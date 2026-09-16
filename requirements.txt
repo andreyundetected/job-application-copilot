@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+python-docx
+python-dotenv
+openai
+jinja2
+python-multipart
+pytest
+pytest-mock

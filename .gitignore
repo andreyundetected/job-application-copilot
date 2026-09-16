@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+.env
+*.db
+*.sqlite3
+/data/
+/output/*.docx
+/output/*.pdf
+resume_source/
