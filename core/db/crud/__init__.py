@@ -8,3 +8,7 @@ from core.db.crud.blocker_rules import *
 from core.db.crud.scoring_factors import *
 from core.db.crud.candidate_profile import *
 from core.db.crud.task_statuses import *
+from core.db.crud.tailoring_changes import *
+from core.db.crud.tailoring_sessions import *
+from core.db.crud.tailoring_messages import *
+from core.db.crud.tailoring_permissions import *

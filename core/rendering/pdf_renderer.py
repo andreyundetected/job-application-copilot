@@ -1,92 +1,71 @@
+from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer
 
-from core.rendering.base import merge_style
+from core.rendering.base import color_hex, merge_style, resolve_style
 
 
-def _build_styles(style: dict) -> dict:
-    return {
-        "name": ParagraphStyle(
-            "name",
-            fontName="Helvetica-Bold",
-            fontSize=style["name_font_size"],
-            alignment=TA_CENTER,
-            spaceAfter=4,
-        ),
-        "contacts": ParagraphStyle(
-            "contacts",
-            fontName="Helvetica",
-            fontSize=style["meta_font_size"],
-            alignment=TA_CENTER,
-            spaceAfter=12,
-        ),
-        "section_header": ParagraphStyle(
-            "section_header",
-            fontName="Helvetica-Bold",
-            fontSize=style["section_header_font_size"],
-            alignment=TA_LEFT,
-            spaceBefore=10,
-            spaceAfter=6,
-        ),
-        "role_company": ParagraphStyle(
-            "role_company",
-            fontName="Helvetica-Bold",
-            fontSize=style["role_company_font_size"],
-            alignment=TA_LEFT,
-            spaceAfter=2,
-        ),
-        "meta": ParagraphStyle(
-            "meta",
-            fontName="Helvetica",
-            fontSize=style["meta_font_size"],
-            alignment=TA_LEFT,
-            spaceAfter=2,
-        ),
-        "meta_italic": ParagraphStyle(
-            "meta_italic",
-            fontName="Helvetica-Oblique",
-            fontSize=style["meta_font_size"],
-            alignment=TA_LEFT,
-            spaceAfter=6,
-        ),
-        "body": ParagraphStyle(
-            "body",
-            fontName="Helvetica",
-            fontSize=style["body_font_size"],
-            alignment=TA_LEFT,
-            spaceAfter=6,
-        ),
-        "subheading": ParagraphStyle(
-            "subheading",
-            fontName="Helvetica-Bold",
-            fontSize=style["body_font_size"],
-            alignment=TA_LEFT,
-            spaceBefore=6,
-            spaceAfter=2,
-        ),
-        "bullet": ParagraphStyle(
-            "bullet",
-            fontName="Helvetica",
-            fontSize=style["body_font_size"],
-            alignment=TA_LEFT,
-        ),
-    }
+def _font_name(resolved: dict) -> str:
+    if resolved.get("bold") and resolved.get("italic"):
+        return "Helvetica-BoldOblique"
+    if resolved.get("bold"):
+        return "Helvetica-Bold"
+    if resolved.get("italic"):
+        return "Helvetica-Oblique"
+    return "Helvetica"
 
 
-def _bullet_list(bullets: list[str], styles: dict):
+def _paragraph_style(
+    class_name, style, path=None, alignment=TA_LEFT, space_after=6, space_before=0
+) -> ParagraphStyle:
+    resolved = resolve_style(style, class_name, path)
+    return ParagraphStyle(
+        f"{class_name}_{path or 'default'}",
+        fontName=_font_name(resolved),
+        fontSize=resolved.get("size", 10),
+        textColor=HexColor(color_hex(resolved.get("color", "black"))),
+        alignment=alignment,
+        spaceBefore=space_before,
+        spaceAfter=space_after,
+    )
+
+
+def _bullet_list(items, class_name, style, path):
+    para_style = _paragraph_style(class_name, style, path, alignment=TA_LEFT, space_after=0)
     return ListFlowable(
-        [ListItem(Paragraph(bullet, styles["bullet"])) for bullet in bullets],
+        [ListItem(Paragraph(item, para_style)) for item in items],
         bulletType="bullet",
         leftIndent=14,
     )
 
 
+def _content_block_flowables(blocks, path_prefix, style):
+    flowables = []
+    for index, block in enumerate(blocks or []):
+        block_path = f"{path_prefix}[{index}]"
+        block_type = block.get("type")
+
+        if block_type == "heading":
+            flowables.append(
+                Paragraph(
+                    block.get("text", ""),
+                    _paragraph_style("heading", style, block_path, space_before=6, space_after=2),
+                )
+            )
+        elif block_type == "bullet_list":
+            flowables.append(_bullet_list(block.get("items", []), "bullet", style, block_path))
+        else:
+            flowables.append(
+                Paragraph(block.get("text", ""), _paragraph_style("body", style, block_path))
+            )
+    return flowables
+
+
 def render_pdf(content: dict, output_path: str, style: dict | None = None) -> str:
     style = merge_style(style)
-    styles = _build_styles(style)
 
     document = SimpleDocTemplate(
         output_path,
@@ -97,50 +76,75 @@ def render_pdf(content: dict, output_path: str, style: dict | None = None) -> st
         bottomMargin=0.6 * inch,
     )
 
-    elements = [Paragraph(content["name"], styles["name"])]
+    elements = [
+        Paragraph(content["name"], _paragraph_style("name", style, alignment=TA_CENTER, space_after=4))
+    ]
 
     if content.get("contacts"):
         contacts_text = " | ".join(content["contacts"])
-        elements.append(Paragraph(contacts_text, styles["contacts"]))
+        elements.append(
+            Paragraph(
+                contacts_text, _paragraph_style("contacts", style, alignment=TA_CENTER, space_after=12)
+            )
+        )
 
     if content.get("summary"):
-        elements.append(Paragraph("SUMMARY", styles["section_header"]))
-        elements.append(Paragraph(content["summary"], styles["body"]))
+        elements.append(
+            Paragraph("SUMMARY", _paragraph_style("section_header", style, space_before=10, space_after=6))
+        )
+        elements.append(Paragraph(content["summary"], _paragraph_style("body", style, "summary")))
 
     if content.get("experience"):
-        elements.append(Paragraph("EXPERIENCE", styles["section_header"]))
-        for entry in content["experience"]:
+        elements.append(
+            Paragraph("EXPERIENCE", _paragraph_style("section_header", style, space_before=10, space_after=6))
+        )
+        for index, entry in enumerate(content["experience"]):
+            path_prefix = f"experience[{index}]"
             elements.append(
-                Paragraph(f"{entry['company']} - {entry['role']}", styles["role_company"])
+                Paragraph(
+                    f"{entry['company']} - {entry['role']}",
+                    _paragraph_style("company_role", style, f"{path_prefix}.company_role", space_after=2),
+                )
             )
             elements.append(
-                Paragraph(f"{entry['location']} - {entry['dates']}", styles["meta"])
+                Paragraph(
+                    f"{entry['location']} - {entry['dates']}",
+                    _paragraph_style("meta", style, f"{path_prefix}.meta", space_after=2),
+                )
             )
             if entry.get("employment_type"):
-                elements.append(Paragraph(entry["employment_type"], styles["meta_italic"]))
-            if entry.get("description"):
-                elements.append(Paragraph(entry["description"], styles["body"]))
-            if entry.get("bullets"):
-                elements.append(_bullet_list(entry["bullets"], styles))
-
-            for subsection in entry.get("subsections", []):
-                elements.append(Paragraph(subsection["heading"], styles["subheading"]))
-                elements.append(_bullet_list(subsection.get("bullets", []), styles))
-
+                elements.append(
+                    Paragraph(
+                        entry["employment_type"],
+                        _paragraph_style(
+                            "employment_type", style, f"{path_prefix}.employment_type", space_after=6
+                        ),
+                    )
+                )
+            elements.extend(
+                _content_block_flowables(entry.get("content", []), f"{path_prefix}.content", style)
+            )
             elements.append(Spacer(1, 8))
 
-    for section in content.get("extra_sections", []):
-        elements.append(Paragraph(section["heading"], styles["section_header"]))
-        if section.get("text"):
-            elements.append(Paragraph(section["text"], styles["body"]))
-        if section.get("bullets"):
-            elements.append(_bullet_list(section["bullets"], styles))
+    for index, section in enumerate(content.get("extra_sections", [])):
+        path_prefix = f"extra_sections[{index}]"
+        elements.append(
+            Paragraph(
+                section["heading"],
+                _paragraph_style("extra_heading", style, f"{path_prefix}.heading", space_before=10, space_after=6),
+            )
+        )
+        elements.extend(
+            _content_block_flowables(section.get("content", []), f"{path_prefix}.content", style)
+        )
 
     if content.get("skills"):
-        elements.append(Paragraph("SKILLS", styles["section_header"]))
+        elements.append(
+            Paragraph("SKILLS", _paragraph_style("section_header", style, space_before=10, space_after=6))
+        )
         for skill_line in content["skills"]:
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
-            elements.append(Paragraph(text, styles["body"]))
+            elements.append(Paragraph(text, _paragraph_style("body", style)))
 
     document.build(elements)
     return output_path

@@ -1,126 +1,122 @@
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 
-from core.rendering.base import merge_style
+from core.rendering.base import color_hex, merge_style, resolve_style
 
 
-def _add_contacts_paragraph(document: Document, contacts: list[str], style: dict):
+def _rgb(color_name: str) -> RGBColor:
+    hex_value = color_hex(color_name).lstrip("#")
+    return RGBColor(int(hex_value[0:2], 16), int(hex_value[2:4], 16), int(hex_value[4:6], 16))
+
+
+def _apply_run_style(run, resolved: dict, font_name: str):
+    run.font.size = Pt(resolved.get("size", 10))
+    run.font.name = font_name
+    run.bold = resolved.get("bold", False)
+    run.italic = resolved.get("italic", False)
+    run.font.color.rgb = _rgb(resolved.get("color", "black"))
+
+
+def _add_styled_paragraph(
+    document, text, class_name, style, path=None, alignment=None, bullet=False
+):
+    resolved = resolve_style(style, class_name, path)
+    paragraph = document.add_paragraph(style="List Bullet" if bullet else None)
+    if alignment is not None:
+        paragraph.alignment = alignment
+    run = paragraph.add_run(text)
+    _apply_run_style(run, resolved, style["font_name"])
+    return paragraph
+
+
+def _add_content_blocks(document, blocks, path_prefix, style):
+    for index, block in enumerate(blocks or []):
+        block_path = f"{path_prefix}[{index}]"
+        block_type = block.get("type")
+
+        if block_type == "heading":
+            _add_styled_paragraph(document, block.get("text", ""), "heading", style, path=block_path)
+        elif block_type == "bullet_list":
+            for item in block.get("items", []):
+                _add_styled_paragraph(document, item, "bullet", style, path=block_path, bullet=True)
+        else:
+            _add_styled_paragraph(document, block.get("text", ""), "body", style, path=block_path)
+
+
+def _add_contacts_paragraph(document, contacts, style):
+    resolved = resolve_style(style, "contacts")
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     if style["contacts_layout"] == "inline":
         run = paragraph.add_run(" | ".join(contacts))
-        run.font.size = Pt(style["meta_font_size"])
-        run.font.name = style["font_name"]
+        _apply_run_style(run, resolved, style["font_name"])
     else:
         for index, contact in enumerate(contacts):
             run = paragraph.add_run(contact)
-            run.font.size = Pt(style["meta_font_size"])
-            run.font.name = style["font_name"]
+            _apply_run_style(run, resolved, style["font_name"])
             if index < len(contacts) - 1:
                 paragraph.add_run().add_break()
 
 
-def _add_section_header(document: Document, text: str, style: dict):
-    paragraph = document.add_paragraph()
-    run = paragraph.add_run(text)
-    run.bold = True
-    run.font.size = Pt(style["section_header_font_size"])
-    run.font.name = style["font_name"]
+def _add_section_header(document, text, style):
+    _add_styled_paragraph(document, text, "section_header", style)
 
 
-def _add_bullets(document: Document, bullets: list[str], style: dict):
-    for bullet in bullets:
-        paragraph = document.add_paragraph(style="List Bullet")
-        run = paragraph.add_run(bullet)
-        run.font.size = Pt(style["body_font_size"])
-        run.font.name = style["font_name"]
+def _add_experience_entry(document, entry, index, style):
+    path_prefix = f"experience[{index}]"
 
+    company_role_text = f"{entry['company']} - {entry['role']}"
+    _add_styled_paragraph(
+        document, company_role_text, "company_role", style, path=f"{path_prefix}.company_role"
+    )
 
-def _add_experience_entry(document: Document, entry: dict, style: dict):
-    header_paragraph = document.add_paragraph()
-    run = header_paragraph.add_run(f"{entry['company']} - {entry['role']}")
-    run.bold = True
-    run.font.size = Pt(style["role_company_font_size"])
-    run.font.name = style["font_name"]
-
-    meta_paragraph = document.add_paragraph()
     meta_text = f"{entry['location']} - {entry['dates']}"
-    meta_run = meta_paragraph.add_run(meta_text)
-    meta_run.font.size = Pt(style["meta_font_size"])
-    meta_run.font.name = style["font_name"]
+    _add_styled_paragraph(document, meta_text, "meta", style, path=f"{path_prefix}.meta")
 
     if entry.get("employment_type"):
-        type_paragraph = document.add_paragraph()
-        type_run = type_paragraph.add_run(entry["employment_type"])
-        type_run.italic = True
-        type_run.font.size = Pt(style["meta_font_size"])
-        type_run.font.name = style["font_name"]
+        _add_styled_paragraph(
+            document,
+            entry["employment_type"],
+            "employment_type",
+            style,
+            path=f"{path_prefix}.employment_type",
+        )
 
-    if entry.get("description"):
-        description_paragraph = document.add_paragraph()
-        description_run = description_paragraph.add_run(entry["description"])
-        description_run.font.size = Pt(style["body_font_size"])
-        description_run.font.name = style["font_name"]
-
-    if entry.get("bullets"):
-        _add_bullets(document, entry["bullets"], style)
-
-    for subsection in entry.get("subsections", []):
-        heading_paragraph = document.add_paragraph()
-        heading_run = heading_paragraph.add_run(subsection["heading"])
-        heading_run.bold = True
-        heading_run.font.size = Pt(style["body_font_size"])
-        heading_run.font.name = style["font_name"]
-
-        _add_bullets(document, subsection.get("bullets", []), style)
+    _add_content_blocks(document, entry.get("content", []), f"{path_prefix}.content", style)
 
 
 def render_docx(content: dict, output_path: str, style: dict | None = None) -> str:
     style = merge_style(style)
     document = Document()
 
-    name_paragraph = document.add_paragraph()
-    name_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    name_run = name_paragraph.add_run(content["name"])
-    name_run.bold = True
-    name_run.font.size = Pt(style["name_font_size"])
-    name_run.font.name = style["font_name"]
+    _add_styled_paragraph(
+        document, content["name"], "name", style, alignment=WD_ALIGN_PARAGRAPH.CENTER
+    )
 
     if content.get("contacts"):
         _add_contacts_paragraph(document, content["contacts"], style)
 
     if content.get("summary"):
         _add_section_header(document, "SUMMARY", style)
-        summary_paragraph = document.add_paragraph()
-        summary_run = summary_paragraph.add_run(content["summary"])
-        summary_run.font.size = Pt(style["body_font_size"])
-        summary_run.font.name = style["font_name"]
+        _add_styled_paragraph(document, content["summary"], "body", style, path="summary")
 
     if content.get("experience"):
         _add_section_header(document, "EXPERIENCE", style)
-        for entry in content["experience"]:
-            _add_experience_entry(document, entry, style)
+        for index, entry in enumerate(content["experience"]):
+            _add_experience_entry(document, entry, index, style)
 
-    for section in content.get("extra_sections", []):
-        _add_section_header(document, section["heading"], style)
-        if section.get("text"):
-            text_paragraph = document.add_paragraph()
-            text_run = text_paragraph.add_run(section["text"])
-            text_run.font.size = Pt(style["body_font_size"])
-            text_run.font.name = style["font_name"]
-        if section.get("bullets"):
-            _add_bullets(document, section["bullets"], style)
+    for index, section in enumerate(content.get("extra_sections", [])):
+        path_prefix = f"extra_sections[{index}]"
+        _add_styled_paragraph(document, section["heading"], "extra_heading", style, path=f"{path_prefix}.heading")
+        _add_content_blocks(document, section.get("content", []), f"{path_prefix}.content", style)
 
     if content.get("skills"):
         _add_section_header(document, "SKILLS", style)
         for skill_line in content["skills"]:
-            paragraph = document.add_paragraph()
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
-            run = paragraph.add_run(text)
-            run.font.size = Pt(style["body_font_size"])
-            run.font.name = style["font_name"]
+            _add_styled_paragraph(document, text, "body", style)
 
     document.save(output_path)
     return output_path

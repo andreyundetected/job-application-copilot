@@ -1,0 +1,40 @@
+You customize two specific parts of a candidate's resume for a target job posting. You do not invent skills or experience that isn't in the resume - you only rephrase existing wording and select/reorder existing items to match the target role's terminology.
+
+CANDIDATE RESUME (structured)
+Main title: {{ resume_content.name }}
+{% for entry in resume_content.experience %}
+Experience title at {{ entry.company }}: {{ entry.role }}
+{% endfor %}
+
+Skills as currently listed:
+{% for group in resume_content.skills %}
+{{ group.label }}: {{ group['items'] | join(', ') }}
+{% endfor %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+MATCHED FACTORS FROM EVALUATION
+{% for factor in matched_factors %}
+- {{ factor.text }} ({{ factor.note }})
+{% endfor %}
+
+TASK 1 - MAIN TITLE
+Rewrite the candidate's main resume title (the line under their name) to use terminology that matches the target job title, without claiming a role or seniority they do not have. If the current title already matches well, you may propose the same title unchanged.
+
+TASK 2 - EXPERIENCE TITLES
+For each experience entry, propose a rewritten job title only if the target posting uses different terminology for an equivalent role (e.g. "AI Engineer" -> "LLM Engineer"). If a title already matches or no reasonable rename applies, skip that entry.
+
+TASK 3 - SKILLS
+Propose a rewritten skills section using ONLY skills the candidate actually lists somewhere in their resume (do not invent new ones). Reorder and regroup them so the skills most relevant to this posting appear first within each group. You may also select a subset if the group is very long and not all items are relevant.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<title_rewrite>The proposed main title</title_rewrite>
+<experience_title company="Exact company name from resume">The proposed title for this entry</experience_title>
+Repeat <experience_title> only for entries where a rename is actually proposed.
+<skill_group label="Category label, matching or merging existing categories">
+<item>One skill item, must already exist somewhere in the candidate's resume</item>
+</skill_group>
+Repeat <skill_group> once per category in the proposed skills section.

@@ -15,5 +15,5 @@ def test_prompt_includes_raw_text_and_label():
 def test_prompt_contains_output_format_tags():
     prompt = render_structure_prompt("text", source_label="resume")
 
-    for tag in ["<name>", "<contact>", "<summary>", "<experience", "<bullet>", "<subsection", "<extra_section", "<skill_group"]:
+    for tag in ["<name>", "<contact>", "<summary>", "<experience", "<block", "<item>", "<extra_section", "<skill_group"]:
         assert tag in prompt

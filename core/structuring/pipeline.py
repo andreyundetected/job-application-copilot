@@ -8,6 +8,18 @@ def _first_or_none(values: list):
     return values[0]
 
 
+def _map_content_block(raw_block) -> dict:
+    if isinstance(raw_block, str):
+        return {"type": "paragraph", "text": raw_block}
+
+    block_type = raw_block.get("type", "paragraph")
+
+    if block_type == "bullet_list":
+        return {"type": "bullet_list", "items": raw_block.get("item", [])}
+
+    return {"type": block_type, "text": raw_block.get("text", "")}
+
+
 def _map_experience_entry(raw_entry) -> dict:
     if isinstance(raw_entry, str):
         raw_entry = {}
@@ -18,19 +30,7 @@ def _map_experience_entry(raw_entry) -> dict:
         "location": raw_entry.get("location", ""),
         "dates": raw_entry.get("dates", ""),
         "employment_type": raw_entry.get("employment_type", ""),
-        "description": _first_or_none(raw_entry.get("description", [])),
-        "bullets": raw_entry.get("bullet", []),
-        "subsections": [_map_subsection(item) for item in raw_entry.get("subsection", [])],
-    }
-
-
-def _map_subsection(raw_subsection) -> dict:
-    if isinstance(raw_subsection, str):
-        raw_subsection = {}
-
-    return {
-        "heading": raw_subsection.get("heading", ""),
-        "bullets": raw_subsection.get("bullet", []),
+        "content": [_map_content_block(block) for block in raw_entry.get("block", [])],
     }
 
 
@@ -40,8 +40,7 @@ def _map_extra_section(raw_section) -> dict:
 
     return {
         "heading": raw_section.get("heading", ""),
-        "text": _first_or_none(raw_section.get("text", [])) or "",
-        "bullets": raw_section.get("bullet", []),
+        "content": [_map_content_block(block) for block in raw_section.get("block", [])],
     }
 
 

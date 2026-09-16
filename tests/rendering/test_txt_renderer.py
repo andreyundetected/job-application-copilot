@@ -23,5 +23,6 @@ def test_render_txt_contains_expected_lines(tmp_path, sample_resume_content):
 
     assert "SAMPLE NAME | Software Engineer" in text
     assert "Example Corp - Software Engineer" in text
+    assert "Sample project" in text
     assert "- Sample bullet one" in text
     assert "SKILLS" in text

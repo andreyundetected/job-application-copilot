@@ -11,17 +11,20 @@ Respond using only the following tags. Omit any tag entirely if that information
 <summary>The professional summary or "about" text, if present</summary>
 
 <experience company="Company name" role="Job title" location="Location if stated" dates="Date range" employment_type="e.g. full-time, part-time, contract - if stated">
-<description>One short line describing the company or role context, if present</description>
-<bullet>One bullet point under this role. Repeat this tag once per bullet.</bullet>
-<subsection heading="Name of a named sub-project or sub-initiative inside this role, if present">
-<bullet>One bullet point under this subsection. Repeat once per bullet.</bullet>
-</subsection>
+<block type="paragraph">A paragraph of free-form text under this role (e.g. a company/role description), if present. Repeat once per paragraph.</block>
+<block type="heading">A bold sub-heading within this role, e.g. a named sub-project or sub-initiative, if present. Repeat once per sub-heading.</block>
+<block type="bullet_list">
+<item>One bullet point. Repeat once per bullet.</item>
+</block>
+Repeat <block> tags in the original order they appear under this role - a role may have any mix of paragraphs, headings, and bullet lists (e.g. a paragraph, then a bold project heading, then its bullets, then another bold project heading with its own bullets).
 </experience>
 Repeat the <experience> block once per job/role found in the source text.
 
 <extra_section heading="Heading of a section that is not experience/summary/skills, e.g. independent projects, education, certifications">
-<text>Free text for this section, if present</text>
-<bullet>One bullet point under this section. Repeat once per bullet.</bullet>
+<block type="paragraph">A paragraph of free-form text in this section, if present. Repeat once per paragraph.</block>
+<block type="bullet_list">
+<item>One bullet point. Repeat once per bullet.</item>
+</block>
 </extra_section>
 Repeat the <extra_section> block once per such section found.
 

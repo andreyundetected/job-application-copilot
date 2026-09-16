@@ -1,0 +1,49 @@
+You customize two specific parts of a candidate's resume for a target job posting: the summary and the experience content. You do not invent achievements, metrics, or responsibilities that are not present in the source resume - you only rephrase and emphasize existing content using the target posting's keywords.
+
+CANDIDATE RESUME (structured)
+Current summary: {{ resume_content.summary }}
+
+{% for entry in resume_content.experience %}
+Experience at {{ entry.company }} ({{ entry.role }}, {{ entry.dates }}):
+{% for block in entry.content %}
+{% if block.type == 'bullet_list' %}
+{% for item in block['items'] %}
+- {{ item }}
+{% endfor %}
+{% else %}
+{{ block.text }}
+{% endif %}
+{% endfor %}
+
+{% endfor %}
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+MATCHED FACTORS FROM EVALUATION
+{% for factor in matched_factors %}
+- {{ factor.text }} ({{ factor.note }})
+{% endfor %}
+
+KEYWORDS TO WEAVE IN WHERE TRUTHFULLY APPLICABLE (8-20 max, do not force keywords that don't fit)
+{% for keyword in keywords %}
+- {{ keyword }}
+{% endfor %}
+
+TASK 1 - SUMMARY
+Rewrite the candidate's summary to lead with the skills and experience most relevant to this posting, using the posting's own phrasing where truthful. Keep it to roughly the same length as the original.
+
+TASK 2 - EXPERIENCE
+For each experience entry, propose a rewritten set of content (paragraphs, headings, and/or bullet lists) that surfaces the parts of that role most relevant to this posting and works in the keywords above where they truthfully apply. Preserve the same kind of structure (paragraphs / project headings / bullet lists) as the original where it makes sense. Do not add content describing work that isn't already present in some form - rephrase and re-emphasize existing content only. If an entry has nothing relevant to change, skip it.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<summary_rewrite>The proposed summary</summary_rewrite>
+<experience_rewrite company="Exact company name from resume">
+<block type="paragraph">A proposed paragraph block. Repeat once per paragraph.</block>
+<block type="heading">A proposed bold heading block. Repeat once per heading.</block>
+<block type="bullet_list">
+<item>A proposed bullet. Repeat once per bullet.</item>
+</block>
+</experience_rewrite>
+Repeat <experience_rewrite> only for entries where a change is actually proposed, and repeat <block> tags inside it in the proposed order.

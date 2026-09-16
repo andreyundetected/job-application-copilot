@@ -190,6 +190,81 @@ class ScoringFactor(Base):
     order: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class TailoringSession(Base):
+    __tablename__ = "tailoring_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    job_posting_id: Mapped[int] = mapped_column(ForeignKey("job_postings.id"))
+    resume_version_id: Mapped[int] = mapped_column(ForeignKey("resume_versions.id"))
+
+    working_content: Mapped[dict] = mapped_column(JSON)
+    style: Mapped[dict] = mapped_column(JSON, nullable=True)
+
+    messages: Mapped[list["TailoringMessage"]] = relationship(back_populates="session")
+    changes: Mapped[list["TailoringChange"]] = relationship(back_populates="session")
+
+
+class TailoringMessage(Base):
+    __tablename__ = "tailoring_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    session_id: Mapped[int] = mapped_column(ForeignKey("tailoring_sessions.id"))
+
+    role: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text)
+
+    session: Mapped["TailoringSession"] = relationship(back_populates="messages")
+    changes: Mapped[list["TailoringChange"]] = relationship(back_populates="message")
+
+
+class TailoringPermission(Base):
+    __tablename__ = "tailoring_permissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    level: Mapped[str] = mapped_column(String(16))
+    change_type: Mapped[str] = mapped_column(String(64))
+    auto_apply: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class TailoringChange(Base):
+    __tablename__ = "tailoring_changes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    evaluation_id: Mapped[int] = mapped_column(ForeignKey("evaluations.id"), nullable=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("tailoring_sessions.id"), nullable=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("tailoring_messages.id"), nullable=True)
+
+    level: Mapped[str] = mapped_column(String(16))
+    change_type: Mapped[str] = mapped_column(String(64))
+    field_path: Mapped[str] = mapped_column(String(255), nullable=True)
+    target_ref: Mapped[str] = mapped_column(String(255), nullable=True)
+    original_text: Mapped[str] = mapped_column(Text, nullable=True)
+    proposed_text: Mapped[str] = mapped_column(Text)
+    proposed_content: Mapped[list] = mapped_column(JSON, nullable=True)
+    final_text: Mapped[str] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+    evaluation: Mapped["Evaluation"] = relationship()
+    session: Mapped["TailoringSession"] = relationship(back_populates="changes")
+    message: Mapped["TailoringMessage"] = relationship(back_populates="changes")
+
+
 class FormQuestion(Base):
     __tablename__ = "form_questions"
 

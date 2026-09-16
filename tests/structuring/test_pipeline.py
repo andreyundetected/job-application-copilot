@@ -19,15 +19,15 @@ _SAMPLE_RESPONSE = """
 <contact>sample@example.com</contact>
 <summary>Sample summary text.</summary>
 <experience company="Example Corp" role="Software Engineer" location="Remote" dates="2023-2025" employment_type="full-time">
-<description>Sample company description</description>
-<bullet>Sample bullet one</bullet>
-<bullet>Sample bullet two</bullet>
-<subsection heading="Sample project">
-<bullet>Sample subsection bullet</bullet>
-</subsection>
+<block type="paragraph">Sample company description</block>
+<block type="heading">Sample project</block>
+<block type="bullet_list">
+<item>Sample bullet one</item>
+<item>Sample bullet two</item>
+</block>
 </experience>
 <extra_section heading="INDEPENDENT PROJECTS">
-<text>Sample independent projects text</text>
+<block type="paragraph">Sample independent projects text</block>
 </extra_section>
 <skill_group label="Languages">
 <item>Python</item>
@@ -49,12 +49,15 @@ def test_structure_resume_text_maps_all_fields():
     experience = content["experience"][0]
     assert experience["company"] == "Example Corp"
     assert experience["role"] == "Software Engineer"
-    assert experience["bullets"] == ["Sample bullet one", "Sample bullet two"]
-    assert experience["subsections"][0]["heading"] == "Sample project"
-    assert experience["subsections"][0]["bullets"] == ["Sample subsection bullet"]
+    assert experience["content"][0] == {"type": "paragraph", "text": "Sample company description"}
+    assert experience["content"][1] == {"type": "heading", "text": "Sample project"}
+    assert experience["content"][2] == {
+        "type": "bullet_list",
+        "items": ["Sample bullet one", "Sample bullet two"],
+    }
 
     assert content["extra_sections"][0]["heading"] == "INDEPENDENT PROJECTS"
-    assert content["extra_sections"][0]["text"] == "Sample independent projects text"
+    assert content["extra_sections"][0]["content"][0]["text"] == "Sample independent projects text"
 
     assert content["skills"][0]["label"] == "Languages"
     assert content["skills"][0]["items"] == ["Python", "SQL"]
@@ -85,10 +88,18 @@ def test_structure_linkedin_text_uses_linkedin_label_in_prompt():
 
 
 @pytest.mark.structuring
-def test_structure_resume_text_handles_experience_without_subsections():
+def test_structure_resume_text_handles_multiple_projects_under_one_role():
     response = """
     <experience company="Solo Corp" role="Engineer" location="Remote" dates="2020-2021" employment_type="full-time">
-    <bullet>Sample bullet</bullet>
+    <block type="paragraph">Intro paragraph</block>
+    <block type="heading">Project One</block>
+    <block type="bullet_list">
+    <item>Bullet for project one</item>
+    </block>
+    <block type="heading">Project Two</block>
+    <block type="bullet_list">
+    <item>Bullet for project two</item>
+    </block>
     </experience>
     """
     provider = _FakeProvider(response)
@@ -96,5 +107,6 @@ def test_structure_resume_text_handles_experience_without_subsections():
     content = structure_resume_text(provider, "raw text")
 
     experience = content["experience"][0]
-    assert experience["subsections"] == []
-    assert experience["description"] is None
+    assert len(experience["content"]) == 5
+    assert experience["content"][1] == {"type": "heading", "text": "Project One"}
+    assert experience["content"][3] == {"type": "heading", "text": "Project Two"}

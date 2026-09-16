@@ -1,3 +1,15 @@
+def _render_content_blocks_lines(blocks):
+    lines = []
+    for block in blocks or []:
+        block_type = block.get("type")
+        if block_type == "bullet_list":
+            for item in block.get("items", []):
+                lines.append(f"- {item}")
+        else:
+            lines.append(block.get("text", ""))
+    return lines
+
+
 def render_txt(content: dict, output_path: str) -> str:
     lines = [content["name"]]
 
@@ -18,22 +30,12 @@ def render_txt(content: dict, output_path: str) -> str:
             lines.append(f"{entry['location']} - {entry['dates']}")
             if entry.get("employment_type"):
                 lines.append(entry["employment_type"])
-            if entry.get("description"):
-                lines.append(entry["description"])
-            for bullet in entry.get("bullets", []):
-                lines.append(f"- {bullet}")
-            for subsection in entry.get("subsections", []):
-                lines.append(subsection["heading"])
-                for bullet in subsection.get("bullets", []):
-                    lines.append(f"- {bullet}")
+            lines.extend(_render_content_blocks_lines(entry.get("content", [])))
 
     for section in content.get("extra_sections", []):
         lines.append("")
         lines.append(section["heading"])
-        if section.get("text"):
-            lines.append(section["text"])
-        for bullet in section.get("bullets", []):
-            lines.append(f"- {bullet}")
+        lines.extend(_render_content_blocks_lines(section.get("content", [])))
 
     if content.get("skills"):
         lines.append("")
