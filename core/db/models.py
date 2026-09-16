@@ -34,6 +34,22 @@ class ResumeVersion(Base):
     )
 
 
+class TaskStatus(Base):
+    __tablename__ = "task_statuses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    task_type: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    result: Mapped[dict] = mapped_column(JSON, nullable=True)
+    error: Mapped[str] = mapped_column(Text, nullable=True)
+
+
 class CandidateProfile(Base):
     __tablename__ = "candidate_profile"
 

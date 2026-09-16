@@ -3,19 +3,19 @@
 {% block title %}Evaluator{% endblock %}
 
 {% block content %}
-<h1>Job Fit Evaluator</h1>
+<h1 id="page-title">Job Fit Evaluator</h1>
 
-<form method="post" class="card">
+<form method="post" class="card" id="evaluator-form">
     <label for="job_posting_text">Job posting text</label>
-    <textarea name="job_posting_text" id="job_posting_text" placeholder="Paste the job posting here...">{{ job_posting_text or "" }}</textarea>
+    <textarea name="job_posting_text" id="job_posting_text" placeholder="Paste the job posting here..."></textarea>
+
+    <label for="extra_info">Additional context (optional)</label>
+    <textarea name="extra_info" id="extra_info" placeholder="Anything not covered above..."></textarea>
 
     <p class="salary-line">
         Using resume: {{ active_resume.label if active_resume else "none set" }}
         · LinkedIn: {{ active_linkedin.label if active_linkedin else "none set" }}
     </p>
-
-    <label for="extra_info">Additional context (optional)</label>
-    <textarea name="extra_info" id="extra_info" placeholder="Anything not covered above..."></textarea>
 
     <h3>Active blockers</h3>
     <ul class="blocker-list">
@@ -39,67 +39,81 @@
     <button type="submit" class="btn">Evaluate</button>
 </form>
 
-{% if result %}
-<div class="result-card">
-    <div class="result-header">
-        <div class="result-title">
-            <div class="company">{{ result.company }}</div>
-            <div class="role">{{ result.role }}</div>
+<div id="evaluator-result"></div>
+
+<script>
+bindAjaxForm("evaluator-form", (data) => {
+    document.getElementById("page-title").innerHTML = 'Job Fit Evaluator <span class="loading-dot"></span>';
+    document.getElementById("evaluator-result").innerHTML = "";
+
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("page-title").textContent = "Job Fit Evaluator";
+            renderResult(task.result);
+        } else if (task.status === "failed") {
+            document.getElementById("page-title").textContent = "Job Fit Evaluator";
+            document.getElementById("evaluator-result").innerHTML =
+                `<div class="result-card">Evaluation failed: ${task.error}</div>`;
+        }
+    });
+});
+
+function renderResult(result) {
+    const scoreClass = result.score >= 7 ? "score-high" : result.score >= 4 ? "score-mid" : "score-low";
+
+    let matchedFactorsHtml = "";
+    if (result.matched_factors && result.matched_factors.length > 0) {
+        matchedFactorsHtml = '<h3>Matched factors</h3><ul class="matched-factor-list">';
+        result.matched_factors.forEach((factor) => {
+            const signClass = factor.direction === "plus" ? "factor-sign-plus" : "factor-sign-minus";
+            const signChar = factor.direction === "plus" ? "+" : "-";
+            matchedFactorsHtml += `<li>
+                <span class="factor-sign ${signClass}">${signChar.repeat(factor.weight)}</span>
+                <span class="matched-factor-text">${factor.text}</span>
+                <span class="matched-factor-note">${factor.note}</span>
+            </li>`;
+        });
+        matchedFactorsHtml += "</ul>";
+    }
+
+    const prosHtml = (result.pros || []).map((pro) => `<li>${pro}</li>`).join("");
+    const consHtml = (result.cons || []).map((con) => `<li>${con}</li>`).join("");
+
+    document.getElementById("evaluator-result").innerHTML = `
+        <div class="result-card">
+            <div class="result-header">
+                <div class="result-title">
+                    <div class="company">${result.company || ""}</div>
+                    <div class="role">${result.role || ""}</div>
+                </div>
+                <div class="score-badge ${scoreClass}">${result.score}</div>
+            </div>
+
+            <div class="badge-row">
+                ${result.location ? `<span class="badge">${result.location}</span>` : ""}
+                ${result.work_mode ? `<span class="badge badge-work-mode">${result.work_mode}</span>` : ""}
+                ${result.salary.is_estimate ? '<span class="badge badge-estimate">Estimated salary</span>' : ""}
+            </div>
+
+            <p class="salary-line">${result.salary.original_text || ""}</p>
+
+            ${matchedFactorsHtml}
+
+            <div class="pros-cons-grid">
+                <div>
+                    <h3>Pros</h3>
+                    <ul class="pros">${prosHtml}</ul>
+                </div>
+                <div>
+                    <h3>Cons</h3>
+                    <ul class="cons">${consHtml}</ul>
+                </div>
+            </div>
+
+            <p class="summary-text">${result.summary || ""}</p>
         </div>
-        <div class="score-badge {% if result.score >= 7 %}score-high{% elif result.score >= 4 %}score-mid{% else %}score-low{% endif %}">
-            {{ result.score }}
-        </div>
-    </div>
-
-    <div class="badge-row">
-        {% if result.location %}
-        <span class="badge">{{ result.location }}</span>
-        {% endif %}
-        {% if result.work_mode %}
-        <span class="badge badge-work-mode">{{ result.work_mode }}</span>
-        {% endif %}
-        {% if result.salary.is_estimate %}
-        <span class="badge badge-estimate">Estimated salary</span>
-        {% endif %}
-    </div>
-
-    <p class="salary-line">{{ result.salary.original_text }}</p>
-
-    {% if result.matched_factors %}
-    <h3>Matched factors</h3>
-    <ul class="matched-factor-list">
-        {% for factor in result.matched_factors %}
-        <li>
-            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
-                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
-            </span>
-            <span class="matched-factor-text">{{ factor.text }}</span>
-            <span class="matched-factor-note">{{ factor.note }}</span>
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
-    <div class="pros-cons-grid">
-        <div>
-            <h3>Pros</h3>
-            <ul class="pros">
-                {% for pro in result.pros %}
-                <li>{{ pro }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div>
-            <h3>Cons</h3>
-            <ul class="cons">
-                {% for con in result.cons %}
-                <li>{{ con }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-
-    <p class="summary-text">{{ result.summary }}</p>
-</div>
-{% endif %}
+    `;
+}
+</script>
 {% endblock %}

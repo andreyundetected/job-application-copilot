@@ -7,7 +7,7 @@
 
 <div class="card">
     <h3>Contacts and links</h3>
-    <form method="post" action="/settings/profile">
+    <form method="post" action="/settings/profile" id="profile-form">
         <label for="email">Email</label>
         <input type="text" name="email" id="email" value="{{ profile.email if profile else '' }}">
 
@@ -29,15 +29,15 @@
 
 <div class="card">
     <h3>Resume</h3>
-    {% if active_resume %}
-    <p class="salary-line">Active: {{ active_resume.label }}</p>
-    {% endif %}
-    <form method="post" action="/settings/resume" enctype="multipart/form-data">
+    <p class="salary-line" id="resume-active-label">Active: {{ active_resume.label if active_resume else "none set" }}</p>
+    <form method="post" action="/settings/resume" enctype="multipart/form-data" id="resume-form">
         <label for="resume_file">Upload resume file (.pdf, .docx, .txt)</label>
         <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx,.txt">
         <button type="submit" class="btn">Upload and parse</button>
     </form>
+    <p class="salary-line" id="resume-status"></p>
 
+    <div id="resume-parsed-blocks">
     {% if active_resume and active_resume.structured_content %}
     <h3>Parsed blocks</h3>
     <ul class="blocker-list">
@@ -52,19 +52,20 @@
         {% endfor %}
     </ul>
     {% endif %}
+    </div>
 </div>
 
 <div class="card">
     <h3>LinkedIn experience</h3>
-    {% if active_linkedin %}
-    <p class="salary-line">Active: {{ active_linkedin.label }}</p>
-    {% endif %}
-    <form method="post" action="/settings/linkedin">
+    <p class="salary-line" id="linkedin-active-label">Active: {{ active_linkedin.label if active_linkedin else "none set" }}</p>
+    <form method="post" action="/settings/linkedin" id="linkedin-form">
         <label for="linkedin_text">Paste LinkedIn experience text</label>
         <textarea name="linkedin_text" id="linkedin_text"></textarea>
         <button type="submit" class="btn">Save and parse</button>
     </form>
+    <p class="salary-line" id="linkedin-status"></p>
 
+    <div id="linkedin-parsed-blocks">
     {% if active_linkedin and active_linkedin.structured_content %}
     <h3>Parsed blocks</h3>
     <ul class="blocker-list">
@@ -73,23 +74,22 @@
         {% endfor %}
     </ul>
     {% endif %}
+    </div>
 </div>
 
 <h1>Matching</h1>
 
 <div class="card">
     <h3>Blockers</h3>
-    <ul class="blocker-list">
+    <ul class="blocker-list" id="blocker-list">
         {% for blocker in blockers %}
-        <li>
-            {{ blocker.text }}
-            <form method="post" action="/settings/blockers/{{ blocker.id }}/delete" style="display:inline">
-                <button type="submit" class="btn-ghost btn">Remove</button>
-            </form>
+        <li data-blocker-id="{{ blocker.id }}">
+            <span>{{ blocker.text }}</span>
+            <button type="button" class="btn-ghost btn blocker-remove-btn" data-blocker-id="{{ blocker.id }}">Remove</button>
         </li>
         {% endfor %}
     </ul>
-    <form method="post" action="/settings/blockers">
+    <form method="post" action="/settings/blockers" id="blocker-form">
         <label for="blocker_text">New blocker</label>
         <input type="text" name="text" id="blocker_text" placeholder="e.g. requires a university degree">
         <button type="submit" class="btn">Add blocker</button>
@@ -98,20 +98,18 @@
 
 <div class="card">
     <h3>Scoring factors</h3>
-    <ul class="blocker-list">
+    <ul class="blocker-list" id="scoring-factor-list">
         {% for factor in scoring_factors %}
-        <li>
+        <li data-factor-id="{{ factor.id }}">
             <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
                 {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
             </span>
-            {{ factor.text }}
-            <form method="post" action="/settings/scoring-factors/{{ factor.id }}/delete" style="display:inline">
-                <button type="submit" class="btn-ghost btn">Remove</button>
-            </form>
+            <span>{{ factor.text }}</span>
+            <button type="button" class="btn-ghost btn factor-remove-btn" data-factor-id="{{ factor.id }}">Remove</button>
         </li>
         {% endfor %}
     </ul>
-    <form method="post" action="/settings/scoring-factors">
+    <form method="post" action="/settings/scoring-factors" id="scoring-factor-form">
         <label for="factor_text">New factor</label>
         <input type="text" name="text" id="factor_text" placeholder="e.g. salary above $120k">
 
@@ -131,4 +129,92 @@
         <button type="submit" class="btn">Add factor</button>
     </form>
 </div>
+
+<script>
+bindAjaxForm("profile-form", () => {});
+
+bindAjaxForm("resume-form", (data) => {
+    document.getElementById("resume-status").textContent = "Parsing resume...";
+    document.getElementById("resume-form").reset();
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("resume-status").textContent = "Done.";
+            document.getElementById("resume-active-label").textContent =
+                "Active: " + (task.result.structured_content.name || "uploaded resume");
+            renderParsedBlocks("resume-parsed-blocks", task.result.structured_content);
+        } else if (task.status === "failed") {
+            document.getElementById("resume-status").textContent = "Failed: " + task.error;
+        }
+    });
+});
+
+bindAjaxForm("linkedin-form", (data) => {
+    document.getElementById("linkedin-status").textContent = "Parsing LinkedIn text...";
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("linkedin-status").textContent = "Done.";
+            document.getElementById("linkedin-active-label").textContent = "Active: LinkedIn experience";
+            renderParsedBlocks("linkedin-parsed-blocks", task.result.structured_content);
+        } else if (task.status === "failed") {
+            document.getElementById("linkedin-status").textContent = "Failed: " + task.error;
+        }
+    });
+});
+
+function renderParsedBlocks(containerId, content) {
+    const container = document.getElementById(containerId);
+    let html = "<h3>Parsed blocks</h3><ul class=\"blocker-list\">";
+    if (content.summary) {
+        html += `<li>Summary: ${content.summary}</li>`;
+    }
+    (content.experience || []).forEach((entry) => {
+        html += `<li>${entry.company} - ${entry.role} (${entry.dates})</li>`;
+    });
+    (content.skills || []).forEach((group) => {
+        html += `<li>${group.label}: ${group.items.join(", ")}</li>`;
+    });
+    html += "</ul>";
+    container.innerHTML = html;
+}
+
+bindAjaxForm("blocker-form", (data) => {
+    const list = document.getElementById("blocker-list");
+    const item = document.createElement("li");
+    item.dataset.blockerId = data.id;
+    item.innerHTML = `<span>${data.text}</span> <button type="button" class="btn-ghost btn blocker-remove-btn" data-blocker-id="${data.id}">Remove</button>`;
+    list.appendChild(item);
+    document.getElementById("blocker-form").reset();
+});
+
+document.getElementById("blocker-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("blocker-remove-btn")) {
+        return;
+    }
+    const blockerId = event.target.dataset.blockerId;
+    await fetch(`/settings/blockers/${blockerId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+
+bindAjaxForm("scoring-factor-form", (data) => {
+    const list = document.getElementById("scoring-factor-list");
+    const item = document.createElement("li");
+    item.dataset.factorId = data.id;
+    const signClass = data.direction === "plus" ? "factor-sign-plus" : "factor-sign-minus";
+    const signChar = data.direction === "plus" ? "+" : "-";
+    item.innerHTML = `<span class="factor-sign ${signClass}">${signChar.repeat(data.weight)}</span> <span>${data.text}</span> <button type="button" class="btn-ghost btn factor-remove-btn" data-factor-id="${data.id}">Remove</button>`;
+    list.appendChild(item);
+    document.getElementById("scoring-factor-form").reset();
+});
+
+document.getElementById("scoring-factor-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("factor-remove-btn")) {
+        return;
+    }
+    const factorId = event.target.dataset.factorId;
+    await fetch(`/settings/scoring-factors/${factorId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+</script>
 {% endblock %}

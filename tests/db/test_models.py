@@ -9,6 +9,7 @@ from core.db.models import (
     ResumeVersion,
     ScoringFactor,
     TailoredResume,
+    TaskStatus,
 )
 
 
@@ -113,6 +114,16 @@ def test_blocker_rule_creation(db_session):
     fetched = db_session.query(BlockerRule).first()
     assert fetched.text == "Sample blocker rule"
     assert fetched.order == 1
+
+
+@pytest.mark.db
+def test_task_status_defaults_to_pending(db_session):
+    task = TaskStatus(task_type="evaluation")
+    db_session.add(task)
+    db_session.commit()
+
+    fetched = db_session.query(TaskStatus).first()
+    assert fetched.status == "pending"
 
 
 @pytest.mark.db
