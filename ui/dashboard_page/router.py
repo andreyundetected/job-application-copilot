@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -21,6 +21,7 @@ templates.env.loader = ChoiceLoader(
 
 def _card_data(job) -> dict:
     latest_evaluation = job.evaluations[-1] if job.evaluations else None
+    pending = job.pending_task_id is not None
 
     if latest_evaluation is None:
         return {
@@ -28,10 +29,13 @@ def _card_data(job) -> dict:
             "company": job.company or "Unknown company",
             "role": job.title or "Unknown role",
             "score": None,
-            "location": None,
-            "work_mode": None,
+            "location": job.location,
+            "work_mode": job.work_mode,
+            "employment_type": job.employment_type,
+            "tags": job.tags or [],
             "salary_text": None,
             "is_estimate": False,
+            "pending": pending,
         }
 
     checked = latest_evaluation.checked_keywords or {}
@@ -42,11 +46,22 @@ def _card_data(job) -> dict:
         "company": job.company or "Unknown company",
         "role": job.title or "Unknown role",
         "score": latest_evaluation.fit_score,
-        "location": checked.get("location"),
-        "work_mode": checked.get("work_mode"),
+        "location": checked.get("location") or job.location,
+        "work_mode": checked.get("work_mode") or job.work_mode,
+        "employment_type": job.employment_type,
+        "tags": job.tags or [],
         "salary_text": salary.get("original_text"),
         "is_estimate": salary.get("is_estimate", False),
+        "pending": pending,
     }
+
+
+@router.get("/jobs/{job_id}/card")
+def job_card_data(job_id: int, session: Session = Depends(get_session)):
+    job = crud.get_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JSONResponse(_card_data(job))
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -63,6 +78,43 @@ def dashboard_page(
         {
             "request": request,
             "cards": cards,
+            "lang": lang,
+            "t": load_page_strings("ui/dashboard_page", lang),
+        },
+    )
+
+
+@router.get("/jobs/{job_id}", response_class=HTMLResponse)
+def job_detail_page(
+    job_id: int,
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    job = crud.get_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    evaluations = crud.list_evaluations_for_job(session, job_id)
+    latest_evaluation = evaluations[0] if evaluations else None
+
+    checked = (latest_evaluation.checked_keywords or {}) if latest_evaluation else {}
+    salary = checked.get("salary") or {}
+
+    return templates.TemplateResponse(
+        "job_detail.html",
+        {
+            "request": request,
+            "job": job,
+            "evaluation": latest_evaluation,
+            "score": latest_evaluation.fit_score if latest_evaluation else None,
+            "location": checked.get("location"),
+            "work_mode": checked.get("work_mode"),
+            "salary": salary,
+            "matched_factors": checked.get("matched_factors") or [],
+            "summary": checked.get("summary"),
+            "pros": (latest_evaluation.fit_bullets or {}).get("pros", []) if latest_evaluation else [],
+            "cons": (latest_evaluation.blocker_bullets or {}).get("cons", []) if latest_evaluation else [],
             "lang": lang,
             "t": load_page_strings("ui/dashboard_page", lang),
         },

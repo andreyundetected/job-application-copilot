@@ -13,5 +13,6 @@
     "evaluation_failed": "Evaluation failed:",
     "matched_factors": "Matched factors",
     "pros": "Pros",
-    "cons": "Cons"
+    "cons": "Cons",
+    "job_added_toast": "Job added to the dashboard."
 }

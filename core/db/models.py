@@ -76,6 +76,11 @@ class JobPosting(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=True)
     source_url: Mapped[str] = mapped_column(String(1024), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    location: Mapped[str] = mapped_column(String(255), nullable=True)
+    work_mode: Mapped[str] = mapped_column(String(32), nullable=True)
+    employment_type: Mapped[str] = mapped_column(String(64), nullable=True)
+    tags: Mapped[list] = mapped_column(JSON, nullable=True)
+    pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="job_posting"

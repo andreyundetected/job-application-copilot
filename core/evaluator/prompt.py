@@ -11,12 +11,6 @@ _env = Environment(
 )
 
 
-_LANGUAGE_NAMES = {
-    "en": "English",
-    "ru": "Russian",
-}
-
-
 def render_evaluator_prompt(
     job_posting_text: str,
     resume_text: str,
@@ -27,6 +21,8 @@ def render_evaluator_prompt(
     extra_info: str | None = None,
     language: str = "en",
 ) -> str:
+    # language is accepted for future use (prompt output translation is
+    # intentionally disabled for now) but not applied yet.
     template = _env.get_template("evaluator_prompt.jinja")
     return template.render(
         job_posting_text=job_posting_text,
@@ -36,5 +32,9 @@ def render_evaluator_prompt(
         scoring_factors=scoring_factors or [],
         contacts=contacts or [],
         extra_info=extra_info or "",
-        output_language=_LANGUAGE_NAMES.get(language, "English"),
     )
+
+
+def render_quick_extract_prompt(job_posting_text: str) -> str:
+    template = _env.get_template("quick_extract_prompt.jinja")
+    return template.render(job_posting_text=job_posting_text)

@@ -1,6 +1,6 @@
 import pytest
 
-from core.evaluator.pipeline import evaluate_job_posting
+from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
 
 
 class _FakeProvider:
@@ -210,3 +210,50 @@ def test_evaluate_job_posting_marks_estimated_salary():
 
     assert result["salary"]["is_estimate"] is True
     assert "estimated" in result["salary"]["original_text"].lower()
+
+
+_SAMPLE_QUICK_RESPONSE = """
+<company>Example Corp</company>
+<role>Backend Engineer</role>
+<location>Berlin, Germany</location>
+<work_mode>remote</work_mode>
+<employment_type>full_time</employment_type>
+<tag>Python</tag>
+<tag>FastAPI</tag>
+<tag>Senior</tag>
+"""
+
+
+@pytest.mark.evaluator
+def test_quick_extract_job_posting_parses_all_fields():
+    provider = _FakeProvider(_SAMPLE_QUICK_RESPONSE)
+
+    result = quick_extract_job_posting(provider, job_posting_text="Sample job posting")
+
+    assert result["company"] == "Example Corp"
+    assert result["role"] == "Backend Engineer"
+    assert result["location"] == "Berlin, Germany"
+    assert result["work_mode"] == "remote"
+    assert result["employment_type"] == "full_time"
+    assert result["tags"] == ["Python", "FastAPI", "Senior"]
+
+
+@pytest.mark.evaluator
+def test_quick_extract_job_posting_handles_missing_tags():
+    response = "<company>Example Corp</company><role>Engineer</role>"
+    provider = _FakeProvider(response)
+
+    result = quick_extract_job_posting(provider, job_posting_text="job")
+
+    assert result["tags"] == []
+    assert result["work_mode"] is None
+    assert result["employment_type"] is None
+
+
+@pytest.mark.evaluator
+def test_quick_extract_job_posting_passes_prompt_to_provider():
+    provider = _FakeProvider(_SAMPLE_QUICK_RESPONSE)
+
+    quick_extract_job_posting(provider, job_posting_text="Unique job posting marker")
+
+    assert "Unique job posting marker" in provider.last_user_prompt

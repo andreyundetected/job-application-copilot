@@ -1,4 +1,4 @@
-from core.evaluator.prompt import render_evaluator_prompt
+from core.evaluator.prompt import render_evaluator_prompt, render_quick_extract_prompt
 from core.parsing.html_like_parser import parse_html_like
 
 
@@ -120,4 +120,24 @@ def evaluate_job_posting(
         "summary": _first_or_none(parsed, "summary"),
         "verdict": bool(score) and score > 0,
         "raw_response": raw_response,
+    }
+
+
+def quick_extract_job_posting(provider, job_posting_text: str) -> dict:
+    prompt = render_quick_extract_prompt(job_posting_text=job_posting_text)
+
+    raw_response = provider.call(
+        system_prompt="You extract short literal facts from a job posting as fast as possible.",
+        user_prompt=prompt,
+    )
+
+    parsed = parse_html_like(raw_response)
+
+    return {
+        "company": _first_or_none(parsed, "company"),
+        "role": _first_or_none(parsed, "role"),
+        "location": _first_or_none(parsed, "location"),
+        "work_mode": _first_or_none(parsed, "work_mode"),
+        "employment_type": _first_or_none(parsed, "employment_type"),
+        "tags": parsed.get("tag", []),
     }

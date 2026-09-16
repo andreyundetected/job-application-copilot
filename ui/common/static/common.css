@@ -459,6 +459,26 @@ input::placeholder {
     margin-top: 2px;
 }
 
+.job-card-pending {
+    opacity: 0.6;
+}
+
+.job-card-score-loading {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-input);
+}
+
+.badge-tag {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    border-color: transparent;
+}
+
 .loading-dot {
     display: inline-block;
     width: 8px;
@@ -477,5 +497,85 @@ input::placeholder {
     50% {
         opacity: 1;
         transform: scale(1.2);
+    }
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+    max-width: 320px;
+}
+
+.toast {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    animation: toast-in 0.25s ease;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.toast-success {
+    border-left-color: var(--score-high);
+}
+
+.toast-danger {
+    border-left-color: var(--score-low);
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.toast-close:hover {
+    color: var(--text-primary);
+}
+
+.toast-hide {
+    animation: toast-out 0.25s ease forwards;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(40px);
     }
 }

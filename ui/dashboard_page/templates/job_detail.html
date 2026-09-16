@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title or job.company or "Job" }}{% endblock %}
+
+{% block content %}
+<a href="/" class="salary-line">&larr; {{ t.back_link }}</a>
+
+<div class="result-card" style="margin-top: 16px;">
+    <div class="result-header">
+        <div class="result-title">
+            <div class="company">{{ job.company or "" }}</div>
+            <div class="role">{{ job.title or "" }}</div>
+        </div>
+        {% if score is not none %}
+        <div class="score-badge {% if score >= 7 %}score-high{% elif score >= 4 %}score-mid{% else %}score-low{% endif %}">{{ score }}</div>
+        {% endif %}
+    </div>
+
+    <div class="badge-row">
+        {% if location %}<span class="badge">{{ location }}</span>{% endif %}
+        {% if work_mode %}<span class="badge badge-work-mode">{{ work_mode }}</span>{% endif %}
+        {% if salary.is_estimate %}<span class="badge badge-estimate">Est.</span>{% endif %}
+    </div>
+
+    {% if salary.original_text %}
+    <p class="salary-line">{{ salary.original_text }}</p>
+    {% endif %}
+
+    {% if matched_factors %}
+    <h3>{{ t.matched_factors }}</h3>
+    <ul class="matched-factor-list">
+        {% for factor in matched_factors %}
+        <li>
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            <span class="matched-factor-text">{{ factor.text }}</span>
+            <span class="matched-factor-note">{{ factor.note }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="pros-cons-grid">
+        <div>
+            <h3>{{ t.pros }}</h3>
+            <ul class="pros">
+                {% for pro in pros %}<li>{{ pro }}</li>{% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h3>{{ t.cons }}</h3>
+            <ul class="cons">
+                {% for con in cons %}<li>{{ con }}</li>{% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    {% if summary %}
+    <p class="summary-text">{{ summary }}</p>
+    {% endif %}
+
+    <button type="button" class="btn" onclick="window.location.href='/tailor?job_id={{ job.id }}'">
+        {{ t.prepare_resume_button }}
+    </button>
+</div>
+
+<div class="card">
+    <h3>{{ t.job_posting_text_title }}</h3>
+    <p class="summary-text" style="white-space: pre-wrap;">{{ job.raw_text }}</p>
+</div>
+{% endblock %}

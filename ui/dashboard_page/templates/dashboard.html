@@ -3,15 +3,22 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>{{ t.page_title }}</h1>
+<div class="result-header">
+    <h1>{{ t.page_title }}</h1>
+    <button type="button" class="btn" onclick="window.location.href='/evaluator'">{{ t.add_vacancy_button }}</button>
+</div>
 
 <div class="job-grid" id="job-grid">
     {% for card in cards %}
-    <div class="job-card" data-job-id="{{ card.job_id }}">
+    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}">
         <div class="job-card-top">
+            {% if card.pending and card.score is none %}
+            <div class="job-card-score-loading"><span class="loading-dot"></span></div>
+            {% else %}
             <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">
                 {{ card.score if card.score is not none else "?" }}
             </div>
+            {% endif %}
             <button type="button" class="job-card-archive" data-job-id="{{ card.job_id }}" title="Archive">&times;</button>
         </div>
 
@@ -22,6 +29,12 @@
             {% if card.work_mode %}
             <span class="badge badge-work-mode">{{ card.work_mode }}</span>
             {% endif %}
+            {% if card.employment_type %}
+            <span class="badge">{{ t["employment_" + card.employment_type] if ("employment_" + card.employment_type) in t else card.employment_type }}</span>
+            {% endif %}
+            {% for tag in card.tags %}
+            <span class="badge badge-tag">{{ tag }}</span>
+            {% endfor %}
             {% if card.is_estimate %}
             <span class="badge badge-estimate">Est.</span>
             {% endif %}
@@ -44,13 +57,90 @@
 {% endif %}
 
 <script>
+const I18N = {{ t | tojson }};
+
 document.getElementById("job-grid").addEventListener("click", async (event) => {
-    if (!event.target.classList.contains("job-card-archive")) {
+    if (event.target.classList.contains("job-card-archive")) {
+        const jobId = event.target.dataset.jobId;
+        await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
+        event.target.closest(".job-card").remove();
+        showToast(I18N.job_removed_toast, "danger");
         return;
     }
-    const jobId = event.target.dataset.jobId;
-    await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
-    event.target.closest(".job-card").remove();
+
+    const card = event.target.closest(".job-card");
+    if (card) {
+        window.location.href = `/jobs/${card.dataset.jobId}`;
+    }
 });
+
+function scoreClassFor(score) {
+    if (score === null || score === undefined) return "score-mid";
+    if (score >= 7) return "score-high";
+    if (score >= 4) return "score-mid";
+    return "score-low";
+}
+
+function renderCardInPlace(cardEl, card) {
+    cardEl.dataset.pending = card.pending ? "true" : "false";
+    cardEl.classList.toggle("job-card-pending", card.pending);
+
+    const scoreContainer = cardEl.querySelector(".job-card-top");
+    const archiveBtn = scoreContainer.querySelector(".job-card-archive");
+    const scoreHtml = (card.pending && card.score === null)
+        ? `<div class="job-card-score-loading"><span class="loading-dot"></span></div>`
+        : `<div class="job-card-score ${scoreClassFor(card.score)}">${card.score !== null ? card.score : "?"}</div>`;
+    scoreContainer.innerHTML = scoreHtml;
+    scoreContainer.appendChild(archiveBtn);
+
+    let badgesHtml = "";
+    if (card.location) badgesHtml += `<span class="badge">${card.location}</span>`;
+    if (card.work_mode) badgesHtml += `<span class="badge badge-work-mode">${card.work_mode}</span>`;
+    if (card.employment_type) {
+        const label = I18N["employment_" + card.employment_type] || card.employment_type;
+        badgesHtml += `<span class="badge">${label}</span>`;
+    }
+    (card.tags || []).forEach((tag) => {
+        badgesHtml += `<span class="badge badge-tag">${tag}</span>`;
+    });
+    if (card.is_estimate) badgesHtml += `<span class="badge badge-estimate">Est.</span>`;
+    cardEl.querySelector(".job-card-badges").innerHTML = badgesHtml;
+
+    let salaryEl = cardEl.querySelector(".job-card-salary");
+    if (card.salary_text) {
+        if (!salaryEl) {
+            salaryEl = document.createElement("p");
+            salaryEl.className = "job-card-salary";
+            cardEl.querySelector(".job-card-badges").insertAdjacentElement("afterend", salaryEl);
+        }
+        salaryEl.textContent = card.salary_text;
+    } else if (salaryEl) {
+        salaryEl.remove();
+    }
+
+    cardEl.querySelector(".job-card-company").textContent = card.company;
+    cardEl.querySelector(".job-card-role").textContent = card.role;
+}
+
+function pollPendingCards() {
+    const pendingCards = document.querySelectorAll('.job-card[data-pending="true"]');
+    pendingCards.forEach(async (cardEl) => {
+        const jobId = cardEl.dataset.jobId;
+        try {
+            const response = await fetch(`/jobs/${jobId}/card`);
+            if (!response.ok) return;
+            const card = await response.json();
+            renderCardInPlace(cardEl, card);
+        } catch (error) {
+            // ignore transient errors, will retry on next poll
+        }
+    });
+
+    if (document.querySelectorAll('.job-card[data-pending="true"]').length > 0) {
+        setTimeout(pollPendingCards, 2500);
+    }
+}
+
+pollPendingCards();
 </script>
 {% endblock %}

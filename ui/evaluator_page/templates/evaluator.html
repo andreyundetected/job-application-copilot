@@ -36,25 +36,28 @@
         {% endfor %}
     </ul>
 
-    <button type="submit" class="btn">Evaluate</button>
+    <button type="submit" class="btn">{{ t.evaluate_button }}</button>
 </form>
 
 <div id="evaluator-result"></div>
 
 <script>
+const I18N = {{ t | tojson }};
+
 bindAjaxForm("evaluator-form", (data) => {
-    document.getElementById("page-title").innerHTML = 'Job Fit Evaluator <span class="loading-dot"></span>';
+    document.getElementById("page-title").innerHTML = `${I18N.page_title} <span class="loading-dot"></span>`;
     document.getElementById("evaluator-result").innerHTML = "";
+    document.getElementById("evaluator-form").reset();
 
     pollTaskStatus([data.task_id], (tasks) => {
         const task = tasks[0];
         if (task.status === "done") {
-            document.getElementById("page-title").textContent = "Job Fit Evaluator";
-            renderResult(task.result);
+            document.getElementById("page-title").textContent = I18N.page_title;
+            showToast(I18N.job_added_toast, "success");
         } else if (task.status === "failed") {
-            document.getElementById("page-title").textContent = "Job Fit Evaluator";
+            document.getElementById("page-title").textContent = I18N.page_title;
             document.getElementById("evaluator-result").innerHTML =
-                `<div class="result-card">Evaluation failed: ${task.error}</div>`;
+                `<div class="result-card">${I18N.evaluation_failed} ${task.error}</div>`;
         }
     });
 });

@@ -1,6 +1,6 @@
 import pytest
 
-from core.evaluator.prompt import render_evaluator_prompt
+from core.evaluator.prompt import render_evaluator_prompt, render_quick_extract_prompt
 
 
 @pytest.mark.evaluator
@@ -119,3 +119,27 @@ def test_prompt_contains_output_format_tags():
     ]
     for tag in tags:
         assert tag in prompt
+
+
+@pytest.mark.evaluator
+def test_quick_extract_prompt_includes_job_posting():
+    prompt = render_quick_extract_prompt(job_posting_text="Sample job posting text")
+
+    assert "Sample job posting text" in prompt
+
+
+@pytest.mark.evaluator
+def test_quick_extract_prompt_contains_output_format_tags():
+    prompt = render_quick_extract_prompt(job_posting_text="job")
+
+    tags = ["<company>", "<role>", "<location>", "<work_mode>", "<employment_type>", "<tag>"]
+    for tag in tags:
+        assert tag in prompt
+
+
+@pytest.mark.evaluator
+def test_quick_extract_prompt_does_not_include_scoring_language():
+    prompt = render_quick_extract_prompt(job_posting_text="job")
+
+    assert "<score>" not in prompt
+    assert "<reasoning>" not in prompt

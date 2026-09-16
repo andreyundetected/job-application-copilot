@@ -40,3 +40,44 @@ async function pollTaskStatus(taskIds, onUpdate, intervalMs = 2000) {
     };
     poll();
 }
+
+const TOAST_CONTAINER_ID = "toast-container";
+const TOAST_MAX_VISIBLE = 3;
+const TOAST_DURATION_MS = 10000;
+
+function _getToastContainer() {
+    let container = document.getElementById(TOAST_CONTAINER_ID);
+    if (!container) {
+        container = document.createElement("div");
+        container.id = TOAST_CONTAINER_ID;
+        container.className = "toast-container";
+        document.body.appendChild(container);
+    }
+    return container;
+}
+
+function showToast(message, type = "info") {
+    const container = _getToastContainer();
+
+    while (container.children.length >= TOAST_MAX_VISIBLE) {
+        container.removeChild(container.firstElementChild);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-message"></span>
+        <button type="button" class="toast-close">&times;</button>
+    `;
+    toast.querySelector(".toast-message").textContent = message;
+
+    const remove = () => {
+        toast.classList.add("toast-hide");
+        toast.addEventListener("animationend", () => toast.remove(), { once: true });
+    };
+
+    toast.querySelector(".toast-close").addEventListener("click", remove);
+    setTimeout(remove, TOAST_DURATION_MS);
+
+    container.appendChild(toast);
+}

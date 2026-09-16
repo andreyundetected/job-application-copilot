@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from core.db import crud
 from core.db.session import SessionLocal, get_session
-from core.evaluator.pipeline import evaluate_job_posting
+from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
 from core.providers.factory import get_llm_provider
 from core.tasks.runner import run_tracked_task
 
@@ -57,13 +57,53 @@ def run_evaluation(
     session: Session = Depends(get_session),
     lang: str = Depends(get_language),
 ):
+    job = crud.create_job_posting(session, raw_text=job_posting_text)
+
     task_id = run_tracked_task(
-        "job_evaluation", _evaluate_and_save, job_posting_text, extra_info or None, lang
+        "job_quick_extract", _quick_extract_and_save, job.id, job_posting_text, extra_info or None, lang
     )
-    return JSONResponse({"status": "processing", "task_id": task_id})
+    crud.set_job_pending_task(session, job.id, task_id)
+
+    return JSONResponse({"status": "processing", "task_id": task_id, "job_id": job.id})
 
 
-def _evaluate_and_save(job_posting_text: str, extra_info: str | None, lang: str = "en") -> dict:
+def _quick_extract_and_save(
+    job_posting_id: int, job_posting_text: str, extra_info: str | None, lang: str = "en"
+) -> dict:
+    session = SessionLocal()
+    try:
+        provider = get_llm_provider()
+        quick_result = quick_extract_job_posting(provider, job_posting_text)
+
+        crud.update_job_quick_meta(
+            session,
+            job_posting_id,
+            company=quick_result["company"],
+            title=quick_result["role"],
+            location=quick_result["location"],
+            work_mode=quick_result["work_mode"],
+            employment_type=quick_result["employment_type"],
+            tags=quick_result["tags"],
+        )
+
+        full_task_id = run_tracked_task(
+            "job_full_evaluation",
+            _evaluate_and_save,
+            job_posting_id,
+            job_posting_text,
+            extra_info,
+            lang,
+        )
+        crud.set_job_pending_task(session, job_posting_id, full_task_id)
+
+        return quick_result
+    finally:
+        session.close()
+
+
+def _evaluate_and_save(
+    job_posting_id: int, job_posting_text: str, extra_info: str | None, lang: str = "en"
+) -> dict:
     session = SessionLocal()
     try:
         blockers = crud.list_blocker_rules(session)
@@ -92,16 +132,18 @@ def _evaluate_and_save(job_posting_text: str, extra_info: str | None, lang: str 
             language=lang,
         )
 
-        job = crud.create_job_posting(
+        crud.update_job_quick_meta(
             session,
-            raw_text=job_posting_text,
+            job_posting_id,
             company=result["company"],
             title=result["role"],
+            location=result["location"],
+            work_mode=result["work_mode"],
         )
 
         crud.create_evaluation(
             session,
-            job_posting_id=job.id,
+            job_posting_id=job_posting_id,
             resume_version_id=resume.id,
             verdict=result["verdict"],
             blocker_bullets={"cons": result["cons"]},
@@ -111,8 +153,12 @@ def _evaluate_and_save(job_posting_text: str, extra_info: str | None, lang: str 
                 "location": result["location"],
                 "work_mode": result["work_mode"],
                 "salary": result["salary"],
+                "matched_factors": result["matched_factors"],
+                "summary": result["summary"],
             },
         )
+
+        crud.set_job_pending_task(session, job_posting_id, None)
 
         return result
     finally:

@@ -1,0 +1,14 @@
+You extract only the following surface-level facts from a job posting. Do not evaluate fit, do not score anything, do not write reasoning. Be fast and literal - only use what is stated in the posting.
+
+JOB POSTING
+{{ job_posting_text }}
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<company>Company name, or "N/A" if not stated</company>
+<role>Job title as stated in the posting</role>
+<location>City, country, or region as stated in the posting. If not stated, write "N/A"</location>
+<work_mode>Exactly one of: remote, hybrid, onsite, unclear</work_mode>
+<employment_type>Exactly one of: full_time, part_time, contract, internship, unclear</employment_type>
+<tag>A short keyword tag relevant to this role (e.g. a core technology, seniority level, or domain). Repeat this tag once per tag, up to 6 tags total.</tag>
