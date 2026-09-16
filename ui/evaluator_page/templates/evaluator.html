@@ -9,19 +9,10 @@
     <label for="job_posting_text">Job posting text</label>
     <textarea name="job_posting_text" id="job_posting_text" placeholder="Paste the job posting here...">{{ job_posting_text or "" }}</textarea>
 
-    <label for="resume_version_id">Resume version</label>
-    <select name="resume_version_id" id="resume_version_id">
-        {% for resume in resumes %}
-        <option value="{{ resume.id }}">{{ resume.label or resume.created_at }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="linkedin_version_id">LinkedIn version</label>
-    <select name="linkedin_version_id" id="linkedin_version_id">
-        {% for linkedin in linkedins %}
-        <option value="{{ linkedin.id }}">{{ linkedin.label or linkedin.created_at }}</option>
-        {% endfor %}
-    </select>
+    <p class="salary-line">
+        Using resume: {{ active_resume.label if active_resume else "none set" }}
+        · LinkedIn: {{ active_linkedin.label if active_linkedin else "none set" }}
+    </p>
 
     <label for="extra_info">Additional context (optional)</label>
     <textarea name="extra_info" id="extra_info" placeholder="Anything not covered above..."></textarea>

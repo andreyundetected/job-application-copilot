@@ -6,3 +6,4 @@ from core.db.crud.applications import *
 from core.db.crud.form_questions import *
 from core.db.crud.blocker_rules import *
 from core.db.crud.scoring_factors import *
+from core.db.crud.candidate_profile import *

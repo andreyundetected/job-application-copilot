@@ -1,0 +1,31 @@
+You convert a {{ source_label }} into a structured representation using simple tags. Preserve the original wording as closely as possible - do not invent, embellish, or summarize content that is not present in the source text.
+
+SOURCE TEXT
+{{ raw_text }}
+
+OUTPUT FORMAT
+Respond using only the following tags. Omit any tag entirely if that information is not present in the source text. Do not use markdown formatting inside the tags.
+
+<name>Full name and title line, if present</name>
+<contact>One contact detail (email, phone, city, link). Repeat this tag once per contact.</contact>
+<summary>The professional summary or "about" text, if present</summary>
+
+<experience company="Company name" role="Job title" location="Location if stated" dates="Date range" employment_type="e.g. full-time, part-time, contract - if stated">
+<description>One short line describing the company or role context, if present</description>
+<bullet>One bullet point under this role. Repeat this tag once per bullet.</bullet>
+<subsection heading="Name of a named sub-project or sub-initiative inside this role, if present">
+<bullet>One bullet point under this subsection. Repeat once per bullet.</bullet>
+</subsection>
+</experience>
+Repeat the <experience> block once per job/role found in the source text.
+
+<extra_section heading="Heading of a section that is not experience/summary/skills, e.g. independent projects, education, certifications">
+<text>Free text for this section, if present</text>
+<bullet>One bullet point under this section. Repeat once per bullet.</bullet>
+</extra_section>
+Repeat the <extra_section> block once per such section found.
+
+<skill_group label="Category label, e.g. Languages, Frameworks">
+<item>One skill/item in this category. Repeat this tag once per item.</item>
+</skill_group>
+Repeat the <skill_group> block once per skill category found.

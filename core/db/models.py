@@ -25,11 +25,27 @@ class ResumeVersion(Base):
     )
     source_type: Mapped[str] = mapped_column(String(32))
     raw_text: Mapped[str] = mapped_column(Text)
+    structured_content: Mapped[dict] = mapped_column(JSON, nullable=True)
     label: Mapped[str] = mapped_column(String(128), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="resume_version"
     )
+
+
+class CandidateProfile(Base):
+    __tablename__ = "candidate_profile"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    email: Mapped[str] = mapped_column(String(255), nullable=True)
+    github_url: Mapped[str] = mapped_column(String(512), nullable=True)
+    linkedin_url: Mapped[str] = mapped_column(String(512), nullable=True)
+    extra_links: Mapped[list] = mapped_column(JSON, nullable=True)
+    extra_info: Mapped[str] = mapped_column(Text, nullable=True)
 
 
 class JobPosting(Base):

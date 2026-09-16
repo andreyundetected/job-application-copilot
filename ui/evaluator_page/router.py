@@ -25,8 +25,8 @@ templates.env.loader = ChoiceLoader(
 def evaluator_page(request: Request, session: Session = Depends(get_session)):
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
-    resumes = crud.list_resume_versions(session, source_type="resume")
-    linkedins = crud.list_resume_versions(session, source_type="linkedin")
+    active_resume = crud.get_active_resume_version(session, "resume")
+    active_linkedin = crud.get_active_resume_version(session, "linkedin")
 
     return templates.TemplateResponse(
         "evaluator.html",
@@ -34,8 +34,8 @@ def evaluator_page(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "blockers": blockers,
             "scoring_factors": scoring_factors,
-            "resumes": resumes,
-            "linkedins": linkedins,
+            "active_resume": active_resume,
+            "active_linkedin": active_linkedin,
             "result": None,
         },
     )
@@ -45,18 +45,13 @@ def evaluator_page(request: Request, session: Session = Depends(get_session)):
 def run_evaluation(
     request: Request,
     job_posting_text: str = Form(...),
-    resume_version_id: int = Form(...),
-    linkedin_version_id: int = Form(...),
     extra_info: str = Form(""),
     session: Session = Depends(get_session),
 ):
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
-    resumes = crud.list_resume_versions(session, source_type="resume")
-    linkedins = crud.list_resume_versions(session, source_type="linkedin")
-
-    resume = crud.get_resume_version(session, resume_version_id)
-    linkedin = crud.get_resume_version(session, linkedin_version_id)
+    resume = crud.get_active_resume_version(session, "resume")
+    linkedin = crud.get_active_resume_version(session, "linkedin")
 
     provider = get_llm_provider()
 
@@ -106,8 +101,8 @@ def run_evaluation(
             "request": request,
             "blockers": blockers,
             "scoring_factors": scoring_factors,
-            "resumes": resumes,
-            "linkedins": linkedins,
+            "active_resume": resume,
+            "active_linkedin": linkedin,
             "result": result,
             "job_posting_text": job_posting_text,
         },

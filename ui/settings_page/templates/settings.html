@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>About Me</h1>
+
+<div class="card">
+    <h3>Contacts and links</h3>
+    <form method="post" action="/settings/profile">
+        <label for="email">Email</label>
+        <input type="text" name="email" id="email" value="{{ profile.email if profile else '' }}">
+
+        <label for="github_url">GitHub</label>
+        <input type="text" name="github_url" id="github_url" value="{{ profile.github_url if profile else '' }}">
+
+        <label for="linkedin_url">LinkedIn</label>
+        <input type="text" name="linkedin_url" id="linkedin_url" value="{{ profile.linkedin_url if profile else '' }}">
+
+        <label for="extra_links_text">Additional links (one per line)</label>
+        <textarea name="extra_links_text" id="extra_links_text">{% if profile and profile.extra_links %}{{ profile.extra_links | join('\n') }}{% endif %}</textarea>
+
+        <label for="extra_info">Additional info</label>
+        <textarea name="extra_info" id="extra_info" placeholder="Anything important that isn't covered by your resume or LinkedIn - extra projects, facts, metrics...">{{ profile.extra_info if profile else '' }}</textarea>
+
+        <button type="submit" class="btn">Save</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Resume</h3>
+    {% if active_resume %}
+    <p class="salary-line">Active: {{ active_resume.label }}</p>
+    {% endif %}
+    <form method="post" action="/settings/resume" enctype="multipart/form-data">
+        <label for="resume_file">Upload resume file (.pdf, .docx, .txt)</label>
+        <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx,.txt">
+        <button type="submit" class="btn">Upload and parse</button>
+    </form>
+
+    {% if active_resume and active_resume.structured_content %}
+    <h3>Parsed blocks</h3>
+    <ul class="blocker-list">
+        {% if active_resume.structured_content.summary %}
+        <li>Summary: {{ active_resume.structured_content.summary }}</li>
+        {% endif %}
+        {% for entry in active_resume.structured_content.experience %}
+        <li>{{ entry.company }} - {{ entry.role }} ({{ entry.dates }})</li>
+        {% endfor %}
+        {% for group in active_resume.structured_content.skills %}
+        <li>{{ group.label }}: {{ group['items'] | join(', ') }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>LinkedIn experience</h3>
+    {% if active_linkedin %}
+    <p class="salary-line">Active: {{ active_linkedin.label }}</p>
+    {% endif %}
+    <form method="post" action="/settings/linkedin">
+        <label for="linkedin_text">Paste LinkedIn experience text</label>
+        <textarea name="linkedin_text" id="linkedin_text"></textarea>
+        <button type="submit" class="btn">Save and parse</button>
+    </form>
+
+    {% if active_linkedin and active_linkedin.structured_content %}
+    <h3>Parsed blocks</h3>
+    <ul class="blocker-list">
+        {% for entry in active_linkedin.structured_content.experience %}
+        <li>{{ entry.company }} - {{ entry.role }} ({{ entry.dates }})</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+<h1>Matching</h1>
+
+<div class="card">
+    <h3>Blockers</h3>
+    <ul class="blocker-list">
+        {% for blocker in blockers %}
+        <li>
+            {{ blocker.text }}
+            <form method="post" action="/settings/blockers/{{ blocker.id }}/delete" style="display:inline">
+                <button type="submit" class="btn-ghost btn">Remove</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/settings/blockers">
+        <label for="blocker_text">New blocker</label>
+        <input type="text" name="text" id="blocker_text" placeholder="e.g. requires a university degree">
+        <button type="submit" class="btn">Add blocker</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Scoring factors</h3>
+    <ul class="blocker-list">
+        {% for factor in scoring_factors %}
+        <li>
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            {{ factor.text }}
+            <form method="post" action="/settings/scoring-factors/{{ factor.id }}/delete" style="display:inline">
+                <button type="submit" class="btn-ghost btn">Remove</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/settings/scoring-factors">
+        <label for="factor_text">New factor</label>
+        <input type="text" name="text" id="factor_text" placeholder="e.g. salary above $120k">
+
+        <label for="factor_direction">Direction</label>
+        <select name="direction" id="factor_direction">
+            <option value="plus">Plus</option>
+            <option value="minus">Minus</option>
+        </select>
+
+        <label for="factor_weight">Weight</label>
+        <select name="weight" id="factor_weight">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
+
+        <button type="submit" class="btn">Add factor</button>
+    </form>
+</div>
+{% endblock %}
