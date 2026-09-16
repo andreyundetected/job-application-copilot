@@ -2,6 +2,7 @@ import pytest
 
 from core.db.models import (
     Application,
+    BlockerRule,
     Evaluation,
     FormQuestion,
     JobPosting,
@@ -100,6 +101,17 @@ def test_application_nullable_tailored_resume(db_session):
     fetched = db_session.query(Application).first()
     assert fetched.tailored_resume_id is None
     assert fetched.job_posting.id == job.id
+
+
+@pytest.mark.db
+def test_blocker_rule_creation(db_session):
+    rule = BlockerRule(text="Sample blocker rule", order=1)
+    db_session.add(rule)
+    db_session.commit()
+
+    fetched = db_session.query(BlockerRule).first()
+    assert fetched.text == "Sample blocker rule"
+    assert fetched.order == 1
 
 
 @pytest.mark.db

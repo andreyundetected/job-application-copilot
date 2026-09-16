@@ -122,6 +122,20 @@ class Application(Base):
     )
 
 
+class BlockerRule(Base):
+    __tablename__ = "blocker_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    text: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class FormQuestion(Base):
     __tablename__ = "form_questions"
 

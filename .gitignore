@@ -218,10 +218,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 
-.env
-*.db
-*.sqlite3
+# Project-specific: generated files & private resume data
+/output/
 /data/
-/output/*.docx
-/output/*.pdf
 resume_source/
+*.sqlite3
+*.sqlite3-journal
