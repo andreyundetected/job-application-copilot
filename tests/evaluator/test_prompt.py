@@ -61,6 +61,37 @@ def test_prompt_omits_extra_info_section_when_not_given():
 
 
 @pytest.mark.evaluator
+def test_prompt_includes_scoring_factors_with_ids():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=[
+            {"id": 1, "text": "Sample plus factor", "direction": "plus", "weight": 2},
+            {"id": 2, "text": "Sample minus factor", "direction": "minus", "weight": 1},
+        ],
+    )
+
+    assert 'id="1"' in prompt
+    assert "Sample plus factor" in prompt
+    assert 'id="2"' in prompt
+    assert "Sample minus factor" in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_omits_scoring_factors_section_when_not_given():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert "SCORING FACTORS" not in prompt
+
+
+@pytest.mark.evaluator
 def test_prompt_contains_output_format_tags():
     prompt = render_evaluator_prompt(
         job_posting_text="job",

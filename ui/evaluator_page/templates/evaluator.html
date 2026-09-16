@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluator{% endblock %}
+
+{% block content %}
+<h1>Job Fit Evaluator</h1>
+
+<form method="post" class="card">
+    <label for="job_posting_text">Job posting text</label>
+    <textarea name="job_posting_text" id="job_posting_text" placeholder="Paste the job posting here...">{{ job_posting_text or "" }}</textarea>
+
+    <label for="resume_version_id">Resume version</label>
+    <select name="resume_version_id" id="resume_version_id">
+        {% for resume in resumes %}
+        <option value="{{ resume.id }}">{{ resume.label or resume.created_at }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="linkedin_version_id">LinkedIn version</label>
+    <select name="linkedin_version_id" id="linkedin_version_id">
+        {% for linkedin in linkedins %}
+        <option value="{{ linkedin.id }}">{{ linkedin.label or linkedin.created_at }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="extra_info">Additional context (optional)</label>
+    <textarea name="extra_info" id="extra_info" placeholder="Anything not covered above..."></textarea>
+
+    <h3>Active blockers</h3>
+    <ul class="blocker-list">
+        {% for blocker in blockers %}
+        <li>{{ blocker.text }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Scoring factors</h3>
+    <ul class="blocker-list">
+        {% for factor in scoring_factors %}
+        <li>
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            {{ factor.text }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit" class="btn">Evaluate</button>
+</form>
+
+{% if result %}
+<div class="result-card">
+    <div class="result-header">
+        <div class="result-title">
+            <div class="company">{{ result.company }}</div>
+            <div class="role">{{ result.role }}</div>
+        </div>
+        <div class="score-badge {% if result.score >= 7 %}score-high{% elif result.score >= 4 %}score-mid{% else %}score-low{% endif %}">
+            {{ result.score }}
+        </div>
+    </div>
+
+    <div class="badge-row">
+        {% if result.location %}
+        <span class="badge">{{ result.location }}</span>
+        {% endif %}
+        {% if result.work_mode %}
+        <span class="badge badge-work-mode">{{ result.work_mode }}</span>
+        {% endif %}
+        {% if result.salary.is_estimate %}
+        <span class="badge badge-estimate">Estimated salary</span>
+        {% endif %}
+    </div>
+
+    <p class="salary-line">{{ result.salary.original_text }}</p>
+
+    {% if result.matched_factors %}
+    <h3>Matched factors</h3>
+    <ul class="matched-factor-list">
+        {% for factor in result.matched_factors %}
+        <li>
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            <span class="matched-factor-text">{{ factor.text }}</span>
+            <span class="matched-factor-note">{{ factor.note }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="pros-cons-grid">
+        <div>
+            <h3>Pros</h3>
+            <ul class="pros">
+                {% for pro in result.pros %}
+                <li>{{ pro }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h3>Cons</h3>
+            <ul class="cons">
+                {% for con in result.cons %}
+                <li>{{ con }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <p class="summary-text">{{ result.summary }}</p>
+</div>
+{% endif %}
+{% endblock %}

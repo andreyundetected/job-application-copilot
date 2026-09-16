@@ -136,6 +136,22 @@ class BlockerRule(Base):
     order: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class ScoringFactor(Base):
+    __tablename__ = "scoring_factors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    text: Mapped[str] = mapped_column(Text)
+    direction: Mapped[str] = mapped_column(String(8))
+    weight: Mapped[int] = mapped_column(Integer, default=1)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class FormQuestion(Base):
     __tablename__ = "form_questions"
 

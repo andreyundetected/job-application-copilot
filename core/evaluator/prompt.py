@@ -16,6 +16,7 @@ def render_evaluator_prompt(
     resume_text: str,
     linkedin_text: str,
     blockers: list[str],
+    scoring_factors: list[dict] | None = None,
     contacts: list[str] | None = None,
     extra_info: str | None = None,
 ) -> str:
@@ -25,6 +26,7 @@ def render_evaluator_prompt(
         resume_text=resume_text,
         linkedin_text=linkedin_text,
         blockers=blockers,
+        scoring_factors=scoring_factors or [],
         contacts=contacts or [],
         extra_info=extra_info or "",
     )

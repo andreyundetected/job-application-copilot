@@ -44,20 +44,54 @@ def _build_salary(parsed: dict) -> dict:
     }
 
 
+def _build_matched_factors(parsed: dict, scoring_factors: list[dict]) -> list[dict]:
+    factors_by_id = {str(factor["id"]): factor for factor in scoring_factors}
+    matched_raw = parsed.get("matched_factor", [])
+
+    matched = []
+    for item in matched_raw:
+        if isinstance(item, dict):
+            factor_id = item.get("id")
+            note = item.get("text", "")
+        else:
+            factor_id = None
+            note = item
+
+        factor = factors_by_id.get(str(factor_id)) if factor_id is not None else None
+        if factor is None:
+            continue
+
+        matched.append(
+            {
+                "id": factor["id"],
+                "text": factor["text"],
+                "direction": factor["direction"],
+                "weight": factor["weight"],
+                "note": note,
+            }
+        )
+
+    return matched
+
+
 def evaluate_job_posting(
     provider,
     job_posting_text: str,
     resume_text: str,
     linkedin_text: str,
     blockers: list[str],
+    scoring_factors: list[dict] | None = None,
     contacts: list[str] | None = None,
     extra_info: str | None = None,
 ) -> dict:
+    scoring_factors = scoring_factors or []
+
     prompt = render_evaluator_prompt(
         job_posting_text=job_posting_text,
         resume_text=resume_text,
         linkedin_text=linkedin_text,
         blockers=blockers,
+        scoring_factors=scoring_factors,
         contacts=contacts,
         extra_info=extra_info,
     )
@@ -78,6 +112,7 @@ def evaluate_job_posting(
         "location": _first_or_none(parsed, "location"),
         "work_mode": _first_or_none(parsed, "work_mode"),
         "salary": _build_salary(parsed),
+        "matched_factors": _build_matched_factors(parsed, scoring_factors),
         "cons": parsed.get("con", []),
         "pros": parsed.get("pro", []),
         "summary": _first_or_none(parsed, "summary"),

@@ -22,6 +22,14 @@ These are non-negotiable. If the job posting clearly triggers any of these, the 
 {{ loop.index }}. {{ blocker }}
 {% endfor %}
 
+{% if scoring_factors %}
+SCORING FACTORS
+These are not blockers. Each one should push the score up or down, proportional to its weight (1 = minor, 3 = major), only if it actually applies to this specific posting.
+{% for factor in scoring_factors %}
+- id="{{ factor.id }}" direction="{{ factor.direction }}" weight="{{ factor.weight }}": {{ factor.text }}
+{% endfor %}
+{% endif %}
+
 SCORING SCALE
 Use this scale strictly and consistently. Never drift more than 0.5-1 point between similar postings.
 - 0: a hard blocker above is triggered, OR the posting is not an IT/software role at all.
@@ -52,6 +60,10 @@ Respond using only the following tags, in this exact order, with no extra text o
 <salary_period>Exactly one of: hour, month, year - matching how the figure is normally paid out for this kind of number (e.g. "25" per "hour", "8000" per "month", "120000" per "year"). Infer this from context even if not explicitly stated</salary_period>
 <salary_is_estimate>Exactly one of: true, false - "true" if the posting did not state a salary and you estimated it yourself, "false" if the posting explicitly stated it</salary_is_estimate>
 <salary_original_text>The salary exactly as written in the posting, verbatim. If not stated, write "Not stated in posting - estimated based on role, seniority, company size and market"</salary_original_text>
-<con>One bullet describing a mismatch or gap. Repeat this tag once per bullet.</con>
-<pro>One bullet describing something that matches well. Repeat this tag once per bullet.</pro>
+{% if scoring_factors %}
+<matched_factor id="the exact id from the scoring factors list above">A brief note on how this factor applies to this specific posting</matched_factor>
+Output one <matched_factor> tag for every scoring factor above that actually applies to this posting. Skip factors that do not apply - do not output a tag for them. Use the exact numeric id given above, do not invent new ids.
+{% endif %}
+<con>One bullet describing a mismatch or gap that is NOT already covered by a scoring factor above. Repeat this tag once per bullet.</con>
+<pro>One bullet describing something that matches well that is NOT already covered by a scoring factor above. Repeat this tag once per bullet.</pro>
 <summary>A short, neutral summary of the company and the role, a few sentences.</summary>

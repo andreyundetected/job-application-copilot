@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Resume Tailoring Pipeline{% endblock %}</title>
+    <link rel="stylesheet" href="/static/common.css">
+</head>
+<body>
+    <nav class="topnav">
+        <a href="/evaluator">Evaluator</a>
+        <a href="/tailor">Tailor</a>
+        <a href="/questions">Questions</a>
+        <a href="/tracker">Tracker</a>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

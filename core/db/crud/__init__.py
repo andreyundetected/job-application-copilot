@@ -5,3 +5,4 @@ from core.db.crud.tailored_resumes import *
 from core.db.crud.applications import *
 from core.db.crud.form_questions import *
 from core.db.crud.blocker_rules import *
+from core.db.crud.scoring_factors import *

@@ -28,12 +28,18 @@ _SAMPLE_RESPONSE = """
 <salary_period>year</salary_period>
 <salary_is_estimate>false</salary_is_estimate>
 <salary_original_text>$120,000/year</salary_original_text>
+<matched_factor id="1">Salary is above the preferred threshold</matched_factor>
 <con>Requires some Kubernetes experience</con>
 <con>Slightly more senior scope than usual</con>
 <pro>Strong Python and FastAPI match</pro>
 <pro>Remote friendly</pro>
 <summary>A backend engineering role at a mid-size product company.</summary>
 """
+
+_SAMPLE_SCORING_FACTORS = [
+    {"id": 1, "text": "Salary above $120k", "direction": "plus", "weight": 2},
+    {"id": 2, "text": "Requires Linux administration", "direction": "minus", "weight": 1},
+]
 
 
 @pytest.mark.evaluator
@@ -46,6 +52,7 @@ def test_evaluate_job_posting_parses_all_fields():
         resume_text="Sample resume",
         linkedin_text="Sample linkedin",
         blockers=["Sample blocker"],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
     )
 
     assert result["company"] == "Example Corp"
@@ -69,6 +76,68 @@ def test_evaluate_job_posting_parses_all_fields():
     ]
     assert result["summary"] == "A backend engineering role at a mid-size product company."
     assert result["verdict"] is True
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_returns_matched_factors():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert len(result["matched_factors"]) == 1
+    matched = result["matched_factors"][0]
+    assert matched["id"] == 1
+    assert matched["text"] == "Salary above $120k"
+    assert matched["direction"] == "plus"
+    assert matched["weight"] == 2
+    assert matched["note"] == "Salary is above the preferred threshold"
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_ignores_unknown_factor_ids():
+    response = _SAMPLE_RESPONSE.replace(
+        '<matched_factor id="1">Salary is above the preferred threshold</matched_factor>',
+        '<matched_factor id="999">Unknown factor</matched_factor>',
+    )
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert result["matched_factors"] == []
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_no_matched_factors_when_none_apply():
+    response = _SAMPLE_RESPONSE.replace(
+        '<matched_factor id="1">Salary is above the preferred threshold</matched_factor>\n',
+        "",
+    )
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert result["matched_factors"] == []
 
 
 @pytest.mark.evaluator

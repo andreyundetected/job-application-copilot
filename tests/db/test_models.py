@@ -7,6 +7,7 @@ from core.db.models import (
     FormQuestion,
     JobPosting,
     ResumeVersion,
+    ScoringFactor,
     TailoredResume,
 )
 
@@ -112,6 +113,18 @@ def test_blocker_rule_creation(db_session):
     fetched = db_session.query(BlockerRule).first()
     assert fetched.text == "Sample blocker rule"
     assert fetched.order == 1
+
+
+@pytest.mark.db
+def test_scoring_factor_creation(db_session):
+    factor = ScoringFactor(text="Sample scoring factor", direction="plus", weight=2, order=1)
+    db_session.add(factor)
+    db_session.commit()
+
+    fetched = db_session.query(ScoringFactor).first()
+    assert fetched.text == "Sample scoring factor"
+    assert fetched.direction == "plus"
+    assert fetched.weight == 2
 
 
 @pytest.mark.db
