@@ -23,8 +23,31 @@ def get_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
     return session.get(JobPosting, job_posting_id)
 
 
-def list_job_postings(session: Session) -> list[JobPosting]:
-    return session.query(JobPosting).order_by(JobPosting.created_at.desc()).all()
+def list_job_postings(session: Session, include_archived: bool = True) -> list[JobPosting]:
+    query = session.query(JobPosting)
+    if not include_archived:
+        query = query.filter(JobPosting.archived.is_(False))
+    return query.order_by(JobPosting.created_at.desc()).all()
+
+
+def archive_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.archived = True
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def unarchive_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.archived = False
+    session.commit()
+    session.refresh(job)
+    return job
 
 
 def delete_job_posting(session: Session, job_posting_id: int) -> bool:

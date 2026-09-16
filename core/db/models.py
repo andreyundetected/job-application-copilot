@@ -75,6 +75,7 @@ class JobPosting(Base):
     company: Mapped[str] = mapped_column(String(255), nullable=True)
     title: Mapped[str] = mapped_column(String(255), nullable=True)
     source_url: Mapped[str] = mapped_column(String(1024), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="job_posting"

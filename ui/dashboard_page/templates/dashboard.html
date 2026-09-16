@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ t.page_title }}</h1>
+
+<div class="job-grid" id="job-grid">
+    {% for card in cards %}
+    <div class="job-card" data-job-id="{{ card.job_id }}">
+        <div class="job-card-top">
+            <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">
+                {{ card.score if card.score is not none else "?" }}
+            </div>
+            <button type="button" class="job-card-archive" data-job-id="{{ card.job_id }}" title="Archive">&times;</button>
+        </div>
+
+        <div class="job-card-badges">
+            {% if card.location %}
+            <span class="badge">{{ card.location }}</span>
+            {% endif %}
+            {% if card.work_mode %}
+            <span class="badge badge-work-mode">{{ card.work_mode }}</span>
+            {% endif %}
+            {% if card.is_estimate %}
+            <span class="badge badge-estimate">Est.</span>
+            {% endif %}
+        </div>
+
+        {% if card.salary_text %}
+        <p class="job-card-salary">{{ card.salary_text }}</p>
+        {% endif %}
+
+        <div class="job-card-bottom">
+            <div class="job-card-company">{{ card.company }}</div>
+            <div class="job-card-role">{{ card.role }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not cards %}
+<p class="salary-line">{{ t.empty_state }}</p>
+{% endif %}
+
+<script>
+document.getElementById("job-grid").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("job-card-archive")) {
+        return;
+    }
+    const jobId = event.target.dataset.jobId;
+    await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
+    event.target.closest(".job-card").remove();
+});
+</script>
+{% endblock %}

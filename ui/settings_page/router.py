@@ -13,6 +13,7 @@ from core.parsing.file_extraction import extract_text
 from core.providers.factory import get_llm_provider
 from core.structuring.pipeline import structure_linkedin_text, structure_resume_text
 from core.tasks.runner import run_tracked_task
+from ui.common.i18n import get_language, load_page_strings
 import config
 
 router = APIRouter(prefix="/settings")
@@ -25,6 +26,7 @@ templates.env.loader = ChoiceLoader(
     ]
 )
 
+
 def _save_upload(upload: UploadFile) -> str:
     destination = config.UPLOADS_DIR / upload.filename
     with open(destination, "wb") as file:
@@ -32,7 +34,7 @@ def _save_upload(upload: UploadFile) -> str:
     return str(destination)
 
 
-def _page_context(session: Session, request: Request) -> dict:
+def _page_context(session: Session, request: Request, lang: str) -> dict:
     profile = crud.get_candidate_profile(session)
     active_resume = crud.get_active_resume_version(session, "resume")
     active_linkedin = crud.get_active_resume_version(session, "linkedin")
@@ -46,12 +48,18 @@ def _page_context(session: Session, request: Request) -> dict:
         "active_linkedin": active_linkedin,
         "blockers": blockers,
         "scoring_factors": scoring_factors,
+        "lang": lang,
+        "t": load_page_strings("ui/settings_page", lang),
     }
 
 
 @router.get("", response_class=HTMLResponse)
-def settings_page(request: Request, session: Session = Depends(get_session)):
-    return templates.TemplateResponse("settings.html", _page_context(session, request))
+def settings_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    return templates.TemplateResponse("settings.html", _page_context(session, request, lang))
 
 
 @router.post("/profile")
@@ -78,7 +86,11 @@ def update_profile(
 
 
 @router.post("/resume")
-def upload_resume(resume_file: UploadFile, session: Session = Depends(get_session)):
+def upload_resume(
+    resume_file: UploadFile,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
     file_path = _save_upload(resume_file)
     raw_text = extract_text(file_path)
 
@@ -87,16 +99,17 @@ def upload_resume(resume_file: UploadFile, session: Session = Depends(get_sessio
         _structure_and_save_resume,
         raw_text,
         resume_file.filename,
+        lang,
     )
 
     return JSONResponse({"status": "processing", "task_id": task_id})
 
 
-def _structure_and_save_resume(raw_text: str, filename: str) -> dict:
+def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -> dict:
     session = SessionLocal()
     try:
         provider = get_llm_provider()
-        structured_content = structure_resume_text(provider, raw_text)
+        structured_content = structure_resume_text(provider, raw_text, language=lang)
 
         resume = crud.create_resume_version(
             session,
@@ -112,16 +125,22 @@ def _structure_and_save_resume(raw_text: str, filename: str) -> dict:
 
 
 @router.post("/linkedin")
-def submit_linkedin(linkedin_text: str = Form(...), session: Session = Depends(get_session)):
-    task_id = run_tracked_task("linkedin_structuring", _structure_and_save_linkedin, linkedin_text)
+def submit_linkedin(
+    linkedin_text: str = Form(...),
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    task_id = run_tracked_task(
+        "linkedin_structuring", _structure_and_save_linkedin, linkedin_text, lang
+    )
     return JSONResponse({"status": "processing", "task_id": task_id})
 
 
-def _structure_and_save_linkedin(linkedin_text: str) -> dict:
+def _structure_and_save_linkedin(linkedin_text: str, lang: str = "en") -> dict:
     session = SessionLocal()
     try:
         provider = get_llm_provider()
-        structured_content = structure_linkedin_text(provider, linkedin_text)
+        structured_content = structure_linkedin_text(provider, linkedin_text, language=lang)
 
         resume = crud.create_resume_version(
             session,

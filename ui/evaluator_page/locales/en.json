@@ -1,0 +1,17 @@
+{
+    "page_title": "Job Fit Evaluator",
+    "job_posting_label": "Job posting text",
+    "job_posting_placeholder": "Paste the job posting here...",
+    "extra_info_label": "Additional context (optional)",
+    "extra_info_placeholder": "Anything not covered above...",
+    "using_resume": "Using resume:",
+    "linkedin": "LinkedIn:",
+    "none_set": "none set",
+    "active_blockers": "Active blockers",
+    "scoring_factors": "Scoring factors",
+    "evaluate_button": "Evaluate",
+    "evaluation_failed": "Evaluation failed:",
+    "matched_factors": "Matched factors",
+    "pros": "Pros",
+    "cons": "Cons"
+}

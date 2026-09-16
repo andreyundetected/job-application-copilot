@@ -41,3 +41,34 @@ def test_delete_job_posting(db_session):
 def test_delete_job_posting_not_found(db_session):
     deleted = jobs_crud.delete_job_posting(db_session, 999)
     assert deleted is False
+
+
+@pytest.mark.db
+def test_archive_job_posting(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+
+    archived = jobs_crud.archive_job_posting(db_session, job.id)
+
+    assert archived.archived is True
+
+
+@pytest.mark.db
+def test_list_job_postings_excludes_archived(db_session):
+    active = jobs_crud.create_job_posting(db_session, raw_text="active job")
+    archived_job = jobs_crud.create_job_posting(db_session, raw_text="archived job")
+    jobs_crud.archive_job_posting(db_session, archived_job.id)
+
+    results = jobs_crud.list_job_postings(db_session, include_archived=False)
+
+    assert len(results) == 1
+    assert results[0].id == active.id
+
+
+@pytest.mark.db
+def test_unarchive_job_posting(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    jobs_crud.archive_job_posting(db_session, job.id)
+
+    restored = jobs_crud.unarchive_job_posting(db_session, job.id)
+
+    assert restored.archived is False

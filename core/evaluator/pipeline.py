@@ -83,6 +83,7 @@ def evaluate_job_posting(
     scoring_factors: list[dict] | None = None,
     contacts: list[str] | None = None,
     extra_info: str | None = None,
+    language: str = "en",
 ) -> dict:
     scoring_factors = scoring_factors or []
 
@@ -94,6 +95,7 @@ def evaluate_job_posting(
         scoring_factors=scoring_factors,
         contacts=contacts,
         extra_info=extra_info,
+        language=language,
     )
 
     raw_response = provider.call(

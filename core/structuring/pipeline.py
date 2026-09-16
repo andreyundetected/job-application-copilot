@@ -66,8 +66,8 @@ def _parsed_to_content(parsed: dict) -> dict:
     }
 
 
-def structure_profile_text(provider, raw_text: str, source_label: str) -> dict:
-    prompt = render_structure_prompt(raw_text, source_label)
+def structure_profile_text(provider, raw_text: str, source_label: str, language: str = "en") -> dict:
+    prompt = render_structure_prompt(raw_text, source_label, language=language)
 
     raw_response = provider.call(
         system_prompt="You convert raw profile text into structured tagged data without adding or inventing content.",
@@ -78,9 +78,11 @@ def structure_profile_text(provider, raw_text: str, source_label: str) -> dict:
     return _parsed_to_content(parsed)
 
 
-def structure_resume_text(provider, raw_text: str) -> dict:
-    return structure_profile_text(provider, raw_text, source_label="resume")
+def structure_resume_text(provider, raw_text: str, language: str = "en") -> dict:
+    return structure_profile_text(provider, raw_text, source_label="resume", language=language)
 
 
-def structure_linkedin_text(provider, raw_text: str) -> dict:
-    return structure_profile_text(provider, raw_text, source_label="LinkedIn experience export")
+def structure_linkedin_text(provider, raw_text: str, language: str = "en") -> dict:
+    return structure_profile_text(
+        provider, raw_text, source_label="LinkedIn experience export", language=language
+    )

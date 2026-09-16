@@ -1,0 +1,17 @@
+{
+    "page_title": "Оценка вакансии",
+    "job_posting_label": "Текст вакансии",
+    "job_posting_placeholder": "Вставь текст вакансии сюда...",
+    "extra_info_label": "Доп. контекст (необязательно)",
+    "extra_info_placeholder": "Всё, что не покрыто выше...",
+    "using_resume": "Используется резюме:",
+    "linkedin": "LinkedIn:",
+    "none_set": "не задано",
+    "active_blockers": "Активные блокеры",
+    "scoring_factors": "Факторы оценки",
+    "evaluate_button": "Оценить",
+    "evaluation_failed": "Ошибка оценки:",
+    "matched_factors": "Совпавшие факторы",
+    "pros": "Плюсы",
+    "cons": "Минусы"
+}

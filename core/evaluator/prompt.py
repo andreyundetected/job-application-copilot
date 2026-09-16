@@ -11,6 +11,12 @@ _env = Environment(
 )
 
 
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "ru": "Russian",
+}
+
+
 def render_evaluator_prompt(
     job_posting_text: str,
     resume_text: str,
@@ -19,6 +25,7 @@ def render_evaluator_prompt(
     scoring_factors: list[dict] | None = None,
     contacts: list[str] | None = None,
     extra_info: str | None = None,
+    language: str = "en",
 ) -> str:
     template = _env.get_template("evaluator_prompt.jinja")
     return template.render(
@@ -29,4 +36,5 @@ def render_evaluator_prompt(
         scoring_factors=scoring_factors or [],
         contacts=contacts or [],
         extra_info=extra_info or "",
+        output_language=_LANGUAGE_NAMES.get(language, "English"),
     )

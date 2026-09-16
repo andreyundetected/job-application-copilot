@@ -11,6 +11,8 @@ from core.tasks.runner import run_tracked_task
 
 from jinja2 import ChoiceLoader, FileSystemLoader
 
+from ui.common.i18n import get_language, load_page_strings
+
 router = APIRouter(prefix="/evaluator")
 
 templates = Jinja2Templates(directory="ui/evaluator_page/templates")
@@ -23,7 +25,11 @@ templates.env.loader = ChoiceLoader(
 
 
 @router.get("", response_class=HTMLResponse)
-def evaluator_page(request: Request, session: Session = Depends(get_session)):
+def evaluator_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
     active_resume = crud.get_active_resume_version(session, "resume")
@@ -38,6 +44,8 @@ def evaluator_page(request: Request, session: Session = Depends(get_session)):
             "active_resume": active_resume,
             "active_linkedin": active_linkedin,
             "result": None,
+            "lang": lang,
+            "t": load_page_strings("ui/evaluator_page", lang),
         },
     )
 
@@ -47,14 +55,15 @@ def run_evaluation(
     job_posting_text: str = Form(...),
     extra_info: str = Form(""),
     session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
 ):
     task_id = run_tracked_task(
-        "job_evaluation", _evaluate_and_save, job_posting_text, extra_info or None
+        "job_evaluation", _evaluate_and_save, job_posting_text, extra_info or None, lang
     )
     return JSONResponse({"status": "processing", "task_id": task_id})
 
 
-def _evaluate_and_save(job_posting_text: str, extra_info: str | None) -> dict:
+def _evaluate_and_save(job_posting_text: str, extra_info: str | None, lang: str = "en") -> dict:
     session = SessionLocal()
     try:
         blockers = crud.list_blocker_rules(session)
@@ -80,6 +89,7 @@ def _evaluate_and_save(job_posting_text: str, extra_info: str | None) -> dict:
                 for factor in scoring_factors
             ],
             extra_info=extra_info,
+            language=lang,
         )
 
         job = crud.create_job_posting(

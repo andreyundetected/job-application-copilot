@@ -1,0 +1,11 @@
+{
+    "nav_dashboard": "Dashboard",
+    "nav_settings": "Settings",
+    "nav_evaluator": "Evaluator",
+    "nav_tailor": "Tailor",
+    "nav_questions": "Questions",
+    "nav_tracker": "Tracker",
+    "lang_label": "Language",
+    "btn_save": "Save",
+    "btn_remove": "Remove"
+}

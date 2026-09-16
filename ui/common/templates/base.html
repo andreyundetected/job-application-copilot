@@ -8,14 +8,31 @@
 </head>
 <body>
     <nav class="topnav">
-        <a href="/settings">Settings</a>
-        <a href="/evaluator">Evaluator</a>
-        <a href="/tailor">Tailor</a>
-        <a href="/questions">Questions</a>
-        <a href="/tracker">Tracker</a>
+        <a href="/">{{ t.nav_dashboard }}</a>
+        <a href="/settings">{{ t.nav_settings }}</a>
+        <a href="/evaluator">{{ t.nav_evaluator }}</a>
+        <a href="/tailor">{{ t.nav_tailor }}</a>
+        <a href="/questions">{{ t.nav_questions }}</a>
+        <a href="/tracker">{{ t.nav_tracker }}</a>
+
+        <form id="lang-form" class="lang-form">
+            <select name="lang" id="lang-select">
+                <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
+                <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>
+            </select>
+        </form>
     </nav>
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+    document.getElementById("lang-select").addEventListener("change", async (event) => {
+        const formData = new FormData();
+        formData.append("lang", event.target.value);
+        await fetch("/set-language", { method: "POST", body: formData });
+        window.location.reload();
+    });
+    </script>
 </body>
 </html>

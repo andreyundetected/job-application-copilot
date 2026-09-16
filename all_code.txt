@@ -1,0 +1,5589 @@
+alembic.ini
+[alembic]
+script_location = migrations
+prepend_sys_path = .
+sqlalchemy.url =
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARN
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARN
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+
+
+
+migrations/env.py
+from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+from core.db.models import Base
+import config as app_config
+
+alembic_config = context.config
+
+if alembic_config.config_file_name is not None:
+    fileConfig(alembic_config.config_file_name)
+
+target_metadata = Base.metadata
+
+alembic_config.set_main_option("sqlalchemy.url", app_config.DATABASE_URL)
+
+
+def run_migrations_offline() -> None:
+    url = alembic_config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    connectable = engine_from_config(
+        alembic_config.get_section(alembic_config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+
+
+migrations/script.py.mako
+"""${message}
+
+Revision ID: ${up_revision}
+Revises: ${down_revision | comma,n}
+Create Date: ${create_date}
+
+"""
+from alembic import op
+import sqlalchemy as sa
+${imports if imports else ""}
+
+revision = ${repr(up_revision)}
+down_revision = ${repr(down_revision)}
+branch_labels = ${repr(branch_labels)}
+depends_on = ${repr(depends_on)}
+
+
+def upgrade() -> None:
+    ${upgrades if upgrades else "pass"}
+
+
+def downgrade() -> None:
+    ${downgrades if downgrades else "pass"}
+
+
+
+migrations/versions/0001_catch_up_schema.py
+"""catch up schema to current models
+
+Revision ID: 0001
+Revises:
+Create Date: 2026-09-16
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "0001"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    existing_tables = inspector.get_table_names()
+
+    if "job_postings" in existing_tables:
+        job_posting_columns = [col["name"] for col in inspector.get_columns("job_postings")]
+        if "archived" not in job_posting_columns:
+            op.add_column(
+                "job_postings", sa.Column("archived", sa.Boolean(), nullable=True, server_default=sa.false())
+            )
+
+    if "resume_versions" in existing_tables:
+        resume_columns = [col["name"] for col in inspector.get_columns("resume_versions")]
+        if "structured_content" not in resume_columns:
+            op.add_column("resume_versions", sa.Column("structured_content", sa.JSON(), nullable=True))
+        if "is_active" not in resume_columns:
+            op.add_column(
+                "resume_versions", sa.Column("is_active", sa.Boolean(), nullable=True, server_default=sa.false())
+            )
+
+    if "blocker_rules" not in existing_tables:
+        op.create_table(
+            "blocker_rules",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("created_at", sa.DateTime(), nullable=True),
+            sa.Column("updated_at", sa.DateTime(), nullable=True),
+            sa.Column("text", sa.Text(), nullable=False),
+            sa.Column("order", sa.Integer(), nullable=True),
+        )
+
+    if "scoring_factors" not in existing_tables:
+        op.create_table(
+            "scoring_factors",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("created_at", sa.DateTime(), nullable=True),
+            sa.Column("updated_at", sa.DateTime(), nullable=True),
+            sa.Column("text", sa.Text(), nullable=False),
+            sa.Column("direction", sa.String(8), nullable=False),
+            sa.Column("weight", sa.Integer(), nullable=True),
+            sa.Column("order", sa.Integer(), nullable=True),
+        )
+
+    if "candidate_profile" not in existing_tables:
+        op.create_table(
+            "candidate_profile",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("updated_at", sa.DateTime(), nullable=True),
+            sa.Column("email", sa.String(255), nullable=True),
+            sa.Column("github_url", sa.String(512), nullable=True),
+            sa.Column("linkedin_url", sa.String(512), nullable=True),
+            sa.Column("extra_links", sa.JSON(), nullable=True),
+            sa.Column("extra_info", sa.Text(), nullable=True),
+        )
+
+    if "task_statuses" not in existing_tables:
+        op.create_table(
+            "task_statuses",
+            sa.Column("id", sa.Integer(), primary_key=True),
+            sa.Column("created_at", sa.DateTime(), nullable=True),
+            sa.Column("updated_at", sa.DateTime(), nullable=True),
+            sa.Column("task_type", sa.String(64), nullable=False),
+            sa.Column("status", sa.String(32), nullable=True),
+            sa.Column("result", sa.JSON(), nullable=True),
+            sa.Column("error", sa.Text(), nullable=True),
+        )
+
+
+def downgrade() -> None:
+    pass
+
+
+
+migrations/versions/__init__.py
+
+
+
+
+ui/dashboard_page/__init__.py
+
+
+
+
+ui/dashboard_page/router.py
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from jinja2 import ChoiceLoader, FileSystemLoader
+from sqlalchemy.orm import Session
+
+from core.db import crud
+from core.db.session import get_session
+from ui.common.i18n import get_language, load_page_strings
+
+router = APIRouter(prefix="")
+
+templates = Jinja2Templates(directory="ui/dashboard_page/templates")
+templates.env.loader = ChoiceLoader(
+    [
+        FileSystemLoader("ui/dashboard_page/templates"),
+        FileSystemLoader("ui/common/templates"),
+    ]
+)
+
+
+def _card_data(job) -> dict:
+    latest_evaluation = job.evaluations[-1] if job.evaluations else None
+
+    if latest_evaluation is None:
+        return {
+            "job_id": job.id,
+            "company": job.company or "Unknown company",
+            "role": job.title or "Unknown role",
+            "score": None,
+            "location": None,
+            "work_mode": None,
+            "salary_text": None,
+            "is_estimate": False,
+        }
+
+    checked = latest_evaluation.checked_keywords or {}
+    salary = checked.get("salary") or {}
+
+    return {
+        "job_id": job.id,
+        "company": job.company or "Unknown company",
+        "role": job.title or "Unknown role",
+        "score": latest_evaluation.fit_score,
+        "location": checked.get("location"),
+        "work_mode": checked.get("work_mode"),
+        "salary_text": salary.get("original_text"),
+        "is_estimate": salary.get("is_estimate", False),
+    }
+
+
+@router.get("/", response_class=HTMLResponse)
+def dashboard_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    jobs = crud.list_job_postings(session, include_archived=False)
+    cards = [_card_data(job) for job in jobs]
+
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "cards": cards,
+            "lang": lang,
+            "t": load_page_strings("ui/dashboard_page", lang),
+        },
+    )
+
+
+@router.post("/jobs/{job_id}/archive")
+def archive_job(job_id: int, session: Session = Depends(get_session)):
+    crud.archive_job_posting(session, job_id)
+    return JSONResponse({"status": "ok", "id": job_id})
+
+
+
+ui/dashboard_page/templates/dashboard.html
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ t.page_title }}</h1>
+
+<div class="job-grid" id="job-grid">
+    {% for card in cards %}
+    <div class="job-card" data-job-id="{{ card.job_id }}">
+        <div class="job-card-top">
+            <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">
+                {{ card.score if card.score is not none else "?" }}
+            </div>
+            <button type="button" class="job-card-archive" data-job-id="{{ card.job_id }}" title="Archive">&times;</button>
+        </div>
+
+        <div class="job-card-badges">
+            {% if card.location %}
+            <span class="badge">{{ card.location }}</span>
+            {% endif %}
+            {% if card.work_mode %}
+            <span class="badge badge-work-mode">{{ card.work_mode }}</span>
+            {% endif %}
+            {% if card.is_estimate %}
+            <span class="badge badge-estimate">Est.</span>
+            {% endif %}
+        </div>
+
+        {% if card.salary_text %}
+        <p class="job-card-salary">{{ card.salary_text }}</p>
+        {% endif %}
+
+        <div class="job-card-bottom">
+            <div class="job-card-company">{{ card.company }}</div>
+            <div class="job-card-role">{{ card.role }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not cards %}
+<p class="salary-line">{{ t.empty_state }}</p>
+{% endif %}
+
+<script>
+document.getElementById("job-grid").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("job-card-archive")) {
+        return;
+    }
+    const jobId = event.target.dataset.jobId;
+    await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
+    event.target.closest(".job-card").remove();
+});
+</script>
+{% endblock %}
+
+
+
+.env.example
+LLM_PROVIDER=freellmapi
+
+FREELLMAPI_KEY=
+FREELLMAPI_BASE_URL=http://localhost:3001/v1
+FREELLMAPI_MODEL=auto
+
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-1.5-flash
+
+DATABASE_URL=
+
+TASK_MAX_WORKERS=25
+
+
+
+.gitignore
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#   Usually these files are written by a python script from a template
+#   before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+# Pipfile.lock
+
+# UV
+#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+# uv.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+# poetry.lock
+# poetry.toml
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
+#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
+# pdm.lock
+# pdm.toml
+.pdm-python
+.pdm-build/
+
+# pixi
+#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
+# pixi.lock
+#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
+#   in the .venv directory. It is recommended not to include this directory in version control.
+.pixi
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# Redis
+*.rdb
+*.aof
+*.pid
+
+# RabbitMQ
+mnesia/
+rabbitmq/
+rabbitmq-data/
+
+# ActiveMQ
+activemq-data/
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
+#   and can be added to the global gitignore or merged into this file.  For a more nuclear
+#   option (not recommended) you can uncomment the following to ignore the entire idea folder.
+# .idea/
+
+# Abstra
+#   Abstra is an AI-powered process automation framework.
+#   Ignore directories containing user credentials, local state, and settings.
+#   Learn more at https://abstra.io/docs
+.abstra/
+
+# Visual Studio Code
+#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
+#   and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#   you could uncomment the following to ignore the entire vscode folder
+# .vscode/
+# Temporary file for partial code execution
+tempCodeRunnerFile.py
+
+# Ruff stuff:
+.ruff_cache/
+
+# PyPI configuration file
+.pypirc
+
+# Marimo
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+# Streamlit
+.streamlit/secrets.toml
+
+
+# Project-specific: generated files & private resume data
+/output/
+/data/
+resume_source/
+*.sqlite3
+*.sqlite3-journal
+context.py
+
+
+
+README.md
+# job-application-copilot
+
+
+
+config.py
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent
+
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "freellmapi")
+
+FREELLMAPI_KEY = os.getenv("FREELLMAPI_KEY", "")
+FREELLMAPI_BASE_URL = os.getenv("FREELLMAPI_BASE_URL", "http://localhost:3001/v1")
+FREELLMAPI_MODEL = os.getenv("FREELLMAPI_MODEL", "auto")
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'app.db'}")
+
+OUTPUT_DIR = BASE_DIR / "output"
+DATA_DIR = BASE_DIR / "data"
+UPLOADS_DIR = DATA_DIR / "uploads"
+
+OUTPUT_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(exist_ok=True)
+UPLOADS_DIR.mkdir(exist_ok=True)
+
+TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
+
+
+
+core/__init__.py
+
+
+
+
+core/db/__init__.py
+
+
+
+
+core/db/crud/__init__.py
+from core.db.crud.resumes import *
+from core.db.crud.jobs import *
+from core.db.crud.evaluations import *
+from core.db.crud.tailored_resumes import *
+from core.db.crud.applications import *
+from core.db.crud.form_questions import *
+from core.db.crud.blocker_rules import *
+from core.db.crud.scoring_factors import *
+from core.db.crud.candidate_profile import *
+from core.db.crud.task_statuses import *
+
+
+
+core/db/crud/applications.py
+import datetime
+
+from sqlalchemy.orm import Session
+
+from core.db.models import Application
+
+
+def create_application(
+    session: Session,
+    job_posting_id: int,
+    tailored_resume_id: int | None = None,
+    status: str = "draft",
+    source_platform: str | None = None,
+    notes: str | None = None,
+) -> Application:
+    application = Application(
+        job_posting_id=job_posting_id,
+        tailored_resume_id=tailored_resume_id,
+        status=status,
+        source_platform=source_platform,
+        notes=notes,
+    )
+    session.add(application)
+    session.commit()
+    session.refresh(application)
+    return application
+
+
+def get_application(session: Session, application_id: int) -> Application | None:
+    return session.get(Application, application_id)
+
+
+def list_applications(session: Session, status: str | None = None) -> list[Application]:
+    query = session.query(Application)
+    if status is not None:
+        query = query.filter(Application.status == status)
+    return query.order_by(Application.created_at.desc()).all()
+
+
+def update_application_status(
+    session: Session,
+    application_id: int,
+    status: str,
+    mark_applied_now: bool = False,
+) -> Application | None:
+    application = session.get(Application, application_id)
+    if application is None:
+        return None
+    application.status = status
+    if mark_applied_now:
+        application.applied_at = datetime.datetime.utcnow()
+    session.commit()
+    session.refresh(application)
+    return application
+
+
+def update_application_notes(
+    session: Session, application_id: int, notes: str
+) -> Application | None:
+    application = session.get(Application, application_id)
+    if application is None:
+        return None
+    application.notes = notes
+    session.commit()
+    session.refresh(application)
+    return application
+
+
+
+core/db/crud/blocker_rules.py
+from sqlalchemy.orm import Session
+
+from core.db.models import BlockerRule
+
+
+def create_blocker_rule(session: Session, text: str, order: int = 0) -> BlockerRule:
+    rule = BlockerRule(text=text, order=order)
+    session.add(rule)
+    session.commit()
+    session.refresh(rule)
+    return rule
+
+
+def get_blocker_rule(session: Session, blocker_rule_id: int) -> BlockerRule | None:
+    return session.get(BlockerRule, blocker_rule_id)
+
+
+def list_blocker_rules(session: Session) -> list[BlockerRule]:
+    return session.query(BlockerRule).order_by(BlockerRule.order.asc()).all()
+
+
+def update_blocker_rule(
+    session: Session, blocker_rule_id: int, text: str | None = None, order: int | None = None
+) -> BlockerRule | None:
+    rule = session.get(BlockerRule, blocker_rule_id)
+    if rule is None:
+        return None
+    if text is not None:
+        rule.text = text
+    if order is not None:
+        rule.order = order
+    session.commit()
+    session.refresh(rule)
+    return rule
+
+
+def delete_blocker_rule(session: Session, blocker_rule_id: int) -> bool:
+    rule = session.get(BlockerRule, blocker_rule_id)
+    if rule is None:
+        return False
+    session.delete(rule)
+    session.commit()
+    return True
+
+
+
+core/db/crud/candidate_profile.py
+from sqlalchemy.orm import Session
+
+from core.db.models import CandidateProfile
+
+
+def get_candidate_profile(session: Session) -> CandidateProfile | None:
+    return session.query(CandidateProfile).first()
+
+
+def upsert_candidate_profile(
+    session: Session,
+    email: str | None = None,
+    github_url: str | None = None,
+    linkedin_url: str | None = None,
+    extra_links: list | None = None,
+    extra_info: str | None = None,
+) -> CandidateProfile:
+    profile = session.query(CandidateProfile).first()
+
+    if profile is None:
+        profile = CandidateProfile()
+        session.add(profile)
+
+    profile.email = email
+    profile.github_url = github_url
+    profile.linkedin_url = linkedin_url
+    profile.extra_links = extra_links or []
+    profile.extra_info = extra_info
+
+    session.commit()
+    session.refresh(profile)
+    return profile
+
+
+
+core/db/crud/evaluations.py
+from sqlalchemy.orm import Session
+
+from core.db.models import Evaluation
+
+
+def create_evaluation(
+    session: Session,
+    job_posting_id: int,
+    resume_version_id: int,
+    verdict: bool,
+    blocker_bullets: dict | None = None,
+    fit_score: int | None = None,
+    fit_bullets: dict | None = None,
+    checked_keywords: dict | None = None,
+) -> Evaluation:
+    evaluation = Evaluation(
+        job_posting_id=job_posting_id,
+        resume_version_id=resume_version_id,
+        verdict=verdict,
+        blocker_bullets=blocker_bullets,
+        fit_score=fit_score,
+        fit_bullets=fit_bullets,
+        checked_keywords=checked_keywords,
+    )
+    session.add(evaluation)
+    session.commit()
+    session.refresh(evaluation)
+    return evaluation
+
+
+def get_evaluation(session: Session, evaluation_id: int) -> Evaluation | None:
+    return session.get(Evaluation, evaluation_id)
+
+
+def list_evaluations_for_job(
+    session: Session, job_posting_id: int
+) -> list[Evaluation]:
+    return (
+        session.query(Evaluation)
+        .filter(Evaluation.job_posting_id == job_posting_id)
+        .order_by(Evaluation.created_at.desc())
+        .all()
+    )
+
+
+def list_passed_evaluations(session: Session) -> list[Evaluation]:
+    return (
+        session.query(Evaluation)
+        .filter(Evaluation.verdict.is_(True))
+        .order_by(Evaluation.created_at.desc())
+        .all()
+    )
+
+
+
+core/db/crud/form_questions.py
+from sqlalchemy.orm import Session
+
+from core.db.models import FormQuestion
+
+
+def create_form_question(
+    session: Session,
+    application_id: int,
+    question_text: str,
+    answer_type: str,
+    answer_text: str | None = None,
+    answer_file_path: str | None = None,
+) -> FormQuestion:
+    question = FormQuestion(
+        application_id=application_id,
+        question_text=question_text,
+        answer_type=answer_type,
+        answer_text=answer_text,
+        answer_file_path=answer_file_path,
+    )
+    session.add(question)
+    session.commit()
+    session.refresh(question)
+    return question
+
+
+def get_form_question(session: Session, form_question_id: int) -> FormQuestion | None:
+    return session.get(FormQuestion, form_question_id)
+
+
+def list_form_questions_for_application(
+    session: Session, application_id: int
+) -> list[FormQuestion]:
+    return (
+        session.query(FormQuestion)
+        .filter(FormQuestion.application_id == application_id)
+        .all()
+    )
+
+
+def update_form_question_answer(
+    session: Session,
+    form_question_id: int,
+    answer_text: str | None = None,
+    answer_file_path: str | None = None,
+) -> FormQuestion | None:
+    question = session.get(FormQuestion, form_question_id)
+    if question is None:
+        return None
+    if answer_text is not None:
+        question.answer_text = answer_text
+    if answer_file_path is not None:
+        question.answer_file_path = answer_file_path
+    session.commit()
+    session.refresh(question)
+    return question
+
+
+
+core/db/crud/jobs.py
+from sqlalchemy.orm import Session
+
+from core.db.models import JobPosting
+
+
+def create_job_posting(
+    session: Session,
+    raw_text: str,
+    company: str | None = None,
+    title: str | None = None,
+    source_url: str | None = None,
+) -> JobPosting:
+    job = JobPosting(
+        raw_text=raw_text, company=company, title=title, source_url=source_url
+    )
+    session.add(job)
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def get_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
+    return session.get(JobPosting, job_posting_id)
+
+
+def list_job_postings(session: Session, include_archived: bool = True) -> list[JobPosting]:
+    query = session.query(JobPosting)
+    if not include_archived:
+        query = query.filter(JobPosting.archived.is_(False))
+    return query.order_by(JobPosting.created_at.desc()).all()
+
+
+def archive_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.archived = True
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def unarchive_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.archived = False
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def delete_job_posting(session: Session, job_posting_id: int) -> bool:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return False
+    session.delete(job)
+    session.commit()
+    return True
+
+
+
+core/db/crud/resumes.py
+from sqlalchemy.orm import Session
+
+from core.db.models import ResumeVersion
+
+
+def create_resume_version(
+    session: Session,
+    source_type: str,
+    raw_text: str,
+    structured_content: dict | None = None,
+    label: str | None = None,
+    is_active: bool = False,
+) -> ResumeVersion:
+    if is_active:
+        session.query(ResumeVersion).filter(
+            ResumeVersion.source_type == source_type
+        ).update({ResumeVersion.is_active: False})
+
+    resume = ResumeVersion(
+        source_type=source_type,
+        raw_text=raw_text,
+        structured_content=structured_content,
+        label=label,
+        is_active=is_active,
+    )
+    session.add(resume)
+    session.commit()
+    session.refresh(resume)
+    return resume
+
+
+def get_resume_version(session: Session, resume_version_id: int) -> ResumeVersion | None:
+    return session.get(ResumeVersion, resume_version_id)
+
+
+def list_resume_versions(
+    session: Session, source_type: str | None = None
+) -> list[ResumeVersion]:
+    query = session.query(ResumeVersion)
+    if source_type is not None:
+        query = query.filter(ResumeVersion.source_type == source_type)
+    return query.order_by(ResumeVersion.created_at.desc()).all()
+
+
+def get_latest_resume_version(
+    session: Session, source_type: str
+) -> ResumeVersion | None:
+    return (
+        session.query(ResumeVersion)
+        .filter(ResumeVersion.source_type == source_type)
+        .order_by(ResumeVersion.created_at.desc())
+        .first()
+    )
+
+
+def get_active_resume_version(
+    session: Session, source_type: str
+) -> ResumeVersion | None:
+    return (
+        session.query(ResumeVersion)
+        .filter(ResumeVersion.source_type == source_type, ResumeVersion.is_active.is_(True))
+        .first()
+    )
+
+
+def set_active_resume_version(
+    session: Session, resume_version_id: int
+) -> ResumeVersion | None:
+    resume = session.get(ResumeVersion, resume_version_id)
+    if resume is None:
+        return None
+
+    session.query(ResumeVersion).filter(
+        ResumeVersion.source_type == resume.source_type
+    ).update({ResumeVersion.is_active: False})
+
+    resume.is_active = True
+    session.commit()
+    session.refresh(resume)
+    return resume
+
+
+
+core/db/crud/scoring_factors.py
+from sqlalchemy.orm import Session
+
+from core.db.models import ScoringFactor
+
+
+def create_scoring_factor(
+    session: Session, text: str, direction: str, weight: int = 1, order: int = 0
+) -> ScoringFactor:
+    factor = ScoringFactor(text=text, direction=direction, weight=weight, order=order)
+    session.add(factor)
+    session.commit()
+    session.refresh(factor)
+    return factor
+
+
+def get_scoring_factor(session: Session, scoring_factor_id: int) -> ScoringFactor | None:
+    return session.get(ScoringFactor, scoring_factor_id)
+
+
+def list_scoring_factors(session: Session) -> list[ScoringFactor]:
+    return session.query(ScoringFactor).order_by(ScoringFactor.order.asc()).all()
+
+
+def update_scoring_factor(
+    session: Session,
+    scoring_factor_id: int,
+    text: str | None = None,
+    direction: str | None = None,
+    weight: int | None = None,
+    order: int | None = None,
+) -> ScoringFactor | None:
+    factor = session.get(ScoringFactor, scoring_factor_id)
+    if factor is None:
+        return None
+    if text is not None:
+        factor.text = text
+    if direction is not None:
+        factor.direction = direction
+    if weight is not None:
+        factor.weight = weight
+    if order is not None:
+        factor.order = order
+    session.commit()
+    session.refresh(factor)
+    return factor
+
+
+def delete_scoring_factor(session: Session, scoring_factor_id: int) -> bool:
+    factor = session.get(ScoringFactor, scoring_factor_id)
+    if factor is None:
+        return False
+    session.delete(factor)
+    session.commit()
+    return True
+
+
+
+core/db/crud/tailored_resumes.py
+from sqlalchemy.orm import Session
+
+from core.db.models import TailoredResume
+
+
+def create_tailored_resume(
+    session: Session,
+    evaluation_id: int,
+    content: list,
+    keywords_used: dict | None = None,
+    docx_path: str | None = None,
+) -> TailoredResume:
+    tailored = TailoredResume(
+        evaluation_id=evaluation_id,
+        content=content,
+        keywords_used=keywords_used,
+        docx_path=docx_path,
+    )
+    session.add(tailored)
+    session.commit()
+    session.refresh(tailored)
+    return tailored
+
+
+def get_tailored_resume(
+    session: Session, tailored_resume_id: int
+) -> TailoredResume | None:
+    return session.get(TailoredResume, tailored_resume_id)
+
+
+def update_tailored_resume_docx_path(
+    session: Session, tailored_resume_id: int, docx_path: str
+) -> TailoredResume | None:
+    tailored = session.get(TailoredResume, tailored_resume_id)
+    if tailored is None:
+        return None
+    tailored.docx_path = docx_path
+    session.commit()
+    session.refresh(tailored)
+    return tailored
+
+
+def list_tailored_resumes_for_evaluation(
+    session: Session, evaluation_id: int
+) -> list[TailoredResume]:
+    return (
+        session.query(TailoredResume)
+        .filter(TailoredResume.evaluation_id == evaluation_id)
+        .order_by(TailoredResume.created_at.desc())
+        .all()
+    )
+
+
+
+core/db/crud/task_statuses.py
+from sqlalchemy.orm import Session
+
+from core.db.models import TaskStatus
+
+
+def create_task_status(session: Session, task_type: str) -> TaskStatus:
+    task = TaskStatus(task_type=task_type, status="pending")
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def get_task_status(session: Session, task_id: int) -> TaskStatus | None:
+    return session.get(TaskStatus, task_id)
+
+
+def list_task_statuses(session: Session, task_ids: list[int]) -> list[TaskStatus]:
+    return session.query(TaskStatus).filter(TaskStatus.id.in_(task_ids)).all()
+
+
+def mark_task_processing(session: Session, task_id: int) -> TaskStatus | None:
+    task = session.get(TaskStatus, task_id)
+    if task is None:
+        return None
+    task.status = "processing"
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def mark_task_done(session: Session, task_id: int, result: dict) -> TaskStatus | None:
+    task = session.get(TaskStatus, task_id)
+    if task is None:
+        return None
+    task.status = "done"
+    task.result = result
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+def mark_task_failed(session: Session, task_id: int, error: str) -> TaskStatus | None:
+    task = session.get(TaskStatus, task_id)
+    if task is None:
+        return None
+    task.status = "failed"
+    task.error = error
+    session.commit()
+    session.refresh(task)
+    return task
+
+
+
+core/db/models.py
+import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class ResumeVersion(Base):
+    __tablename__ = "resume_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    source_type: Mapped[str] = mapped_column(String(32))
+    raw_text: Mapped[str] = mapped_column(Text)
+    structured_content: Mapped[dict] = mapped_column(JSON, nullable=True)
+    label: Mapped[str] = mapped_column(String(128), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    evaluations: Mapped[list["Evaluation"]] = relationship(
+        back_populates="resume_version"
+    )
+
+
+class TaskStatus(Base):
+    __tablename__ = "task_statuses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    task_type: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    result: Mapped[dict] = mapped_column(JSON, nullable=True)
+    error: Mapped[str] = mapped_column(Text, nullable=True)
+
+
+class CandidateProfile(Base):
+    __tablename__ = "candidate_profile"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    email: Mapped[str] = mapped_column(String(255), nullable=True)
+    github_url: Mapped[str] = mapped_column(String(512), nullable=True)
+    linkedin_url: Mapped[str] = mapped_column(String(512), nullable=True)
+    extra_links: Mapped[list] = mapped_column(JSON, nullable=True)
+    extra_info: Mapped[str] = mapped_column(Text, nullable=True)
+
+
+class JobPosting(Base):
+    __tablename__ = "job_postings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    raw_text: Mapped[str] = mapped_column(Text)
+    company: Mapped[str] = mapped_column(String(255), nullable=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=True)
+    source_url: Mapped[str] = mapped_column(String(1024), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    evaluations: Mapped[list["Evaluation"]] = relationship(
+        back_populates="job_posting"
+    )
+    applications: Mapped[list["Application"]] = relationship(
+        back_populates="job_posting"
+    )
+
+
+class Evaluation(Base):
+    __tablename__ = "evaluations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    job_posting_id: Mapped[int] = mapped_column(ForeignKey("job_postings.id"))
+    resume_version_id: Mapped[int] = mapped_column(ForeignKey("resume_versions.id"))
+
+    verdict: Mapped[bool] = mapped_column(Boolean)
+    blocker_bullets: Mapped[dict] = mapped_column(JSON, nullable=True)
+    fit_score: Mapped[int] = mapped_column(Integer, nullable=True)
+    fit_bullets: Mapped[dict] = mapped_column(JSON, nullable=True)
+    checked_keywords: Mapped[dict] = mapped_column(JSON, nullable=True)
+
+    job_posting: Mapped["JobPosting"] = relationship(back_populates="evaluations")
+    resume_version: Mapped["ResumeVersion"] = relationship(
+        back_populates="evaluations"
+    )
+    tailored_resumes: Mapped[list["TailoredResume"]] = relationship(
+        back_populates="evaluation"
+    )
+
+
+class TailoredResume(Base):
+    __tablename__ = "tailored_resumes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    evaluation_id: Mapped[int] = mapped_column(ForeignKey("evaluations.id"))
+
+    keywords_used: Mapped[dict] = mapped_column(JSON, nullable=True)
+    content: Mapped[list] = mapped_column(JSON)
+    docx_path: Mapped[str] = mapped_column(String(1024), nullable=True)
+
+    evaluation: Mapped["Evaluation"] = relationship(back_populates="tailored_resumes")
+    applications: Mapped[list["Application"]] = relationship(
+        back_populates="tailored_resume"
+    )
+
+
+class Application(Base):
+    __tablename__ = "applications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    job_posting_id: Mapped[int] = mapped_column(ForeignKey("job_postings.id"))
+    tailored_resume_id: Mapped[int] = mapped_column(
+        ForeignKey("tailored_resumes.id"), nullable=True
+    )
+
+    status: Mapped[str] = mapped_column(String(32), default="draft")
+    applied_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    source_platform: Mapped[str] = mapped_column(String(128), nullable=True)
+
+    job_posting: Mapped["JobPosting"] = relationship(back_populates="applications")
+    tailored_resume: Mapped["TailoredResume"] = relationship(
+        back_populates="applications"
+    )
+    form_questions: Mapped[list["FormQuestion"]] = relationship(
+        back_populates="application"
+    )
+
+
+class BlockerRule(Base):
+    __tablename__ = "blocker_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    text: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ScoringFactor(Base):
+    __tablename__ = "scoring_factors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    text: Mapped[str] = mapped_column(Text)
+    direction: Mapped[str] = mapped_column(String(8))
+    weight: Mapped[int] = mapped_column(Integer, default=1)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class FormQuestion(Base):
+    __tablename__ = "form_questions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id"))
+
+    question_text: Mapped[str] = mapped_column(Text)
+    answer_type: Mapped[str] = mapped_column(String(32))
+    answer_text: Mapped[str] = mapped_column(Text, nullable=True)
+    answer_file_path: Mapped[str] = mapped_column(String(1024), nullable=True)
+
+    application: Mapped["Application"] = relationship(back_populates="form_questions")
+
+
+
+core/db/session.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from core.db.models import Base
+import config
+
+engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+
+def get_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+
+core/evaluator/__init__.py
+
+
+
+
+core/evaluator/pipeline.py
+from core.evaluator.prompt import render_evaluator_prompt
+from core.parsing.html_like_parser import parse_html_like
+
+
+def _first_or_none(parsed: dict, key: str) -> str | None:
+    values = parsed.get(key)
+    if not values:
+        return None
+    return values[0]
+
+
+def _parse_score(raw_score: str | None) -> int | None:
+    if raw_score is None:
+        return None
+    try:
+        return int(raw_score.strip())
+    except ValueError:
+        return None
+
+
+def _parse_float(raw_value: str | None) -> float | None:
+    if raw_value is None:
+        return None
+    try:
+        return float(raw_value.strip())
+    except ValueError:
+        return None
+
+
+def _parse_bool(raw_value: str | None) -> bool | None:
+    if raw_value is None:
+        return None
+    return raw_value.strip().lower() == "true"
+
+
+def _build_salary(parsed: dict) -> dict:
+    return {
+        "min": _parse_float(_first_or_none(parsed, "salary_min")),
+        "max": _parse_float(_first_or_none(parsed, "salary_max")),
+        "currency": _first_or_none(parsed, "salary_currency"),
+        "period": _first_or_none(parsed, "salary_period"),
+        "is_estimate": _parse_bool(_first_or_none(parsed, "salary_is_estimate")),
+        "original_text": _first_or_none(parsed, "salary_original_text"),
+    }
+
+
+def _build_matched_factors(parsed: dict, scoring_factors: list[dict]) -> list[dict]:
+    factors_by_id = {str(factor["id"]): factor for factor in scoring_factors}
+    matched_raw = parsed.get("matched_factor", [])
+
+    matched = []
+    for item in matched_raw:
+        if isinstance(item, dict):
+            factor_id = item.get("id")
+            note = item.get("text", "")
+        else:
+            factor_id = None
+            note = item
+
+        factor = factors_by_id.get(str(factor_id)) if factor_id is not None else None
+        if factor is None:
+            continue
+
+        matched.append(
+            {
+                "id": factor["id"],
+                "text": factor["text"],
+                "direction": factor["direction"],
+                "weight": factor["weight"],
+                "note": note,
+            }
+        )
+
+    return matched
+
+
+def evaluate_job_posting(
+    provider,
+    job_posting_text: str,
+    resume_text: str,
+    linkedin_text: str,
+    blockers: list[str],
+    scoring_factors: list[dict] | None = None,
+    contacts: list[str] | None = None,
+    extra_info: str | None = None,
+    language: str = "en",
+) -> dict:
+    scoring_factors = scoring_factors or []
+
+    prompt = render_evaluator_prompt(
+        job_posting_text=job_posting_text,
+        resume_text=resume_text,
+        linkedin_text=linkedin_text,
+        blockers=blockers,
+        scoring_factors=scoring_factors,
+        contacts=contacts,
+        extra_info=extra_info,
+        language=language,
+    )
+
+    raw_response = provider.call(
+        system_prompt="You are a strict, consistent job-fit evaluator.",
+        user_prompt=prompt,
+    )
+
+    parsed = parse_html_like(raw_response)
+    score = _parse_score(_first_or_none(parsed, "score"))
+
+    return {
+        "reasoning": _first_or_none(parsed, "reasoning"),
+        "company": _first_or_none(parsed, "company"),
+        "role": _first_or_none(parsed, "role"),
+        "score": score,
+        "location": _first_or_none(parsed, "location"),
+        "work_mode": _first_or_none(parsed, "work_mode"),
+        "salary": _build_salary(parsed),
+        "matched_factors": _build_matched_factors(parsed, scoring_factors),
+        "cons": parsed.get("con", []),
+        "pros": parsed.get("pro", []),
+        "summary": _first_or_none(parsed, "summary"),
+        "verdict": bool(score) and score > 0,
+        "raw_response": raw_response,
+    }
+
+
+
+core/evaluator/prompt.py
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+_env = Environment(
+    loader=FileSystemLoader(str(TEMPLATES_DIR)),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
+
+
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "ru": "Russian",
+}
+
+
+def render_evaluator_prompt(
+    job_posting_text: str,
+    resume_text: str,
+    linkedin_text: str,
+    blockers: list[str],
+    scoring_factors: list[dict] | None = None,
+    contacts: list[str] | None = None,
+    extra_info: str | None = None,
+    language: str = "en",
+) -> str:
+    template = _env.get_template("evaluator_prompt.jinja")
+    return template.render(
+        job_posting_text=job_posting_text,
+        resume_text=resume_text,
+        linkedin_text=linkedin_text,
+        blockers=blockers,
+        scoring_factors=scoring_factors or [],
+        contacts=contacts or [],
+        extra_info=extra_info or "",
+        output_language=_LANGUAGE_NAMES.get(language, "English"),
+    )
+
+
+
+core/evaluator/templates/evaluator_prompt.jinja
+You are a strict, consistent job-fit evaluator. You know this candidate's background in depth and you judge every job posting against the same fixed rules, without drifting in strictness between evaluations.
+
+CANDIDATE CONTACTS
+{% for contact in contacts %}
+{{ contact }}
+{% endfor %}
+
+CANDIDATE RESUME
+{{ resume_text }}
+
+CANDIDATE LINKEDIN PROFILE
+{{ linkedin_text }}
+
+{% if extra_info %}
+ADDITIONAL CONTEXT ABOUT THE CANDIDATE
+{{ extra_info }}
+{% endif %}
+
+HARD BLOCKERS
+These are non-negotiable. If the job posting clearly triggers any of these, the score must be 0 regardless of anything else about the role.
+{% for blocker in blockers %}
+{{ loop.index }}. {{ blocker }}
+{% endfor %}
+
+{% if scoring_factors %}
+SCORING FACTORS
+These are not blockers. Each one should push the score up or down, proportional to its weight (1 = minor, 3 = major), only if it actually applies to this specific posting.
+{% for factor in scoring_factors %}
+- id="{{ factor.id }}" direction="{{ factor.direction }}" weight="{{ factor.weight }}": {{ factor.text }}
+{% endfor %}
+{% endif %}
+
+SCORING SCALE
+Use this scale strictly and consistently. Never drift more than 0.5-1 point between similar postings.
+- 0: a hard blocker above is triggered, OR the posting is not an IT/software role at all.
+- 1-2: technically IT, but the role is a fundamentally different profession from the candidate's (e.g. pure ML research/training, hardware, QA-only, data entry).
+- 3-4: adjacent role with real gaps (e.g. requires deep DevOps/infra ownership, or a management role with only light technical involvement).
+- 5-6: plausible but partial fit - meaningful parts of the stack or role scope do not match the candidate's experience.
+- 7-8: strong fit - core stack, seniority, and role scope match well, with minor gaps.
+- 9-10: excellent fit - this is close to exactly the candidate's profile and experience level.
+
+TASK
+Read the job posting below and evaluate it against the candidate's background and the hard blockers.
+
+Write the <company>, <role>, <location>, <con>, <pro> and <summary> tags in {{ output_language }}. Keep <reasoning> in English regardless. Keep <work_mode>, <salary_currency>, <salary_period>, <salary_is_estimate> exactly as specified in the output format below (do not translate these enum values).
+
+JOB POSTING
+{{ job_posting_text }}
+
+OUTPUT FORMAT
+Respond using only the following tags, in this exact order, with no extra text outside them. Do not use markdown formatting inside the tags.
+
+<reasoning>Step-by-step reasoning matching the job posting against the candidate's background and the hard blockers. This is internal and not shown to the user, but must be thorough and honest.</reasoning>
+<company>Company name, or "N/A" if not stated</company>
+<role>Job title as stated in the posting</role>
+<score>A single integer from 0 to 10, following the scoring scale above</score>
+<location>City, country, or region as stated in the posting. If not stated, write "N/A"</location>
+<work_mode>Exactly one of: remote, hybrid, onsite, unclear</work_mode>
+<salary_min>The minimum salary figure as a plain number, no currency symbol, no separators, e.g. "100000". If a single figure is given rather than a range, repeat it here. If salary is not stated in the posting, give your best estimated minimum for this role/seniority/company size/market as a plain number</salary_min>
+<salary_max>The maximum salary figure as a plain number, same rules as salary_min. If a single figure is given, repeat it here too</salary_max>
+<salary_currency>The ISO 4217 currency code, e.g. "USD", "EUR", "GBP". If genuinely unclear, write "USD"</salary_currency>
+<salary_period>Exactly one of: hour, month, year - matching how the figure is normally paid out for this kind of number (e.g. "25" per "hour", "8000" per "month", "120000" per "year"). Infer this from context even if not explicitly stated</salary_period>
+<salary_is_estimate>Exactly one of: true, false - "true" if the posting did not state a salary and you estimated it yourself, "false" if the posting explicitly stated it</salary_is_estimate>
+<salary_original_text>The salary exactly as written in the posting, verbatim. If not stated, write "Not stated in posting - estimated based on role, seniority, company size and market"</salary_original_text>
+{% if scoring_factors %}
+<matched_factor id="the exact id from the scoring factors list above">A brief note on how this factor applies to this specific posting</matched_factor>
+Output one <matched_factor> tag for every scoring factor above that actually applies to this posting. Skip factors that do not apply - do not output a tag for them. Use the exact numeric id given above, do not invent new ids.
+{% endif %}
+<con>One bullet describing a mismatch or gap that is NOT already covered by a scoring factor above. Repeat this tag once per bullet.</con>
+<pro>One bullet describing something that matches well that is NOT already covered by a scoring factor above. Repeat this tag once per bullet.</pro>
+<summary>A short, neutral summary of the company and the role, a few sentences.</summary>
+
+
+
+core/parsing/__init__.py
+
+
+
+
+core/parsing/file_extraction.py
+from pathlib import Path
+
+from docx import Document
+from pypdf import PdfReader
+
+
+def _extract_from_pdf(file_path: str) -> str:
+    reader = PdfReader(file_path)
+    pages_text = [page.extract_text() or "" for page in reader.pages]
+    return "\n".join(pages_text).strip()
+
+
+def _extract_from_docx(file_path: str) -> str:
+    document = Document(file_path)
+    paragraphs = [paragraph.text for paragraph in document.paragraphs]
+    return "\n".join(paragraphs).strip()
+
+
+def _extract_from_txt(file_path: str) -> str:
+    with open(file_path, "r", encoding="utf-8") as file:
+        return file.read().strip()
+
+
+def extract_text(file_path: str) -> str:
+    extension = Path(file_path).suffix.lower()
+
+    if extension == ".pdf":
+        return _extract_from_pdf(file_path)
+    if extension == ".docx":
+        return _extract_from_docx(file_path)
+    if extension == ".txt":
+        return _extract_from_txt(file_path)
+
+    raise ValueError(f"Unsupported file extension: {extension}")
+
+
+
+core/parsing/html_like_parser.py
+from collections import defaultdict
+from html.parser import HTMLParser
+
+
+class _Node:
+    def __init__(self, tag: str, attrs: dict[str, str]):
+        self.tag = tag
+        self.attrs = attrs
+        self.children: dict[str, list] = defaultdict(list)
+        self.text_parts: list[str] = []
+
+
+def _node_to_element(node: _Node):
+    text = "".join(node.text_parts).strip()
+
+    if not node.attrs and not node.children:
+        return text
+
+    element: dict = dict(node.attrs)
+    for child_tag, child_list in node.children.items():
+        element[child_tag] = child_list
+
+    if text:
+        element["text"] = text
+
+    return element
+
+
+class _HtmlLikeParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.root = _Node("__root__", {})
+        self.stack = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = _Node(tag, {key: value or "" for key, value in attrs})
+        self.stack.append(node)
+
+    def handle_endtag(self, tag):
+        if len(self.stack) <= 1:
+            return
+
+        node = self.stack.pop()
+
+        if node.tag != tag:
+            self.stack.append(node)
+            return
+
+        element = _node_to_element(node)
+        parent = self.stack[-1]
+        parent.children[node.tag].append(element)
+
+    def handle_data(self, data):
+        self.stack[-1].text_parts.append(data)
+
+
+def parse_html_like(raw_text: str) -> dict:
+    parser = _HtmlLikeParser()
+    parser.feed(raw_text)
+    parser.close()
+    return dict(parser.root.children)
+
+
+
+core/providers/__init__.py
+
+
+
+
+core/providers/base.py
+from abc import ABC, abstractmethod
+
+
+class BaseLLMProvider(ABC):
+    @abstractmethod
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        raise NotImplementedError
+
+
+
+core/providers/factory.py
+from core.providers.base import BaseLLMProvider
+from core.providers.freellmapi import FreeLLMAPIProvider
+from core.providers.openai_provider import OpenAIProvider
+from core.providers.gemini_provider import GeminiProvider
+import config
+
+_PROVIDERS = {
+    "freellmapi": FreeLLMAPIProvider,
+    "openai": OpenAIProvider,
+    "gemini": GeminiProvider,
+}
+
+
+def get_llm_provider() -> BaseLLMProvider:
+    provider_cls = _PROVIDERS.get(config.LLM_PROVIDER)
+    if provider_cls is None:
+        raise ValueError(f"Unknown LLM_PROVIDER: {config.LLM_PROVIDER}")
+    return provider_cls()
+
+
+
+core/providers/freellmapi.py
+from openai import OpenAI
+
+from core.providers.base import BaseLLMProvider
+import config
+
+
+class FreeLLMAPIProvider(BaseLLMProvider):
+    def __init__(self):
+        self.client = OpenAI(
+            base_url=config.FREELLMAPI_BASE_URL,
+            api_key=config.FREELLMAPI_KEY or "unused",
+        )
+        self.model = config.FREELLMAPI_MODEL
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content
+
+
+
+core/providers/gemini_provider.py
+from openai import OpenAI
+
+from core.providers.base import BaseLLMProvider
+import config
+
+
+class GeminiProvider(BaseLLMProvider):
+    def __init__(self):
+        self.client = OpenAI(
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            api_key=config.GEMINI_API_KEY,
+        )
+        self.model = config.GEMINI_MODEL
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content
+
+
+
+core/providers/openai_provider.py
+from openai import OpenAI
+
+from core.providers.base import BaseLLMProvider
+import config
+
+
+class OpenAIProvider(BaseLLMProvider):
+    def __init__(self):
+        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.model = config.OPENAI_MODEL
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        return response.choices[0].message.content
+
+
+
+core/rendering/__init__.py
+
+
+
+
+core/rendering/base.py
+DEFAULT_STYLE = {
+    "font_name": "Calibri",
+    "name_font_size": 16,
+    "section_header_font_size": 12,
+    "role_company_font_size": 11,
+    "meta_font_size": 10,
+    "body_font_size": 10,
+    "contacts_layout": "inline",
+}
+
+
+def merge_style(style: dict | None) -> dict:
+    merged = dict(DEFAULT_STYLE)
+    if style:
+        merged.update(style)
+    return merged
+
+
+
+core/rendering/docx_renderer.py
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+
+from core.rendering.base import merge_style
+
+
+def _add_contacts_paragraph(document: Document, contacts: list[str], style: dict):
+    paragraph = document.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    if style["contacts_layout"] == "inline":
+        run = paragraph.add_run(" | ".join(contacts))
+        run.font.size = Pt(style["meta_font_size"])
+        run.font.name = style["font_name"]
+    else:
+        for index, contact in enumerate(contacts):
+            run = paragraph.add_run(contact)
+            run.font.size = Pt(style["meta_font_size"])
+            run.font.name = style["font_name"]
+            if index < len(contacts) - 1:
+                paragraph.add_run().add_break()
+
+
+def _add_section_header(document: Document, text: str, style: dict):
+    paragraph = document.add_paragraph()
+    run = paragraph.add_run(text)
+    run.bold = True
+    run.font.size = Pt(style["section_header_font_size"])
+    run.font.name = style["font_name"]
+
+
+def _add_bullets(document: Document, bullets: list[str], style: dict):
+    for bullet in bullets:
+        paragraph = document.add_paragraph(style="List Bullet")
+        run = paragraph.add_run(bullet)
+        run.font.size = Pt(style["body_font_size"])
+        run.font.name = style["font_name"]
+
+
+def _add_experience_entry(document: Document, entry: dict, style: dict):
+    header_paragraph = document.add_paragraph()
+    run = header_paragraph.add_run(f"{entry['company']} - {entry['role']}")
+    run.bold = True
+    run.font.size = Pt(style["role_company_font_size"])
+    run.font.name = style["font_name"]
+
+    meta_paragraph = document.add_paragraph()
+    meta_text = f"{entry['location']} - {entry['dates']}"
+    meta_run = meta_paragraph.add_run(meta_text)
+    meta_run.font.size = Pt(style["meta_font_size"])
+    meta_run.font.name = style["font_name"]
+
+    if entry.get("employment_type"):
+        type_paragraph = document.add_paragraph()
+        type_run = type_paragraph.add_run(entry["employment_type"])
+        type_run.italic = True
+        type_run.font.size = Pt(style["meta_font_size"])
+        type_run.font.name = style["font_name"]
+
+    if entry.get("description"):
+        description_paragraph = document.add_paragraph()
+        description_run = description_paragraph.add_run(entry["description"])
+        description_run.font.size = Pt(style["body_font_size"])
+        description_run.font.name = style["font_name"]
+
+    if entry.get("bullets"):
+        _add_bullets(document, entry["bullets"], style)
+
+    for subsection in entry.get("subsections", []):
+        heading_paragraph = document.add_paragraph()
+        heading_run = heading_paragraph.add_run(subsection["heading"])
+        heading_run.bold = True
+        heading_run.font.size = Pt(style["body_font_size"])
+        heading_run.font.name = style["font_name"]
+
+        _add_bullets(document, subsection.get("bullets", []), style)
+
+
+def render_docx(content: dict, output_path: str, style: dict | None = None) -> str:
+    style = merge_style(style)
+    document = Document()
+
+    name_paragraph = document.add_paragraph()
+    name_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    name_run = name_paragraph.add_run(content["name"])
+    name_run.bold = True
+    name_run.font.size = Pt(style["name_font_size"])
+    name_run.font.name = style["font_name"]
+
+    if content.get("contacts"):
+        _add_contacts_paragraph(document, content["contacts"], style)
+
+    if content.get("summary"):
+        _add_section_header(document, "SUMMARY", style)
+        summary_paragraph = document.add_paragraph()
+        summary_run = summary_paragraph.add_run(content["summary"])
+        summary_run.font.size = Pt(style["body_font_size"])
+        summary_run.font.name = style["font_name"]
+
+    if content.get("experience"):
+        _add_section_header(document, "EXPERIENCE", style)
+        for entry in content["experience"]:
+            _add_experience_entry(document, entry, style)
+
+    for section in content.get("extra_sections", []):
+        _add_section_header(document, section["heading"], style)
+        if section.get("text"):
+            text_paragraph = document.add_paragraph()
+            text_run = text_paragraph.add_run(section["text"])
+            text_run.font.size = Pt(style["body_font_size"])
+            text_run.font.name = style["font_name"]
+        if section.get("bullets"):
+            _add_bullets(document, section["bullets"], style)
+
+    if content.get("skills"):
+        _add_section_header(document, "SKILLS", style)
+        for skill_line in content["skills"]:
+            paragraph = document.add_paragraph()
+            text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
+            run = paragraph.add_run(text)
+            run.font.size = Pt(style["body_font_size"])
+            run.font.name = style["font_name"]
+
+    document.save(output_path)
+    return output_path
+
+
+
+core/rendering/pdf_renderer.py
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer
+
+from core.rendering.base import merge_style
+
+
+def _build_styles(style: dict) -> dict:
+    return {
+        "name": ParagraphStyle(
+            "name",
+            fontName="Helvetica-Bold",
+            fontSize=style["name_font_size"],
+            alignment=TA_CENTER,
+            spaceAfter=4,
+        ),
+        "contacts": ParagraphStyle(
+            "contacts",
+            fontName="Helvetica",
+            fontSize=style["meta_font_size"],
+            alignment=TA_CENTER,
+            spaceAfter=12,
+        ),
+        "section_header": ParagraphStyle(
+            "section_header",
+            fontName="Helvetica-Bold",
+            fontSize=style["section_header_font_size"],
+            alignment=TA_LEFT,
+            spaceBefore=10,
+            spaceAfter=6,
+        ),
+        "role_company": ParagraphStyle(
+            "role_company",
+            fontName="Helvetica-Bold",
+            fontSize=style["role_company_font_size"],
+            alignment=TA_LEFT,
+            spaceAfter=2,
+        ),
+        "meta": ParagraphStyle(
+            "meta",
+            fontName="Helvetica",
+            fontSize=style["meta_font_size"],
+            alignment=TA_LEFT,
+            spaceAfter=2,
+        ),
+        "meta_italic": ParagraphStyle(
+            "meta_italic",
+            fontName="Helvetica-Oblique",
+            fontSize=style["meta_font_size"],
+            alignment=TA_LEFT,
+            spaceAfter=6,
+        ),
+        "body": ParagraphStyle(
+            "body",
+            fontName="Helvetica",
+            fontSize=style["body_font_size"],
+            alignment=TA_LEFT,
+            spaceAfter=6,
+        ),
+        "subheading": ParagraphStyle(
+            "subheading",
+            fontName="Helvetica-Bold",
+            fontSize=style["body_font_size"],
+            alignment=TA_LEFT,
+            spaceBefore=6,
+            spaceAfter=2,
+        ),
+        "bullet": ParagraphStyle(
+            "bullet",
+            fontName="Helvetica",
+            fontSize=style["body_font_size"],
+            alignment=TA_LEFT,
+        ),
+    }
+
+
+def _bullet_list(bullets: list[str], styles: dict):
+    return ListFlowable(
+        [ListItem(Paragraph(bullet, styles["bullet"])) for bullet in bullets],
+        bulletType="bullet",
+        leftIndent=14,
+    )
+
+
+def render_pdf(content: dict, output_path: str, style: dict | None = None) -> str:
+    style = merge_style(style)
+    styles = _build_styles(style)
+
+    document = SimpleDocTemplate(
+        output_path,
+        pagesize=letter,
+        leftMargin=0.75 * inch,
+        rightMargin=0.75 * inch,
+        topMargin=0.6 * inch,
+        bottomMargin=0.6 * inch,
+    )
+
+    elements = [Paragraph(content["name"], styles["name"])]
+
+    if content.get("contacts"):
+        contacts_text = " | ".join(content["contacts"])
+        elements.append(Paragraph(contacts_text, styles["contacts"]))
+
+    if content.get("summary"):
+        elements.append(Paragraph("SUMMARY", styles["section_header"]))
+        elements.append(Paragraph(content["summary"], styles["body"]))
+
+    if content.get("experience"):
+        elements.append(Paragraph("EXPERIENCE", styles["section_header"]))
+        for entry in content["experience"]:
+            elements.append(
+                Paragraph(f"{entry['company']} - {entry['role']}", styles["role_company"])
+            )
+            elements.append(
+                Paragraph(f"{entry['location']} - {entry['dates']}", styles["meta"])
+            )
+            if entry.get("employment_type"):
+                elements.append(Paragraph(entry["employment_type"], styles["meta_italic"]))
+            if entry.get("description"):
+                elements.append(Paragraph(entry["description"], styles["body"]))
+            if entry.get("bullets"):
+                elements.append(_bullet_list(entry["bullets"], styles))
+
+            for subsection in entry.get("subsections", []):
+                elements.append(Paragraph(subsection["heading"], styles["subheading"]))
+                elements.append(_bullet_list(subsection.get("bullets", []), styles))
+
+            elements.append(Spacer(1, 8))
+
+    for section in content.get("extra_sections", []):
+        elements.append(Paragraph(section["heading"], styles["section_header"]))
+        if section.get("text"):
+            elements.append(Paragraph(section["text"], styles["body"]))
+        if section.get("bullets"):
+            elements.append(_bullet_list(section["bullets"], styles))
+
+    if content.get("skills"):
+        elements.append(Paragraph("SKILLS", styles["section_header"]))
+        for skill_line in content["skills"]:
+            text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
+            elements.append(Paragraph(text, styles["body"]))
+
+    document.build(elements)
+    return output_path
+
+
+
+core/rendering/txt_renderer.py
+def render_txt(content: dict, output_path: str) -> str:
+    lines = [content["name"]]
+
+    if content.get("contacts"):
+        lines.append(" | ".join(content["contacts"]))
+
+    if content.get("summary"):
+        lines.append("")
+        lines.append("SUMMARY")
+        lines.append(content["summary"])
+
+    if content.get("experience"):
+        lines.append("")
+        lines.append("EXPERIENCE")
+        for entry in content["experience"]:
+            lines.append("")
+            lines.append(f"{entry['company']} - {entry['role']}")
+            lines.append(f"{entry['location']} - {entry['dates']}")
+            if entry.get("employment_type"):
+                lines.append(entry["employment_type"])
+            if entry.get("description"):
+                lines.append(entry["description"])
+            for bullet in entry.get("bullets", []):
+                lines.append(f"- {bullet}")
+            for subsection in entry.get("subsections", []):
+                lines.append(subsection["heading"])
+                for bullet in subsection.get("bullets", []):
+                    lines.append(f"- {bullet}")
+
+    for section in content.get("extra_sections", []):
+        lines.append("")
+        lines.append(section["heading"])
+        if section.get("text"):
+            lines.append(section["text"])
+        for bullet in section.get("bullets", []):
+            lines.append(f"- {bullet}")
+
+    if content.get("skills"):
+        lines.append("")
+        lines.append("SKILLS")
+        for skill_line in content["skills"]:
+            lines.append(f"{skill_line['label']}: {', '.join(skill_line['items'])}")
+
+    text = "\n".join(lines)
+
+    with open(output_path, "w", encoding="utf-8") as file:
+        file.write(text)
+
+    return output_path
+
+
+
+core/structuring/__init__.py
+
+
+
+
+core/structuring/pipeline.py
+from core.parsing.html_like_parser import parse_html_like
+from core.structuring.prompt import render_structure_prompt
+
+
+def _first_or_none(values: list):
+    if not values:
+        return None
+    return values[0]
+
+
+def _map_experience_entry(raw_entry) -> dict:
+    if isinstance(raw_entry, str):
+        raw_entry = {}
+
+    return {
+        "company": raw_entry.get("company", ""),
+        "role": raw_entry.get("role", ""),
+        "location": raw_entry.get("location", ""),
+        "dates": raw_entry.get("dates", ""),
+        "employment_type": raw_entry.get("employment_type", ""),
+        "description": _first_or_none(raw_entry.get("description", [])),
+        "bullets": raw_entry.get("bullet", []),
+        "subsections": [_map_subsection(item) for item in raw_entry.get("subsection", [])],
+    }
+
+
+def _map_subsection(raw_subsection) -> dict:
+    if isinstance(raw_subsection, str):
+        raw_subsection = {}
+
+    return {
+        "heading": raw_subsection.get("heading", ""),
+        "bullets": raw_subsection.get("bullet", []),
+    }
+
+
+def _map_extra_section(raw_section) -> dict:
+    if isinstance(raw_section, str):
+        raw_section = {}
+
+    return {
+        "heading": raw_section.get("heading", ""),
+        "text": _first_or_none(raw_section.get("text", [])) or "",
+        "bullets": raw_section.get("bullet", []),
+    }
+
+
+def _map_skill_group(raw_group) -> dict:
+    if isinstance(raw_group, str):
+        raw_group = {}
+
+    return {
+        "label": raw_group.get("label", ""),
+        "items": raw_group.get("item", []),
+    }
+
+
+def _parsed_to_content(parsed: dict) -> dict:
+    return {
+        "name": _first_or_none(parsed.get("name", [])),
+        "contacts": parsed.get("contact", []),
+        "summary": _first_or_none(parsed.get("summary", [])),
+        "experience": [_map_experience_entry(entry) for entry in parsed.get("experience", [])],
+        "extra_sections": [_map_extra_section(section) for section in parsed.get("extra_section", [])],
+        "skills": [_map_skill_group(group) for group in parsed.get("skill_group", [])],
+    }
+
+
+def structure_profile_text(provider, raw_text: str, source_label: str, language: str = "en") -> dict:
+    prompt = render_structure_prompt(raw_text, source_label, language=language)
+
+    raw_response = provider.call(
+        system_prompt="You convert raw profile text into structured tagged data without adding or inventing content.",
+        user_prompt=prompt,
+    )
+
+    parsed = parse_html_like(raw_response)
+    return _parsed_to_content(parsed)
+
+
+def structure_resume_text(provider, raw_text: str, language: str = "en") -> dict:
+    return structure_profile_text(provider, raw_text, source_label="resume", language=language)
+
+
+def structure_linkedin_text(provider, raw_text: str, language: str = "en") -> dict:
+    return structure_profile_text(
+        provider, raw_text, source_label="LinkedIn experience export", language=language
+    )
+
+
+
+core/structuring/prompt.py
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+_env = Environment(
+    loader=FileSystemLoader(str(TEMPLATES_DIR)),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
+
+
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "ru": "Russian",
+}
+
+
+def render_structure_prompt(raw_text: str, source_label: str, language: str = "en") -> str:
+    template = _env.get_template("structure_prompt.jinja")
+    return template.render(
+        raw_text=raw_text,
+        source_label=source_label,
+        output_language=_LANGUAGE_NAMES.get(language, "English"),
+    )
+
+
+
+core/structuring/templates/structure_prompt.jinja
+You convert a {{ source_label }} into a structured representation using simple tags. Preserve the original wording as closely as possible - do not invent, embellish, or summarize content that is not present in the source text.
+
+Note: the source text below is in its original language - do not translate it. Preserve wording as-is regardless of {{ output_language }}.
+
+SOURCE TEXT
+{{ raw_text }}
+
+OUTPUT FORMAT
+Respond using only the following tags. Omit any tag entirely if that information is not present in the source text. Do not use markdown formatting inside the tags.
+
+<name>Full name and title line, if present</name>
+<contact>One contact detail (email, phone, city, link). Repeat this tag once per contact.</contact>
+<summary>The professional summary or "about" text, if present</summary>
+
+<experience company="Company name" role="Job title" location="Location if stated" dates="Date range" employment_type="e.g. full-time, part-time, contract - if stated">
+<description>One short line describing the company or role context, if present</description>
+<bullet>One bullet point under this role. Repeat this tag once per bullet.</bullet>
+<subsection heading="Name of a named sub-project or sub-initiative inside this role, if present">
+<bullet>One bullet point under this subsection. Repeat once per bullet.</bullet>
+</subsection>
+</experience>
+Repeat the <experience> block once per job/role found in the source text.
+
+<extra_section heading="Heading of a section that is not experience/summary/skills, e.g. independent projects, education, certifications">
+<text>Free text for this section, if present</text>
+<bullet>One bullet point under this section. Repeat once per bullet.</bullet>
+</extra_section>
+Repeat the <extra_section> block once per such section found.
+
+<skill_group label="Category label, e.g. Languages, Frameworks">
+<item>One skill/item in this category. Repeat this tag once per item.</item>
+</skill_group>
+Repeat the <skill_group> block once per skill category found.
+
+
+
+core/tasks/__init__.py
+
+
+
+
+core/tasks/executor.py
+from concurrent.futures import ThreadPoolExecutor
+
+import config
+
+_executor: ThreadPoolExecutor | None = None
+
+
+def get_executor() -> ThreadPoolExecutor:
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(max_workers=config.TASK_MAX_WORKERS)
+    return _executor
+
+
+def submit_task(func, *args, **kwargs):
+    executor = get_executor()
+    return executor.submit(func, *args, **kwargs)
+
+
+
+core/tasks/runner.py
+from core.db.crud import task_statuses as task_statuses_crud
+from core.db.session import SessionLocal
+from core.tasks.executor import submit_task
+
+
+def run_tracked_task(task_type: str, func, *args, **kwargs) -> int:
+    session = SessionLocal()
+    try:
+        task = task_statuses_crud.create_task_status(session, task_type=task_type)
+        task_id = task.id
+    finally:
+        session.close()
+
+    submit_task(_execute_and_record, task_id, func, *args, **kwargs)
+    return task_id
+
+
+def _execute_and_record(task_id: int, func, *args, **kwargs):
+    session = SessionLocal()
+    try:
+        task_statuses_crud.mark_task_processing(session, task_id)
+    finally:
+        session.close()
+
+    session = SessionLocal()
+    try:
+        result = func(*args, **kwargs)
+        task_statuses_crud.mark_task_done(session, task_id, result=result)
+    except Exception as error:
+        task_statuses_crud.mark_task_failed(session, task_id, error=str(error))
+    finally:
+        session.close()
+
+
+
+pytest.ini
+[pytest]
+markers =
+    providers: tests for core/providers
+    db: tests for core/db
+    evaluator: tests for core/evaluator
+    tailoring: tests for core/tailoring
+    questions: tests for core/questions
+    rendering: tests for core/rendering
+    parsing: tests for core/parsing
+    structuring: tests for core/structuring
+    tasks: tests for core/tasks
+    ui: tests for ui routers
+testpaths = tests
+pythonpath = .
+
+
+
+requirements.txt
+fastapi
+uvicorn[standard]
+sqlalchemy
+python-docx
+python-dotenv
+openai
+jinja2
+python-multipart
+pytest
+pytest-mock
+reportlab
+pypdf
+alembic
+
+
+
+tests/__init__.py
+
+
+
+
+tests/conftest.py
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from core.db.models import Base
+
+
+@pytest.fixture()
+def db_session():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session_local = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    session = session_local()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+
+tests/db/__init__.py
+
+
+
+
+tests/db/test_crud_applications.py
+import pytest
+
+from core.db.crud import applications as applications_crud
+from core.db.crud import jobs as jobs_crud
+
+
+@pytest.mark.db
+def test_create_application_without_resume(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+
+    application = applications_crud.create_application(
+        db_session, job_posting_id=job.id
+    )
+
+    assert application.id is not None
+    assert application.tailored_resume_id is None
+    assert application.status == "draft"
+
+
+@pytest.mark.db
+def test_update_application_status_marks_applied_at(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    application = applications_crud.create_application(
+        db_session, job_posting_id=job.id
+    )
+
+    updated = applications_crud.update_application_status(
+        db_session, application.id, status="applied", mark_applied_now=True
+    )
+
+    assert updated.status == "applied"
+    assert updated.applied_at is not None
+
+
+@pytest.mark.db
+def test_list_applications_filtered_by_status(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    applications_crud.create_application(db_session, job_posting_id=job.id, status="draft")
+    applications_crud.create_application(
+        db_session, job_posting_id=job.id, status="applied"
+    )
+
+    applied_only = applications_crud.list_applications(db_session, status="applied")
+
+    assert len(applied_only) == 1
+    assert applied_only[0].status == "applied"
+
+
+@pytest.mark.db
+def test_update_application_notes(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    application = applications_crud.create_application(
+        db_session, job_posting_id=job.id
+    )
+
+    updated = applications_crud.update_application_notes(
+        db_session, application.id, "Sample note."
+    )
+
+    assert updated.notes == "Sample note."
+
+
+
+tests/db/test_crud_blocker_rules.py
+import pytest
+
+from core.db.crud import blocker_rules as blocker_rules_crud
+
+
+@pytest.mark.db
+def test_create_and_list_blocker_rules_ordered(db_session):
+    blocker_rules_crud.create_blocker_rule(db_session, text="Second rule", order=2)
+    blocker_rules_crud.create_blocker_rule(db_session, text="First rule", order=1)
+
+    rules = blocker_rules_crud.list_blocker_rules(db_session)
+
+    assert [rule.text for rule in rules] == ["First rule", "Second rule"]
+
+
+@pytest.mark.db
+def test_update_blocker_rule(db_session):
+    rule = blocker_rules_crud.create_blocker_rule(db_session, text="Original text")
+
+    updated = blocker_rules_crud.update_blocker_rule(
+        db_session, rule.id, text="Updated text"
+    )
+
+    assert updated.text == "Updated text"
+
+
+@pytest.mark.db
+def test_delete_blocker_rule(db_session):
+    rule = blocker_rules_crud.create_blocker_rule(db_session, text="To delete")
+
+    deleted = blocker_rules_crud.delete_blocker_rule(db_session, rule.id)
+    missing = blocker_rules_crud.get_blocker_rule(db_session, rule.id)
+
+    assert deleted is True
+    assert missing is None
+
+
+
+tests/db/test_crud_candidate_profile.py
+import pytest
+
+from core.db.crud import candidate_profile as candidate_profile_crud
+
+
+@pytest.mark.db
+def test_upsert_candidate_profile_creates_when_missing(db_session):
+    profile = candidate_profile_crud.upsert_candidate_profile(
+        db_session,
+        email="sample@example.com",
+        github_url="github.com/sampleuser",
+        linkedin_url="linkedin.com/in/sampleuser",
+        extra_links=["example.com/portfolio"],
+        extra_info="Sample extra info.",
+    )
+
+    assert profile.id is not None
+    assert profile.email == "sample@example.com"
+    assert profile.extra_links == ["example.com/portfolio"]
+
+
+@pytest.mark.db
+def test_upsert_candidate_profile_updates_existing(db_session):
+    candidate_profile_crud.upsert_candidate_profile(db_session, email="old@example.com")
+
+    updated = candidate_profile_crud.upsert_candidate_profile(db_session, email="new@example.com")
+
+    all_profiles = db_session.query(type(updated)).all()
+    assert len(all_profiles) == 1
+    assert updated.email == "new@example.com"
+
+
+@pytest.mark.db
+def test_get_candidate_profile_returns_none_when_empty(db_session):
+    result = candidate_profile_crud.get_candidate_profile(db_session)
+
+    assert result is None
+
+
+
+tests/db/test_crud_evaluations.py
+import pytest
+
+from core.db.crud import evaluations as evaluations_crud
+from core.db.crud import jobs as jobs_crud
+from core.db.crud import resumes as resumes_crud
+
+
+@pytest.mark.db
+def test_create_evaluation(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    resume = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text"
+    )
+
+    evaluation = evaluations_crud.create_evaluation(
+        db_session,
+        job_posting_id=job.id,
+        resume_version_id=resume.id,
+        verdict=True,
+        blocker_bullets={"passed": ["years_ok"]},
+        fit_score=7,
+    )
+
+    assert evaluation.id is not None
+    assert evaluation.verdict is True
+
+
+@pytest.mark.db
+def test_list_evaluations_for_job(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    resume = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text"
+    )
+    evaluations_crud.create_evaluation(
+        db_session, job_posting_id=job.id, resume_version_id=resume.id, verdict=False
+    )
+
+    results = evaluations_crud.list_evaluations_for_job(db_session, job.id)
+
+    assert len(results) == 1
+    assert results[0].verdict is False
+
+
+@pytest.mark.db
+def test_list_passed_evaluations(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    resume = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text"
+    )
+    evaluations_crud.create_evaluation(
+        db_session, job_posting_id=job.id, resume_version_id=resume.id, verdict=True
+    )
+    evaluations_crud.create_evaluation(
+        db_session, job_posting_id=job.id, resume_version_id=resume.id, verdict=False
+    )
+
+    passed = evaluations_crud.list_passed_evaluations(db_session)
+
+    assert len(passed) == 1
+    assert passed[0].verdict is True
+
+
+
+tests/db/test_crud_form_questions.py
+import pytest
+
+from core.db.crud import applications as applications_crud
+from core.db.crud import form_questions as form_questions_crud
+from core.db.crud import jobs as jobs_crud
+
+
+def _make_application(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    return applications_crud.create_application(db_session, job_posting_id=job.id)
+
+
+@pytest.mark.db
+def test_create_form_question(db_session):
+    application = _make_application(db_session)
+
+    question = form_questions_crud.create_form_question(
+        db_session,
+        application_id=application.id,
+        question_text="Sample question?",
+        answer_type="text",
+    )
+
+    assert question.id is not None
+    assert question.answer_text is None
+
+
+@pytest.mark.db
+def test_update_form_question_answer(db_session):
+    application = _make_application(db_session)
+    question = form_questions_crud.create_form_question(
+        db_session,
+        application_id=application.id,
+        question_text="Sample question?",
+        answer_type="text",
+    )
+
+    updated = form_questions_crud.update_form_question_answer(
+        db_session, question.id, answer_text="Sample answer."
+    )
+
+    assert updated.answer_text == "Sample answer."
+
+
+@pytest.mark.db
+def test_list_form_questions_for_application(db_session):
+    application = _make_application(db_session)
+    form_questions_crud.create_form_question(
+        db_session,
+        application_id=application.id,
+        question_text="Q1",
+        answer_type="text",
+    )
+    form_questions_crud.create_form_question(
+        db_session,
+        application_id=application.id,
+        question_text="Q2",
+        answer_type="file",
+    )
+
+    results = form_questions_crud.list_form_questions_for_application(
+        db_session, application.id
+    )
+
+    assert len(results) == 2
+
+
+
+tests/db/test_crud_jobs.py
+import pytest
+
+from core.db.crud import jobs as jobs_crud
+
+
+@pytest.mark.db
+def test_create_and_get_job_posting(db_session):
+    job = jobs_crud.create_job_posting(
+        db_session, raw_text="job text", company="Example Corp", title="Engineer"
+    )
+
+    fetched = jobs_crud.get_job_posting(db_session, job.id)
+
+    assert fetched is not None
+    assert fetched.company == "Example Corp"
+
+
+@pytest.mark.db
+def test_list_job_postings_order(db_session):
+    jobs_crud.create_job_posting(db_session, raw_text="first")
+    jobs_crud.create_job_posting(db_session, raw_text="second")
+
+    jobs = jobs_crud.list_job_postings(db_session)
+
+    assert len(jobs) == 2
+    assert jobs[0].raw_text == "second"
+
+
+@pytest.mark.db
+def test_delete_job_posting(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="to delete")
+
+    deleted = jobs_crud.delete_job_posting(db_session, job.id)
+    missing = jobs_crud.get_job_posting(db_session, job.id)
+
+    assert deleted is True
+    assert missing is None
+
+
+@pytest.mark.db
+def test_delete_job_posting_not_found(db_session):
+    deleted = jobs_crud.delete_job_posting(db_session, 999)
+    assert deleted is False
+
+
+@pytest.mark.db
+def test_archive_job_posting(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+
+    archived = jobs_crud.archive_job_posting(db_session, job.id)
+
+    assert archived.archived is True
+
+
+@pytest.mark.db
+def test_list_job_postings_excludes_archived(db_session):
+    active = jobs_crud.create_job_posting(db_session, raw_text="active job")
+    archived_job = jobs_crud.create_job_posting(db_session, raw_text="archived job")
+    jobs_crud.archive_job_posting(db_session, archived_job.id)
+
+    results = jobs_crud.list_job_postings(db_session, include_archived=False)
+
+    assert len(results) == 1
+    assert results[0].id == active.id
+
+
+@pytest.mark.db
+def test_unarchive_job_posting(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    jobs_crud.archive_job_posting(db_session, job.id)
+
+    restored = jobs_crud.unarchive_job_posting(db_session, job.id)
+
+    assert restored.archived is False
+
+
+
+tests/db/test_crud_resumes.py
+import pytest
+
+from core.db.crud import resumes as resumes_crud
+
+
+@pytest.mark.db
+def test_create_resume_version(db_session):
+    resume = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text", label="base"
+    )
+
+    assert resume.id is not None
+    assert resume.label == "base"
+
+
+@pytest.mark.db
+def test_list_resume_versions_filtered(db_session):
+    resumes_crud.create_resume_version(db_session, source_type="resume", raw_text="r1")
+    resumes_crud.create_resume_version(db_session, source_type="linkedin", raw_text="l1")
+
+    only_resumes = resumes_crud.list_resume_versions(db_session, source_type="resume")
+
+    assert len(only_resumes) == 1
+    assert only_resumes[0].source_type == "resume"
+
+
+@pytest.mark.db
+def test_get_latest_resume_version(db_session):
+    resumes_crud.create_resume_version(db_session, source_type="resume", raw_text="old")
+    newest = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="new"
+    )
+
+    latest = resumes_crud.get_latest_resume_version(db_session, "resume")
+
+    assert latest.id == newest.id
+
+
+
+tests/db/test_crud_scoring_factors.py
+import pytest
+
+from core.db.crud import scoring_factors as scoring_factors_crud
+
+
+@pytest.mark.db
+def test_create_and_list_scoring_factors_ordered(db_session):
+    scoring_factors_crud.create_scoring_factor(
+        db_session, text="Second factor", direction="minus", weight=1, order=2
+    )
+    scoring_factors_crud.create_scoring_factor(
+        db_session, text="First factor", direction="plus", weight=2, order=1
+    )
+
+    factors = scoring_factors_crud.list_scoring_factors(db_session)
+
+    assert [factor.text for factor in factors] == ["First factor", "Second factor"]
+
+
+@pytest.mark.db
+def test_update_scoring_factor(db_session):
+    factor = scoring_factors_crud.create_scoring_factor(
+        db_session, text="Original", direction="plus", weight=1
+    )
+
+    updated = scoring_factors_crud.update_scoring_factor(
+        db_session, factor.id, weight=3
+    )
+
+    assert updated.weight == 3
+
+
+@pytest.mark.db
+def test_delete_scoring_factor(db_session):
+    factor = scoring_factors_crud.create_scoring_factor(
+        db_session, text="To delete", direction="minus", weight=1
+    )
+
+    deleted = scoring_factors_crud.delete_scoring_factor(db_session, factor.id)
+    missing = scoring_factors_crud.get_scoring_factor(db_session, factor.id)
+
+    assert deleted is True
+    assert missing is None
+
+
+
+tests/db/test_crud_tailored_resumes.py
+import pytest
+
+from core.db.crud import evaluations as evaluations_crud
+from core.db.crud import jobs as jobs_crud
+from core.db.crud import resumes as resumes_crud
+from core.db.crud import tailored_resumes as tailored_crud
+
+
+def _make_evaluation(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    resume = resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text"
+    )
+    return evaluations_crud.create_evaluation(
+        db_session, job_posting_id=job.id, resume_version_id=resume.id, verdict=True
+    )
+
+
+@pytest.mark.db
+def test_create_tailored_resume(db_session):
+    evaluation = _make_evaluation(db_session)
+    content = [{"type": "summary", "text": "Sample summary."}]
+
+    tailored = tailored_crud.create_tailored_resume(
+        db_session, evaluation_id=evaluation.id, content=content
+    )
+
+    assert tailored.id is not None
+    assert tailored.content[0]["type"] == "summary"
+
+
+@pytest.mark.db
+def test_update_tailored_resume_docx_path(db_session):
+    evaluation = _make_evaluation(db_session)
+    tailored = tailored_crud.create_tailored_resume(
+        db_session, evaluation_id=evaluation.id, content=[]
+    )
+
+    updated = tailored_crud.update_tailored_resume_docx_path(
+        db_session, tailored.id, "output/sample.docx"
+    )
+
+    assert updated.docx_path == "output/sample.docx"
+
+
+@pytest.mark.db
+def test_list_tailored_resumes_for_evaluation(db_session):
+    evaluation = _make_evaluation(db_session)
+    tailored_crud.create_tailored_resume(
+        db_session, evaluation_id=evaluation.id, content=[]
+    )
+    tailored_crud.create_tailored_resume(
+        db_session, evaluation_id=evaluation.id, content=[]
+    )
+
+    results = tailored_crud.list_tailored_resumes_for_evaluation(
+        db_session, evaluation.id
+    )
+
+    assert len(results) == 2
+
+
+
+tests/db/test_models.py
+import pytest
+
+from core.db.models import (
+    Application,
+    BlockerRule,
+    Evaluation,
+    FormQuestion,
+    JobPosting,
+    ResumeVersion,
+    ScoringFactor,
+    TailoredResume,
+    TaskStatus,
+)
+
+
+@pytest.mark.db
+def test_create_job_posting(db_session):
+    job = JobPosting(raw_text="some job text", company="Acme", title="Backend Dev")
+    db_session.add(job)
+    db_session.commit()
+
+    fetched = db_session.query(JobPosting).first()
+    assert fetched.raw_text == "some job text"
+    assert fetched.company == "Acme"
+    assert fetched.archived is False
+
+
+@pytest.mark.db
+def test_evaluation_relationships(db_session):
+    resume = ResumeVersion(source_type="resume", raw_text="resume text")
+    job = JobPosting(raw_text="job text")
+    db_session.add_all([resume, job])
+    db_session.commit()
+
+    evaluation = Evaluation(
+        job_posting_id=job.id,
+        resume_version_id=resume.id,
+        verdict=True,
+        blocker_bullets={"passed": ["years_ok", "stack_ok"]},
+        fit_score=8,
+        fit_bullets={"positives": ["strong stack match"]},
+        checked_keywords={"years_of_experience": True},
+    )
+    # placeholder data only, no personal info
+    db_session.add(evaluation)
+    db_session.commit()
+
+    assert evaluation.job_posting.id == job.id
+    assert evaluation.resume_version.id == resume.id
+    assert job.evaluations[0].id == evaluation.id
+
+
+@pytest.mark.db
+def test_tailored_resume_flexible_content(db_session):
+    resume = ResumeVersion(source_type="linkedin", raw_text="linkedin text")
+    job = JobPosting(raw_text="job text")
+    db_session.add_all([resume, job])
+    db_session.commit()
+
+    evaluation = Evaluation(
+        job_posting_id=job.id,
+        resume_version_id=resume.id,
+        verdict=True,
+    )
+    db_session.add(evaluation)
+    db_session.commit()
+
+    content_blocks = [
+        {"type": "summary", "text": "Experienced software engineer."},
+        {
+            "type": "experience",
+            "role": "Software Engineer",
+            "company": "Example Corp",
+            "dates": "2024-2026",
+            "bullets": ["Built internal tooling", "Led a small feature team"],
+        },
+        {"type": "skills", "items": ["Python", "SQL", "FastAPI"]},
+    ]
+
+    tailored = TailoredResume(
+        evaluation_id=evaluation.id,
+        keywords_used={"stack": ["Python", "FastAPI"]},
+        content=content_blocks,
+    )
+    db_session.add(tailored)
+    db_session.commit()
+
+    fetched = db_session.query(TailoredResume).first()
+    assert fetched.content[0]["type"] == "summary"
+    assert fetched.content[1]["bullets"] == ["Built internal tooling", "Led a small feature team"]
+    assert fetched.evaluation.id == evaluation.id
+
+
+@pytest.mark.db
+def test_application_nullable_tailored_resume(db_session):
+    job = JobPosting(raw_text="job text")
+    db_session.add(job)
+    db_session.commit()
+
+    application = Application(job_posting_id=job.id, status="applied")
+    db_session.add(application)
+    db_session.commit()
+
+    fetched = db_session.query(Application).first()
+    assert fetched.tailored_resume_id is None
+    assert fetched.job_posting.id == job.id
+
+
+@pytest.mark.db
+def test_blocker_rule_creation(db_session):
+    rule = BlockerRule(text="Sample blocker rule", order=1)
+    db_session.add(rule)
+    db_session.commit()
+
+    fetched = db_session.query(BlockerRule).first()
+    assert fetched.text == "Sample blocker rule"
+    assert fetched.order == 1
+
+
+@pytest.mark.db
+def test_task_status_defaults_to_pending(db_session):
+    task = TaskStatus(task_type="evaluation")
+    db_session.add(task)
+    db_session.commit()
+
+    fetched = db_session.query(TaskStatus).first()
+    assert fetched.status == "pending"
+
+
+@pytest.mark.db
+def test_scoring_factor_creation(db_session):
+    factor = ScoringFactor(text="Sample scoring factor", direction="plus", weight=2, order=1)
+    db_session.add(factor)
+    db_session.commit()
+
+    fetched = db_session.query(ScoringFactor).first()
+    assert fetched.text == "Sample scoring factor"
+    assert fetched.direction == "plus"
+    assert fetched.weight == 2
+
+
+@pytest.mark.db
+def test_form_question_relationship(db_session):
+    job = JobPosting(raw_text="job text")
+    db_session.add(job)
+    db_session.commit()
+
+    application = Application(job_posting_id=job.id, status="draft")
+    db_session.add(application)
+    db_session.commit()
+
+    question = FormQuestion(
+        application_id=application.id,
+        question_text="Why do you want this role?",
+        answer_type="text",
+        answer_text="Sample answer text.",
+    )
+    db_session.add(question)
+    db_session.commit()
+
+    assert application.form_questions[0].question_text == "Why do you want this role?"
+
+
+
+tests/evaluator/__init__.py
+
+
+
+
+tests/evaluator/test_pipeline.py
+import pytest
+
+from core.evaluator.pipeline import evaluate_job_posting
+
+
+class _FakeProvider:
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+        self.last_system_prompt = None
+        self.last_user_prompt = None
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        self.last_system_prompt = system_prompt
+        self.last_user_prompt = user_prompt
+        return self.response_text
+
+
+_SAMPLE_RESPONSE = """
+<reasoning>Matches the candidate's stack and seniority well.</reasoning>
+<company>Example Corp</company>
+<role>Backend Engineer</role>
+<score>8</score>
+<location>Berlin, Germany</location>
+<work_mode>remote</work_mode>
+<salary_min>120000</salary_min>
+<salary_max>120000</salary_max>
+<salary_currency>USD</salary_currency>
+<salary_period>year</salary_period>
+<salary_is_estimate>false</salary_is_estimate>
+<salary_original_text>$120,000/year</salary_original_text>
+<matched_factor id="1">Salary is above the preferred threshold</matched_factor>
+<con>Requires some Kubernetes experience</con>
+<con>Slightly more senior scope than usual</con>
+<pro>Strong Python and FastAPI match</pro>
+<pro>Remote friendly</pro>
+<summary>A backend engineering role at a mid-size product company.</summary>
+"""
+
+_SAMPLE_SCORING_FACTORS = [
+    {"id": 1, "text": "Salary above $120k", "direction": "plus", "weight": 2},
+    {"id": 2, "text": "Requires Linux administration", "direction": "minus", "weight": 1},
+]
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_parses_all_fields():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="Sample job posting",
+        resume_text="Sample resume",
+        linkedin_text="Sample linkedin",
+        blockers=["Sample blocker"],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert result["company"] == "Example Corp"
+    assert result["role"] == "Backend Engineer"
+    assert result["score"] == 8
+    assert result["location"] == "Berlin, Germany"
+    assert result["work_mode"] == "remote"
+    assert result["salary"]["min"] == 120000
+    assert result["salary"]["max"] == 120000
+    assert result["salary"]["currency"] == "USD"
+    assert result["salary"]["period"] == "year"
+    assert result["salary"]["is_estimate"] is False
+    assert result["salary"]["original_text"] == "$120,000/year"
+    assert result["cons"] == [
+        "Requires some Kubernetes experience",
+        "Slightly more senior scope than usual",
+    ]
+    assert result["pros"] == [
+        "Strong Python and FastAPI match",
+        "Remote friendly",
+    ]
+    assert result["summary"] == "A backend engineering role at a mid-size product company."
+    assert result["verdict"] is True
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_returns_matched_factors():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert len(result["matched_factors"]) == 1
+    matched = result["matched_factors"][0]
+    assert matched["id"] == 1
+    assert matched["text"] == "Salary above $120k"
+    assert matched["direction"] == "plus"
+    assert matched["weight"] == 2
+    assert matched["note"] == "Salary is above the preferred threshold"
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_ignores_unknown_factor_ids():
+    response = _SAMPLE_RESPONSE.replace(
+        '<matched_factor id="1">Salary is above the preferred threshold</matched_factor>',
+        '<matched_factor id="999">Unknown factor</matched_factor>',
+    )
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert result["matched_factors"] == []
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_no_matched_factors_when_none_apply():
+    response = _SAMPLE_RESPONSE.replace(
+        '<matched_factor id="1">Salary is above the preferred threshold</matched_factor>\n',
+        "",
+    )
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=_SAMPLE_SCORING_FACTORS,
+    )
+
+    assert result["matched_factors"] == []
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_zero_score_means_no_verdict():
+    response = _SAMPLE_RESPONSE.replace("<score>8</score>", "<score>0</score>")
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="Sample job posting",
+        resume_text="Sample resume",
+        linkedin_text="Sample linkedin",
+        blockers=["Sample blocker"],
+    )
+
+    assert result["score"] == 0
+    assert result["verdict"] is False
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_passes_prompt_to_provider():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    evaluate_job_posting(
+        provider,
+        job_posting_text="Unique job posting marker",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert "Unique job posting marker" in provider.last_user_prompt
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_handles_missing_score_gracefully():
+    response = _SAMPLE_RESPONSE.replace("<score>8</score>", "")
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert result["score"] is None
+    assert result["verdict"] is False
+
+
+@pytest.mark.evaluator
+def test_evaluate_job_posting_marks_estimated_salary():
+    response = _SAMPLE_RESPONSE.replace(
+        "<salary_is_estimate>false</salary_is_estimate>",
+        "<salary_is_estimate>true</salary_is_estimate>",
+    ).replace(
+        "<salary_original_text>$120,000/year</salary_original_text>",
+        "<salary_original_text>Not stated in posting - estimated based on role, seniority, company size and market</salary_original_text>",
+    )
+    provider = _FakeProvider(response)
+
+    result = evaluate_job_posting(
+        provider,
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert result["salary"]["is_estimate"] is True
+    assert "estimated" in result["salary"]["original_text"].lower()
+
+
+
+tests/evaluator/test_prompt.py
+import pytest
+
+from core.evaluator.prompt import render_evaluator_prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_includes_job_posting_and_resume():
+    prompt = render_evaluator_prompt(
+        job_posting_text="Sample job posting text",
+        resume_text="Sample resume text",
+        linkedin_text="Sample linkedin text",
+        blockers=["Sample blocker one", "Sample blocker two"],
+    )
+
+    assert "Sample job posting text" in prompt
+    assert "Sample resume text" in prompt
+    assert "Sample linkedin text" in prompt
+    assert "Sample blocker one" in prompt
+    assert "Sample blocker two" in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_numbers_blockers_in_order():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=["First rule", "Second rule"],
+    )
+
+    assert "1. First rule" in prompt
+    assert "2. Second rule" in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_includes_contacts_and_extra_info_when_given():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        contacts=["sample@example.com", "github.com/sampleuser"],
+        extra_info="Sample extra context.",
+    )
+
+    assert "sample@example.com" in prompt
+    assert "github.com/sampleuser" in prompt
+    assert "Sample extra context." in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_omits_extra_info_section_when_not_given():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert "ADDITIONAL CONTEXT ABOUT THE CANDIDATE" not in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_includes_scoring_factors_with_ids():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+        scoring_factors=[
+            {"id": 1, "text": "Sample plus factor", "direction": "plus", "weight": 2},
+            {"id": 2, "text": "Sample minus factor", "direction": "minus", "weight": 1},
+        ],
+    )
+
+    assert 'id="1"' in prompt
+    assert "Sample plus factor" in prompt
+    assert 'id="2"' in prompt
+    assert "Sample minus factor" in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_omits_scoring_factors_section_when_not_given():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert "SCORING FACTORS" not in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_contains_output_format_tags():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    tags = [
+        "<reasoning>",
+        "<company>",
+        "<role>",
+        "<score>",
+        "<location>",
+        "<work_mode>",
+        "<salary_min>",
+        "<salary_max>",
+        "<salary_currency>",
+        "<salary_period>",
+        "<salary_is_estimate>",
+        "<salary_original_text>",
+        "<con>",
+        "<pro>",
+        "<summary>",
+    ]
+    for tag in tags:
+        assert tag in prompt
+
+
+
+tests/parsing/__init__.py
+
+
+
+
+tests/parsing/test_file_extraction.py
+import pytest
+from docx import Document
+
+from core.parsing.file_extraction import extract_text
+
+
+@pytest.mark.parsing
+def test_extract_text_from_txt(tmp_path):
+    file_path = tmp_path / "sample.txt"
+    file_path.write_text("Sample text content", encoding="utf-8")
+
+    result = extract_text(str(file_path))
+
+    assert result == "Sample text content"
+
+
+@pytest.mark.parsing
+def test_extract_text_from_docx(tmp_path):
+    file_path = tmp_path / "sample.docx"
+    document = Document()
+    document.add_paragraph("Sample paragraph one")
+    document.add_paragraph("Sample paragraph two")
+    document.save(str(file_path))
+
+    result = extract_text(str(file_path))
+
+    assert "Sample paragraph one" in result
+    assert "Sample paragraph two" in result
+
+
+@pytest.mark.parsing
+def test_extract_text_unsupported_extension(tmp_path):
+    file_path = tmp_path / "sample.xyz"
+    file_path.write_text("content", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        extract_text(str(file_path))
+
+
+
+tests/parsing/test_html_like_parser.py
+import pytest
+
+from core.parsing.html_like_parser import parse_html_like
+
+
+@pytest.mark.parsing
+def test_simple_repeated_tags_become_list():
+    raw_text = """
+    <a>answer one</a>
+    <a>answer two</a>
+    """
+
+    result = parse_html_like(raw_text)
+
+    assert result == {"a": ["answer one", "answer two"]}
+
+
+@pytest.mark.parsing
+def test_single_tag_still_becomes_list():
+    raw_text = "<verdict>yes</verdict>"
+
+    result = parse_html_like(raw_text)
+
+    assert result == {"verdict": ["yes"]}
+
+
+@pytest.mark.parsing
+def test_empty_input_returns_empty_dict():
+    result = parse_html_like("")
+
+    assert result == {}
+
+
+@pytest.mark.parsing
+def test_attributes_are_strings_and_children_are_lists():
+    raw_text = """
+    <experience role="Backend Developer" company="Example Corp" dates="2023-2025">
+    <bullet>Rebuilt the payments service</bullet>
+    <bullet>Migrated legacy monolith</bullet>
+    <skill>Python</skill>
+    <skill>FastAPI</skill>
+    </experience>
+    """
+
+    result = parse_html_like(raw_text)
+
+    assert result == {
+        "experience": [
+            {
+                "role": "Backend Developer",
+                "company": "Example Corp",
+                "dates": "2023-2025",
+                "bullet": ["Rebuilt the payments service", "Migrated legacy monolith"],
+                "skill": ["Python", "FastAPI"],
+            }
+        ]
+    }
+
+
+@pytest.mark.parsing
+def test_multiple_blocks_with_same_tag_stay_isolated():
+    raw_text = """
+    <experience role="Backend Developer" company="Example Corp">
+    <bullet>First job bullet</bullet>
+    </experience>
+    <experience role="LLM Engineer" company="Another Corp">
+    <bullet>Second job bullet</bullet>
+    </experience>
+    """
+
+    result = parse_html_like(raw_text)
+
+    assert len(result["experience"]) == 2
+    assert result["experience"][0]["role"] == "Backend Developer"
+    assert result["experience"][0]["bullet"] == ["First job bullet"]
+    assert result["experience"][1]["role"] == "LLM Engineer"
+    assert result["experience"][1]["bullet"] == ["Second job bullet"]
+
+
+@pytest.mark.parsing
+def test_tag_with_attributes_and_text_content():
+    raw_text = '<summary tone="professional">Experienced engineer with a strong track record.</summary>'
+
+    result = parse_html_like(raw_text)
+
+    assert result == {
+        "summary": [
+            {
+                "tone": "professional",
+                "text": "Experienced engineer with a strong track record.",
+            }
+        ]
+    }
+
+
+@pytest.mark.parsing
+def test_nested_tags_without_attributes():
+    raw_text = """
+    <section>
+    <heading>Skills</heading>
+    <item>Python</item>
+    <item>SQL</item>
+    </section>
+    """
+
+    result = parse_html_like(raw_text)
+
+    assert result == {
+        "section": [
+            {
+                "heading": ["Skills"],
+                "item": ["Python", "SQL"],
+            }
+        ]
+    }
+
+
+@pytest.mark.parsing
+def test_whitespace_is_stripped_from_text():
+    raw_text = """
+    <a>
+        answer with surrounding whitespace
+    </a>
+    """
+
+    result = parse_html_like(raw_text)
+
+    assert result == {"a": ["answer with surrounding whitespace"]}
+
+
+
+tests/providers/__init__.py
+
+
+
+
+tests/providers/test_factory.py
+import pytest
+
+from core.providers.factory import get_llm_provider
+from core.providers.freellmapi import FreeLLMAPIProvider
+from core.providers.openai_provider import OpenAIProvider
+from core.providers.gemini_provider import GeminiProvider
+import config
+
+
+@pytest.mark.providers
+def test_get_llm_provider_freellmapi(monkeypatch):
+    monkeypatch.setattr(config, "LLM_PROVIDER", "freellmapi")
+    provider = get_llm_provider()
+    assert isinstance(provider, FreeLLMAPIProvider)
+
+
+@pytest.mark.providers
+def test_get_llm_provider_openai(monkeypatch):
+    monkeypatch.setattr(config, "LLM_PROVIDER", "openai")
+    monkeypatch.setattr(config, "OPENAI_API_KEY", "fake-key")
+    provider = get_llm_provider()
+    assert isinstance(provider, OpenAIProvider)
+
+
+@pytest.mark.providers
+def test_get_llm_provider_gemini(monkeypatch):
+    monkeypatch.setattr(config, "LLM_PROVIDER", "gemini")
+    monkeypatch.setattr(config, "GEMINI_API_KEY", "fake-key")
+    provider = get_llm_provider()
+    assert isinstance(provider, GeminiProvider)
+
+
+@pytest.mark.providers
+def test_get_llm_provider_unknown(monkeypatch):
+    monkeypatch.setattr(config, "LLM_PROVIDER", "not_a_real_provider")
+    with pytest.raises(ValueError):
+        get_llm_provider()
+
+
+
+tests/providers/test_freellmapi.py
+import pytest
+
+from core.providers.freellmapi import FreeLLMAPIProvider
+
+
+class _FakeMessage:
+    def __init__(self, content):
+        self.content = content
+
+
+class _FakeChoice:
+    def __init__(self, content):
+        self.message = _FakeMessage(content)
+
+
+class _FakeResponse:
+    def __init__(self, content):
+        self.choices = [_FakeChoice(content)]
+
+
+@pytest.mark.providers
+def test_freellmapi_call_returns_content(monkeypatch):
+    provider = FreeLLMAPIProvider()
+
+    def fake_create(model, messages):
+        assert model == provider.model
+        assert messages[0]["role"] == "system"
+        assert messages[1]["role"] == "user"
+        return _FakeResponse("fake response text")
+
+    monkeypatch.setattr(provider.client.chat.completions, "create", fake_create)
+
+    result = provider.call("system prompt", "user prompt")
+
+    assert result == "fake response text"
+
+
+
+tests/rendering/__init__.py
+
+
+
+
+tests/rendering/conftest.py
+import pytest
+
+
+@pytest.fixture()
+def sample_resume_content():
+    return {
+        "name": "SAMPLE NAME | Software Engineer",
+        "contacts": ["City, Country", "sample@example.com", "linkedin.com/in/sample"],
+        "summary": "Sample summary text describing experience.",
+        "experience": [
+            {
+                "company": "Example Corp",
+                "role": "Software Engineer",
+                "location": "Remote",
+                "dates": "2023-2025",
+                "employment_type": "full-time",
+                "description": "Sample company description.",
+                "bullets": ["Sample bullet one", "Sample bullet two"],
+                "subsections": [
+                    {"heading": "Sample project", "bullets": ["Sample subsection bullet"]}
+                ],
+            }
+        ],
+        "extra_sections": [
+            {
+                "heading": "INDEPENDENT PROJECTS",
+                "text": "Sample independent projects text.",
+                "bullets": [],
+            }
+        ],
+        "skills": [
+            {"label": "Languages", "items": ["Python"]},
+            {"label": "Frameworks", "items": ["FastAPI", "Flask"]},
+        ],
+    }
+
+
+
+tests/rendering/test_docx_renderer.py
+import pytest
+from docx import Document
+
+from core.rendering.docx_renderer import render_docx
+
+
+@pytest.mark.rendering
+def test_render_docx_creates_file(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.docx"
+
+    result_path = render_docx(sample_resume_content, str(output_path))
+
+    assert output_path.exists()
+    assert result_path == str(output_path)
+
+
+@pytest.mark.rendering
+def test_render_docx_contains_expected_text(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.docx"
+
+    render_docx(sample_resume_content, str(output_path))
+
+    document = Document(str(output_path))
+    full_text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+
+    assert "SAMPLE NAME | Software Engineer" in full_text
+    assert "Example Corp - Software Engineer" in full_text
+    assert "Sample bullet one" in full_text
+    assert "SKILLS" in full_text
+
+
+@pytest.mark.rendering
+def test_render_docx_respects_custom_style(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.docx"
+
+    render_docx(sample_resume_content, str(output_path), style={"name_font_size": 20})
+
+    document = Document(str(output_path))
+    name_run = document.paragraphs[0].runs[0]
+
+    assert name_run.font.size.pt == 20
+
+
+
+tests/rendering/test_pdf_renderer.py
+import pytest
+
+from core.rendering.pdf_renderer import render_pdf
+
+
+@pytest.mark.rendering
+def test_render_pdf_creates_valid_file(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.pdf"
+
+    result_path = render_pdf(sample_resume_content, str(output_path))
+
+    assert output_path.exists()
+    assert result_path == str(output_path)
+
+    with open(output_path, "rb") as file:
+        header = file.read(5)
+
+    assert header == b"%PDF-"
+
+
+@pytest.mark.rendering
+def test_render_pdf_handles_minimal_content(tmp_path):
+    minimal_content = {"name": "SAMPLE NAME"}
+    output_path = tmp_path / "minimal.pdf"
+
+    render_pdf(minimal_content, str(output_path))
+
+    assert output_path.exists()
+
+
+
+tests/rendering/test_txt_renderer.py
+import pytest
+
+from core.rendering.txt_renderer import render_txt
+
+
+@pytest.mark.rendering
+def test_render_txt_creates_file(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.txt"
+
+    result_path = render_txt(sample_resume_content, str(output_path))
+
+    assert output_path.exists()
+    assert result_path == str(output_path)
+
+
+@pytest.mark.rendering
+def test_render_txt_contains_expected_lines(tmp_path, sample_resume_content):
+    output_path = tmp_path / "resume.txt"
+
+    render_txt(sample_resume_content, str(output_path))
+
+    text = output_path.read_text(encoding="utf-8")
+
+    assert "SAMPLE NAME | Software Engineer" in text
+    assert "Example Corp - Software Engineer" in text
+    assert "- Sample bullet one" in text
+    assert "SKILLS" in text
+
+
+
+tests/structuring/__init__.py
+
+
+
+
+tests/structuring/test_pipeline.py
+import pytest
+
+from core.structuring.pipeline import structure_resume_text, structure_linkedin_text
+
+
+class _FakeProvider:
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+        self.last_user_prompt = None
+
+    def call(self, system_prompt: str, user_prompt: str) -> str:
+        self.last_user_prompt = user_prompt
+        return self.response_text
+
+
+_SAMPLE_RESPONSE = """
+<name>Sample Name | Software Engineer</name>
+<contact>City, Country</contact>
+<contact>sample@example.com</contact>
+<summary>Sample summary text.</summary>
+<experience company="Example Corp" role="Software Engineer" location="Remote" dates="2023-2025" employment_type="full-time">
+<description>Sample company description</description>
+<bullet>Sample bullet one</bullet>
+<bullet>Sample bullet two</bullet>
+<subsection heading="Sample project">
+<bullet>Sample subsection bullet</bullet>
+</subsection>
+</experience>
+<extra_section heading="INDEPENDENT PROJECTS">
+<text>Sample independent projects text</text>
+</extra_section>
+<skill_group label="Languages">
+<item>Python</item>
+<item>SQL</item>
+</skill_group>
+"""
+
+
+@pytest.mark.structuring
+def test_structure_resume_text_maps_all_fields():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    content = structure_resume_text(provider, "raw resume text")
+
+    assert content["name"] == "Sample Name | Software Engineer"
+    assert content["contacts"] == ["City, Country", "sample@example.com"]
+    assert content["summary"] == "Sample summary text."
+
+    experience = content["experience"][0]
+    assert experience["company"] == "Example Corp"
+    assert experience["role"] == "Software Engineer"
+    assert experience["bullets"] == ["Sample bullet one", "Sample bullet two"]
+    assert experience["subsections"][0]["heading"] == "Sample project"
+    assert experience["subsections"][0]["bullets"] == ["Sample subsection bullet"]
+
+    assert content["extra_sections"][0]["heading"] == "INDEPENDENT PROJECTS"
+    assert content["extra_sections"][0]["text"] == "Sample independent projects text"
+
+    assert content["skills"][0]["label"] == "Languages"
+    assert content["skills"][0]["items"] == ["Python", "SQL"]
+
+
+@pytest.mark.structuring
+def test_structure_resume_text_handles_missing_optional_sections():
+    provider = _FakeProvider("<name>Only Name</name>")
+
+    content = structure_resume_text(provider, "raw resume text")
+
+    assert content["name"] == "Only Name"
+    assert content["contacts"] == []
+    assert content["summary"] is None
+    assert content["experience"] == []
+    assert content["extra_sections"] == []
+    assert content["skills"] == []
+
+
+@pytest.mark.structuring
+def test_structure_linkedin_text_uses_linkedin_label_in_prompt():
+    provider = _FakeProvider(_SAMPLE_RESPONSE)
+
+    structure_linkedin_text(provider, "raw linkedin text")
+
+    assert "LinkedIn experience export" in provider.last_user_prompt
+    assert "raw linkedin text" in provider.last_user_prompt
+
+
+@pytest.mark.structuring
+def test_structure_resume_text_handles_experience_without_subsections():
+    response = """
+    <experience company="Solo Corp" role="Engineer" location="Remote" dates="2020-2021" employment_type="full-time">
+    <bullet>Sample bullet</bullet>
+    </experience>
+    """
+    provider = _FakeProvider(response)
+
+    content = structure_resume_text(provider, "raw text")
+
+    experience = content["experience"][0]
+    assert experience["subsections"] == []
+    assert experience["description"] is None
+
+
+
+tests/structuring/test_prompt.py
+import pytest
+
+from core.structuring.prompt import render_structure_prompt
+
+
+@pytest.mark.structuring
+def test_prompt_includes_raw_text_and_label():
+    prompt = render_structure_prompt("Sample resume raw text", source_label="resume")
+
+    assert "Sample resume raw text" in prompt
+    assert "resume" in prompt
+
+
+@pytest.mark.structuring
+def test_prompt_contains_output_format_tags():
+    prompt = render_structure_prompt("text", source_label="resume")
+
+    for tag in ["<name>", "<contact>", "<summary>", "<experience", "<bullet>", "<subsection", "<extra_section", "<skill_group"]:
+        assert tag in prompt
+
+
+
+tests/tasks/__init__.py
+
+
+
+
+tests/tasks/test_runner.py
+import time
+
+import pytest
+
+from core.db.crud import task_statuses as task_statuses_crud
+from core.tasks.runner import run_tracked_task
+
+
+def _sample_task(value):
+    time.sleep(0.05)
+    return {"echo": value}
+
+
+def _failing_task():
+    raise ValueError("Sample failure")
+
+
+@pytest.mark.tasks
+def test_run_tracked_task_completes_successfully(db_session, monkeypatch):
+    monkeypatch.setattr("core.tasks.runner.SessionLocal", lambda: db_session)
+    monkeypatch.setattr(db_session, "close", lambda: None)
+
+    task_id = run_tracked_task("sample", _sample_task, "hello")
+
+    deadline = time.time() + 2
+    while time.time() < deadline:
+        task = task_statuses_crud.get_task_status(db_session, task_id)
+        if task.status == "done":
+            break
+        time.sleep(0.01)
+
+    task = task_statuses_crud.get_task_status(db_session, task_id)
+    assert task.status == "done"
+    assert task.result == {"echo": "hello"}
+
+
+@pytest.mark.tasks
+def test_run_tracked_task_records_failure(db_session, monkeypatch):
+    monkeypatch.setattr("core.tasks.runner.SessionLocal", lambda: db_session)
+    monkeypatch.setattr(db_session, "close", lambda: None)
+
+    task_id = run_tracked_task("sample", _failing_task)
+
+    deadline = time.time() + 2
+    while time.time() < deadline:
+        task = task_statuses_crud.get_task_status(db_session, task_id)
+        if task.status == "failed":
+            break
+        time.sleep(0.01)
+
+    task = task_statuses_crud.get_task_status(db_session, task_id)
+    assert task.status == "failed"
+    assert "Sample failure" in task.error
+
+
+
+ui/__init__.py
+
+
+
+
+ui/app.py
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from core.db.session import init_db
+from ui.dashboard_page.router import router as dashboard_router
+from ui.evaluator_page.router import router as evaluator_router
+from ui.language_router import router as language_router
+from ui.settings_page.router import router as settings_router
+from ui.tasks_page.router import router as tasks_router
+
+app = FastAPI(title="Resume Tailoring Pipeline")
+
+app.mount("/static", StaticFiles(directory="ui/common/static"), name="static")
+
+app.include_router(dashboard_router)
+app.include_router(evaluator_router)
+app.include_router(settings_router)
+app.include_router(tasks_router)
+app.include_router(language_router)
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
+
+
+ui/common/__init__.py
+
+
+
+
+ui/common/static/app.js
+async function submitFormAjax(form, onSuccess) {
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+        method: "POST",
+        body: formData,
+    });
+
+    if (!response.ok) {
+        alert("Something went wrong, please try again.");
+        return;
+    }
+
+    const data = await response.json();
+    onSuccess(data);
+}
+
+function bindAjaxForm(formId, onSuccess) {
+    const form = document.getElementById(formId);
+    if (!form) {
+        return;
+    }
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitFormAjax(form, onSuccess);
+    });
+}
+
+async function pollTaskStatus(taskIds, onUpdate, intervalMs = 2000) {
+    const poll = async () => {
+        const response = await fetch(`/api/tasks/status?ids=${taskIds.join(",")}`);
+        const data = await response.json();
+        onUpdate(data.tasks);
+
+        const stillRunning = data.tasks.some(
+            (task) => task.status === "pending" || task.status === "processing"
+        );
+        if (stillRunning) {
+            setTimeout(poll, intervalMs);
+        }
+    };
+    poll();
+}
+
+
+
+ui/common/static/common.css
+:root {
+    --bg: #0a0a0b;
+    --bg-elevated: #131316;
+    --bg-card: #17171b;
+    --bg-input: #1c1c21;
+    --border: #26262c;
+    --border-hover: #35353d;
+    --text-primary: #f2f2f3;
+    --text-secondary: #8b8b93;
+    --text-tertiary: #5a5a63;
+
+    --accent: #5b8def;
+    --accent-hover: #4a7ade;
+    --accent-soft: rgba(91, 141, 239, 0.12);
+
+    --score-high: #4ade80;
+    --score-high-soft: rgba(74, 222, 128, 0.12);
+    --score-mid: #facc15;
+    --score-mid-soft: rgba(250, 204, 21, 0.12);
+    --score-low: #f87171;
+    --score-low-soft: rgba(248, 113, 113, 0.12);
+
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Inter", "Segoe UI", -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.55;
+    font-size: 14px;
+}
+
+.topnav {
+    background-color: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    height: 52px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.topnav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.12s ease;
+}
+
+.topnav a:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+}
+
+main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+}
+
+h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+h3 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin: 20px 0 8px;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+textarea,
+select,
+input[type="text"] {
+    width: 100%;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 9px 11px;
+    resize: vertical;
+    transition: border-color 0.12s ease;
+}
+
+textarea {
+    min-height: 140px;
+    line-height: 1.5;
+}
+
+textarea:focus,
+select:focus,
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+textarea::placeholder,
+input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.btn {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    margin-top: 18px;
+    transition: background-color 0.12s ease;
+}
+
+.btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-ghost {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    background-color: var(--bg-card);
+}
+
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+}
+
+.result-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 26px;
+    margin-bottom: 16px;
+}
+
+.result-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.result-title {
+    flex: 1;
+}
+
+.result-title .company {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.result-title .role {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.score-badge {
+    font-size: 24px;
+    font-weight: 700;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.score-high {
+    background-color: var(--score-high-soft);
+    color: var(--score-high);
+}
+
+.score-mid {
+    background-color: var(--score-mid-soft);
+    color: var(--score-mid);
+}
+
+.score-low {
+    background-color: var(--score-low-soft);
+    color: var(--score-low);
+}
+
+.badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 14px 0;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.badge-work-mode {
+    background-color: var(--score-high-soft);
+    color: var(--score-high);
+    border-color: transparent;
+}
+
+.badge-estimate {
+    background-color: var(--score-mid-soft);
+    color: var(--score-mid);
+    border-color: transparent;
+}
+
+.salary-line {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 4px 0 0;
+}
+
+.summary-text {
+    font-size: 13.5px;
+    color: var(--text-primary);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.pros-cons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.pros,
+.cons {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.pros li,
+.cons li {
+    padding: 5px 0 5px 20px;
+    position: relative;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.pros li::before {
+    content: "+";
+    position: absolute;
+    left: 2px;
+    font-weight: 700;
+    color: var(--score-high);
+}
+
+.cons li::before {
+    content: "-";
+    position: absolute;
+    left: 2px;
+    font-weight: 700;
+    color: var(--score-low);
+}
+
+.blocker-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.blocker-list li {
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.blocker-list li:last-child {
+    border-bottom: none;
+}
+
+.factor-sign {
+    display: inline-block;
+    width: 26px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.factor-sign-plus {
+    color: var(--score-high);
+}
+
+.factor-sign-minus {
+    color: var(--score-low);
+}
+
+.matched-factor-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0 0 4px;
+}
+
+.matched-factor-list li {
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.matched-factor-list li:last-child {
+    border-bottom: none;
+}
+
+.matched-factor-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.matched-factor-note {
+    color: var(--text-secondary);
+    display: block;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.job-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    position: relative;
+    transition: border-color 0.15s ease;
+}
+
+.job-card:hover {
+    border-color: var(--border-hover);
+}
+
+.job-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.job-card-score {
+    font-size: 22px;
+    font-weight: 700;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.job-card-archive {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.job-card-archive:hover {
+    color: var(--score-low);
+    background-color: var(--score-low-soft);
+}
+
+.job-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.job-card-salary {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 8px 0 0;
+}
+
+.job-card-bottom {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.job-card-company {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.job-card-role {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.loading-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    margin-left: 8px;
+    animation: pulse 1s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+
+
+ui/common/templates/base.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Resume Tailoring Pipeline{% endblock %}</title>
+    <link rel="stylesheet" href="/static/common.css">
+    <script src="/static/app.js"></script>
+</head>
+<body>
+    <nav class="topnav">
+        <a href="/">{{ t.nav_dashboard }}</a>
+        <a href="/settings">{{ t.nav_settings }}</a>
+        <a href="/evaluator">{{ t.nav_evaluator }}</a>
+        <a href="/tailor">{{ t.nav_tailor }}</a>
+        <a href="/questions">{{ t.nav_questions }}</a>
+        <a href="/tracker">{{ t.nav_tracker }}</a>
+
+        <form id="lang-form" class="lang-form">
+            <select name="lang" id="lang-select">
+                <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
+                <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>
+            </select>
+        </form>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+    document.getElementById("lang-select").addEventListener("change", async (event) => {
+        const formData = new FormData();
+        formData.append("lang", event.target.value);
+        await fetch("/set-language", { method: "POST", body: formData });
+        window.location.reload();
+    });
+    </script>
+</body>
+</html>
+
+
+
+ui/evaluator_page/__init__.py
+
+
+
+
+ui/evaluator_page/router.py
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+
+from core.db import crud
+from core.db.session import SessionLocal, get_session
+from core.evaluator.pipeline import evaluate_job_posting
+from core.providers.factory import get_llm_provider
+from core.tasks.runner import run_tracked_task
+
+from jinja2 import ChoiceLoader, FileSystemLoader
+
+from ui.common.i18n import get_language, load_page_strings
+
+router = APIRouter(prefix="/evaluator")
+
+templates = Jinja2Templates(directory="ui/evaluator_page/templates")
+templates.env.loader = ChoiceLoader(
+    [
+        FileSystemLoader("ui/evaluator_page/templates"),
+        FileSystemLoader("ui/common/templates"),
+    ]
+)
+
+
+@router.get("", response_class=HTMLResponse)
+def evaluator_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    blockers = crud.list_blocker_rules(session)
+    scoring_factors = crud.list_scoring_factors(session)
+    active_resume = crud.get_active_resume_version(session, "resume")
+    active_linkedin = crud.get_active_resume_version(session, "linkedin")
+
+    return templates.TemplateResponse(
+        "evaluator.html",
+        {
+            "request": request,
+            "blockers": blockers,
+            "scoring_factors": scoring_factors,
+            "active_resume": active_resume,
+            "active_linkedin": active_linkedin,
+            "result": None,
+            "lang": lang,
+            "t": load_page_strings("ui/evaluator_page", lang),
+        },
+    )
+
+
+@router.post("")
+def run_evaluation(
+    job_posting_text: str = Form(...),
+    extra_info: str = Form(""),
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    task_id = run_tracked_task(
+        "job_evaluation", _evaluate_and_save, job_posting_text, extra_info or None, lang
+    )
+    return JSONResponse({"status": "processing", "task_id": task_id})
+
+
+def _evaluate_and_save(job_posting_text: str, extra_info: str | None, lang: str = "en") -> dict:
+    session = SessionLocal()
+    try:
+        blockers = crud.list_blocker_rules(session)
+        scoring_factors = crud.list_scoring_factors(session)
+        resume = crud.get_active_resume_version(session, "resume")
+        linkedin = crud.get_active_resume_version(session, "linkedin")
+
+        provider = get_llm_provider()
+
+        result = evaluate_job_posting(
+            provider,
+            job_posting_text=job_posting_text,
+            resume_text=resume.raw_text,
+            linkedin_text=linkedin.raw_text,
+            blockers=[rule.text for rule in blockers],
+            scoring_factors=[
+                {
+                    "id": factor.id,
+                    "text": factor.text,
+                    "direction": factor.direction,
+                    "weight": factor.weight,
+                }
+                for factor in scoring_factors
+            ],
+            extra_info=extra_info,
+            language=lang,
+        )
+
+        job = crud.create_job_posting(
+            session,
+            raw_text=job_posting_text,
+            company=result["company"],
+            title=result["role"],
+        )
+
+        crud.create_evaluation(
+            session,
+            job_posting_id=job.id,
+            resume_version_id=resume.id,
+            verdict=result["verdict"],
+            blocker_bullets={"cons": result["cons"]},
+            fit_score=result["score"],
+            fit_bullets={"pros": result["pros"]},
+            checked_keywords={
+                "location": result["location"],
+                "work_mode": result["work_mode"],
+                "salary": result["salary"],
+            },
+        )
+
+        return result
+    finally:
+        session.close()
+
+
+
+ui/evaluator_page/templates/evaluator.html
+{% extends "base.html" %}
+
+{% block title %}Evaluator{% endblock %}
+
+{% block content %}
+<h1 id="page-title">{{ t.page_title }}</h1>
+
+<form method="post" class="card" id="evaluator-form">
+    <label for="job_posting_text">{{ t.job_posting_label }}</label>
+    <textarea name="job_posting_text" id="job_posting_text" placeholder="{{ t.job_posting_placeholder }}"></textarea>
+
+    <label for="extra_info">{{ t.extra_info_label }}</label>
+    <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}"></textarea>
+
+    <p class="salary-line">
+        {{ t.using_resume }} {{ active_resume.label if active_resume else t.none_set }}
+        · {{ t.linkedin }} {{ active_linkedin.label if active_linkedin else t.none_set }}
+    </p>
+
+    <h3>{{ t.active_blockers }}</h3>
+    <ul class="blocker-list">
+        {% for blocker in blockers %}
+        <li>{{ blocker.text }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>{{ t.scoring_factors }}</h3>
+    <ul class="blocker-list">
+        {% for factor in scoring_factors %}
+        <li>
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            {{ factor.text }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit" class="btn">Evaluate</button>
+</form>
+
+<div id="evaluator-result"></div>
+
+<script>
+bindAjaxForm("evaluator-form", (data) => {
+    document.getElementById("page-title").innerHTML = 'Job Fit Evaluator <span class="loading-dot"></span>';
+    document.getElementById("evaluator-result").innerHTML = "";
+
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("page-title").textContent = "Job Fit Evaluator";
+            renderResult(task.result);
+        } else if (task.status === "failed") {
+            document.getElementById("page-title").textContent = "Job Fit Evaluator";
+            document.getElementById("evaluator-result").innerHTML =
+                `<div class="result-card">Evaluation failed: ${task.error}</div>`;
+        }
+    });
+});
+
+function renderResult(result) {
+    const scoreClass = result.score >= 7 ? "score-high" : result.score >= 4 ? "score-mid" : "score-low";
+
+    let matchedFactorsHtml = "";
+    if (result.matched_factors && result.matched_factors.length > 0) {
+        matchedFactorsHtml = `<h3>${I18N.matched_factors}</h3><ul class="matched-factor-list">`;
+        result.matched_factors.forEach((factor) => {
+            const signClass = factor.direction === "plus" ? "factor-sign-plus" : "factor-sign-minus";
+            const signChar = factor.direction === "plus" ? "+" : "-";
+            matchedFactorsHtml += `<li>
+                <span class="factor-sign ${signClass}">${signChar.repeat(factor.weight)}</span>
+                <span class="matched-factor-text">${factor.text}</span>
+                <span class="matched-factor-note">${factor.note}</span>
+            </li>`;
+        });
+        matchedFactorsHtml += "</ul>";
+    }
+
+    const prosHtml = (result.pros || []).map((pro) => `<li>${pro}</li>`).join("");
+    const consHtml = (result.cons || []).map((con) => `<li>${con}</li>`).join("");
+
+    document.getElementById("evaluator-result").innerHTML = `
+        <div class="result-card">
+            <div class="result-header">
+                <div class="result-title">
+                    <div class="company">${result.company || ""}</div>
+                    <div class="role">${result.role || ""}</div>
+                </div>
+                <div class="score-badge ${scoreClass}">${result.score}</div>
+            </div>
+
+            <div class="badge-row">
+                ${result.location ? `<span class="badge">${result.location}</span>` : ""}
+                ${result.work_mode ? `<span class="badge badge-work-mode">${result.work_mode}</span>` : ""}
+                ${result.salary.is_estimate ? '<span class="badge badge-estimate">Estimated salary</span>' : ""}
+            </div>
+
+            <p class="salary-line">${result.salary.original_text || ""}</p>
+
+            ${matchedFactorsHtml}
+
+            <div class="pros-cons-grid">
+                <div>
+                    <h3>${I18N.pros}</h3>
+                    <ul class="pros">${prosHtml}</ul>
+                </div>
+                <div>
+                    <h3>${I18N.cons}</h3>
+                    <ul class="cons">${consHtml}</ul>
+                </div>
+            </div>
+
+            <p class="summary-text">${result.summary || ""}</p>
+        </div>
+    `;
+}
+</script>
+{% endblock %}
+
+
+
+ui/settings_page/__init__.py
+
+
+
+
+ui/settings_page/router.py
+import shutil
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from jinja2 import ChoiceLoader, FileSystemLoader
+from sqlalchemy.orm import Session
+
+from core.db import crud
+from core.db.session import SessionLocal, get_session
+from core.parsing.file_extraction import extract_text
+from core.providers.factory import get_llm_provider
+def _page_context(session: Session, request: Request, lang: str) -> dict:
+    profile = crud.get_candidate_profile(session)
+    active_resume = crud.get_active_resume_version(session, "resume")
+    active_linkedin = crud.get_active_resume_version(session, "linkedin")
+    blockers = crud.list_blocker_rules(session)
+    scoring_factors = crud.list_scoring_factors(session)
+
+    return {
+        "request": request,
+        "profile": profile,
+        "active_resume": active_resume,
+        "active_linkedin": active_linkedin,
+        "blockers": blockers,
+        "scoring_factors": scoring_factors,
+        "lang": lang,
+        "t": load_page_strings("ui/settings_page", lang),
+    }
+
+
+@router.get("", response_class=HTMLResponse)
+def settings_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    return templates.TemplateResponse("settings.html", _page_context(session, request, lang))
+
+router = APIRouter(prefix="/settings")
+
+templates = Jinja2Templates(directory="ui/settings_page/templates")
+templates.env.loader = ChoiceLoader(
+    [
+        FileSystemLoader("ui/settings_page/templates"),
+        FileSystemLoader("ui/common/templates"),
+    ]
+)
+
+def _save_upload(upload: UploadFile) -> str:
+    destination = config.UPLOADS_DIR / upload.filename
+    with open(destination, "wb") as file:
+        shutil.copyfileobj(upload.file, file)
+    return str(destination)
+
+
+def _page_context(session: Session, request: Request) -> dict:
+    profile = crud.get_candidate_profile(session)
+    active_resume = crud.get_active_resume_version(session, "resume")
+    active_linkedin = crud.get_active_resume_version(session, "linkedin")
+    blockers = crud.list_blocker_rules(session)
+    scoring_factors = crud.list_scoring_factors(session)
+
+    return {
+        "request": request,
+        "profile": profile,
+        "active_resume": active_resume,
+        "active_linkedin": active_linkedin,
+        "blockers": blockers,
+        "scoring_factors": scoring_factors,
+    }
+
+
+@router.get("", response_class=HTMLResponse)
+def settings_page(request: Request, session: Session = Depends(get_session)):
+    return templates.TemplateResponse("settings.html", _page_context(session, request))
+
+
+@router.post("/profile")
+def update_profile(
+    email: str = Form(""),
+    github_url: str = Form(""),
+    linkedin_url: str = Form(""),
+    extra_links_text: str = Form(""),
+    extra_info: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    extra_links = [line.strip() for line in extra_links_text.splitlines() if line.strip()]
+
+    crud.upsert_candidate_profile(
+        session,
+        email=email or None,
+        github_url=github_url or None,
+        linkedin_url=linkedin_url or None,
+        extra_links=extra_links,
+        extra_info=extra_info or None,
+    )
+
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/resume")
+def upload_resume(
+    resume_file: UploadFile,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    file_path = _save_upload(resume_file)
+    raw_text = extract_text(file_path)
+
+    task_id = run_tracked_task(
+        "resume_structuring",
+        _structure_and_save_resume,
+        raw_text,
+        resume_file.filename,
+        lang,
+    )
+
+    return JSONResponse({"status": "processing", "task_id": task_id})
+
+
+def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -> dict:
+    session = SessionLocal()
+    try:
+        provider = get_llm_provider()
+        structured_content = structure_resume_text(provider, raw_text, language=lang)
+
+        resume = crud.create_resume_version(
+            session,
+            source_type="resume",
+            raw_text=raw_text,
+            structured_content=structured_content,
+            label=filename,
+            is_active=True,
+        )
+        return {"resume_version_id": resume.id, "structured_content": structured_content}
+    finally:
+        session.close()
+
+
+@router.post("/linkedin")
+def submit_linkedin(
+    linkedin_text: str = Form(...),
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    task_id = run_tracked_task(
+        "linkedin_structuring", _structure_and_save_linkedin, linkedin_text, lang
+    )
+    return JSONResponse({"status": "processing", "task_id": task_id})
+
+
+def _structure_and_save_linkedin(linkedin_text: str, lang: str = "en") -> dict:
+    session = SessionLocal()
+    try:
+        provider = get_llm_provider()
+        structured_content = structure_linkedin_text(provider, linkedin_text, language=lang)
+
+        resume = crud.create_resume_version(
+            session,
+            source_type="linkedin",
+            raw_text=linkedin_text,
+            structured_content=structured_content,
+            label="LinkedIn experience",
+            is_active=True,
+        )
+        return {"resume_version_id": resume.id, "structured_content": structured_content}
+    finally:
+        session.close()
+
+
+@router.post("/blockers")
+def add_blocker(text: str = Form(...), session: Session = Depends(get_session)):
+    existing = crud.list_blocker_rules(session)
+    blocker = crud.create_blocker_rule(session, text=text, order=len(existing))
+    return JSONResponse({"id": blocker.id, "text": blocker.text})
+
+
+@router.post("/blockers/{blocker_id}/delete")
+def delete_blocker(blocker_id: int, session: Session = Depends(get_session)):
+    crud.delete_blocker_rule(session, blocker_id)
+    return JSONResponse({"status": "ok", "id": blocker_id})
+
+
+@router.post("/scoring-factors")
+def add_scoring_factor(
+    text: str = Form(...),
+    direction: str = Form(...),
+    weight: int = Form(...),
+    session: Session = Depends(get_session),
+):
+    existing = crud.list_scoring_factors(session)
+    factor = crud.create_scoring_factor(
+        session, text=text, direction=direction, weight=weight, order=len(existing)
+    )
+    return JSONResponse(
+        {"id": factor.id, "text": factor.text, "direction": factor.direction, "weight": factor.weight}
+    )
+
+
+@router.post("/scoring-factors/{factor_id}/delete")
+def delete_scoring_factor(factor_id: int, session: Session = Depends(get_session)):
+    crud.delete_scoring_factor(session, factor_id)
+    return JSONResponse({"status": "ok", "id": factor_id})
+
+
+
+ui/settings_page/templates/settings.html
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>{{ t.about_me_title }}</h1>
+
+<div class="card">
+    <h3>{{ t.contacts_links }}</h3>
+    <form method="post" action="/settings/profile" id="profile-form">
+        <label for="email">{{ t.email_label }}</label>
+        <input type="text" name="email" id="email" value="{{ profile.email if profile else '' }}">
+
+        <label for="github_url">{{ t.github_label }}</label>
+        <input type="text" name="github_url" id="github_url" value="{{ profile.github_url if profile else '' }}">
+
+        <label for="linkedin_url">{{ t.linkedin_label }}</label>
+        <input type="text" name="linkedin_url" id="linkedin_url" value="{{ profile.linkedin_url if profile else '' }}">
+
+        <label for="extra_links_text">{{ t.extra_links_label }}</label>
+        <textarea name="extra_links_text" id="extra_links_text">{% if profile and profile.extra_links %}{{ profile.extra_links | join('\n') }}{% endif %}</textarea>
+
+        <label for="extra_info">{{ t.extra_info_label }}</label>
+        <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}">{{ profile.extra_info if profile else '' }}</textarea>
+
+        <button type="submit" class="btn">{{ t.btn_save }}</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>{{ t.resume_title }}</h3>
+    <p class="salary-line" id="resume-active-label">{{ t.active_label }} {{ active_resume.label if active_resume else t.none_set }}</p>
+    <form method="post" action="/settings/resume" enctype="multipart/form-data" id="resume-form">
+        <label for="resume_file">{{ t.resume_upload_label }}</label>
+        <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx,.txt">
+        <button type="submit" class="btn">{{ t.upload_parse_button }}</button>
+    </form>
+    <p class="salary-line" id="resume-status"></p>
+
+    <div id="resume-parsed-blocks">
+    {% if active_resume and active_resume.structured_content %}
+    <h3>{{ t.parsed_blocks }}</h3>
+    <ul class="blocker-list">
+        {% if active_resume.structured_content.summary %}
+        <li>Summary: {{ active_resume.structured_content.summary }}</li>
+        {% endif %}
+        {% for entry in active_resume.structured_content.experience %}
+        <li>{{ entry.company }} - {{ entry.role }} ({{ entry.dates }})</li>
+        {% endfor %}
+        {% for group in active_resume.structured_content.skills %}
+        <li>{{ group.label }}: {{ group['items'] | join(', ') }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>{{ t.linkedin_title }}</h3>
+    <p class="salary-line" id="linkedin-active-label">{{ t.active_label }} {{ active_linkedin.label if active_linkedin else t.none_set }}</p>
+    <form method="post" action="/settings/linkedin" id="linkedin-form">
+        <label for="linkedin_text">{{ t.linkedin_text_label }}</label>
+        <textarea name="linkedin_text" id="linkedin_text"></textarea>
+        <button type="submit" class="btn">{{ t.save_parse_button }}</button>
+    </form>
+    <p class="salary-line" id="linkedin-status"></p>
+
+    <div id="linkedin-parsed-blocks">
+    {% if active_linkedin and active_linkedin.structured_content %}
+    <h3>{{ t.parsed_blocks }}</h3>
+    <ul class="blocker-list">
+        {% for entry in active_linkedin.structured_content.experience %}
+        <li>{{ entry.company }} - {{ entry.role }} ({{ entry.dates }})</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    </div>
+</div>
+
+<h1>{{ t.matching_title }}</h1>
+
+<div class="card">
+    <h3>{{ t.blockers_title }}</h3>
+    <ul class="blocker-list" id="blocker-list">
+        {% for blocker in blockers %}
+        <li data-blocker-id="{{ blocker.id }}">
+            <span>{{ blocker.text }}</span>
+            <button type="button" class="btn-ghost btn blocker-remove-btn" data-blocker-id="{{ blocker.id }}">Remove</button>
+        </li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/settings/blockers" id="blocker-form">
+        <label for="blocker_text">{{ t.new_blocker_label }}</label>
+        <input type="text" name="text" id="blocker_text" placeholder="{{ t.new_blocker_placeholder }}">
+        <button type="submit" class="btn">{{ t.add_blocker_button }}</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>{{ t.scoring_factors }}</h3>
+    <ul class="blocker-list" id="scoring-factor-list">
+        {% for factor in scoring_factors %}
+        <li data-factor-id="{{ factor.id }}">
+            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
+                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+            </span>
+            <span>{{ factor.text }}</span>
+            <button type="button" class="btn-ghost btn factor-remove-btn" data-factor-id="{{ factor.id }}">Remove</button>
+        </li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/settings/scoring-factors" id="scoring-factor-form">
+        <label for="factor_text">{{ t.new_factor_label }}</label>
+        <input type="text" name="text" id="factor_text" placeholder="{{ t.new_factor_placeholder }}">
+
+        <label for="factor_direction">{{ t.direction_label }}</label>
+        <select name="direction" id="factor_direction">
+            <option value="plus">{{ t.direction_plus }}</option>
+            <option value="minus">{{ t.direction_minus }}</option>
+        </select>
+
+        <label for="factor_weight">{{ t.weight_label }}</label>
+        <select name="weight" id="factor_weight">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
+
+        <button type="submit" class="btn">{{ t.add_factor_button }}</button>
+    </form>
+</div>
+
+<script>
+const I18N = {{ t | tojson }};
+
+bindAjaxForm("profile-form", () => {});
+
+bindAjaxForm("resume-form", (data) => {
+    document.getElementById("resume-status").textContent = I18N.parsing_resume;
+    document.getElementById("resume-form").reset();
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("resume-status").textContent = I18N.done;
+            document.getElementById("resume-active-label").textContent =
+                I18N.active_label + " " + (task.result.structured_content.name || "uploaded resume");
+            renderParsedBlocks("resume-parsed-blocks", task.result.structured_content);
+        } else if (task.status === "failed") {
+            document.getElementById("resume-status").textContent = I18N.failed + " " + task.error;
+        }
+    });
+});
+
+bindAjaxForm("linkedin-form", (data) => {
+    document.getElementById("linkedin-status").textContent = I18N.parsing_linkedin;
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("linkedin-status").textContent = I18N.done;
+            document.getElementById("linkedin-active-label").textContent = I18N.active_label + " " + I18N.linkedin_active_default;
+            renderParsedBlocks("linkedin-parsed-blocks", task.result.structured_content);
+        } else if (task.status === "failed") {
+            document.getElementById("linkedin-status").textContent = I18N.failed + " " + task.error;
+        }
+    });
+});
+
+function renderParsedBlocks(containerId, content) {
+    const container = document.getElementById(containerId);
+    let html = `<h3>${I18N.parsed_blocks}</h3><ul class="blocker-list">`;
+    if (content.summary) {
+        html += `<li>${I18N.summary_prefix} ${content.summary}</li>`;
+    }
+    (content.experience || []).forEach((entry) => {
+        html += `<li>${entry.company} - ${entry.role} (${entry.dates})</li>`;
+    });
+    (content.skills || []).forEach((group) => {
+        html += `<li>${group.label}: ${group.items.join(", ")}</li>`;
+    });
+    html += "</ul>";
+    container.innerHTML = html;
+}
+
+bindAjaxForm("blocker-form", (data) => {
+    const list = document.getElementById("blocker-list");
+    const item = document.createElement("li");
+    item.dataset.blockerId = data.id;
+    item.innerHTML = `<span>${data.text}</span> <button type="button" class="btn-ghost btn blocker-remove-btn" data-blocker-id="${data.id}">Remove</button>`;
+    list.appendChild(item);
+    document.getElementById("blocker-form").reset();
+});
+
+document.getElementById("blocker-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("blocker-remove-btn")) {
+        return;
+    }
+    const blockerId = event.target.dataset.blockerId;
+    await fetch(`/settings/blockers/${blockerId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+
+document.getElementById("scoring-factor-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("factor-remove-btn")) {
+        return;
+    }
+    const factorId = event.target.dataset.factorId;
+    await fetch(`/settings/scoring-factors/${factorId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+
+bindAjaxForm("scoring-factor-form", (data) => {
+    const list = document.getElementById("scoring-factor-list");
+    const item = document.createElement("li");
+    item.dataset.factorId = data.id;
+    const signClass = data.direction === "plus" ? "factor-sign-plus" : "factor-sign-minus";
+    const signChar = data.direction === "plus" ? "+" : "-";
+    item.innerHTML = `<span class="factor-sign ${signClass}">${signChar.repeat(data.weight)}</span> <span>${data.text}</span> <button type="button" class="btn-ghost btn factor-remove-btn" data-factor-id="${data.id}">Remove</button>`;
+    list.appendChild(item);
+    document.getElementById("scoring-factor-form").reset();
+});
+
+document.getElementById("scoring-factor-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("factor-remove-btn")) {
+        return;
+    }
+    const factorId = event.target.dataset.factorId;
+    await fetch(`/settings/scoring-factors/${factorId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+</script>
+{% endblock %}
+
+
+
+ui/tasks_page/__init__.py
+
+
+
+
+ui/tasks_page/router.py
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from core.db.crud import task_statuses as task_statuses_crud
+from core.db.session import get_session
+
+router = APIRouter(prefix="/api/tasks")
+
+
+@router.get("/status")
+def task_status(ids: str, session: Session = Depends(get_session)):
+    task_ids = [int(item) for item in ids.split(",") if item.strip()]
+    tasks = task_statuses_crud.list_task_statuses(session, task_ids)
+
+    return {
+        "tasks": [
+            {
+                "id": task.id,
+                "status": task.status,
+                "result": task.result,
+                "error": task.error,
+            }
+            for task in tasks
+        ]
+    }
+
+
+

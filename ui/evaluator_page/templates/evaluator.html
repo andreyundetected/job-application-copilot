@@ -3,28 +3,28 @@
 {% block title %}Evaluator{% endblock %}
 
 {% block content %}
-<h1 id="page-title">Job Fit Evaluator</h1>
+<h1 id="page-title">{{ t.page_title }}</h1>
 
 <form method="post" class="card" id="evaluator-form">
-    <label for="job_posting_text">Job posting text</label>
-    <textarea name="job_posting_text" id="job_posting_text" placeholder="Paste the job posting here..."></textarea>
+    <label for="job_posting_text">{{ t.job_posting_label }}</label>
+    <textarea name="job_posting_text" id="job_posting_text" placeholder="{{ t.job_posting_placeholder }}"></textarea>
 
-    <label for="extra_info">Additional context (optional)</label>
-    <textarea name="extra_info" id="extra_info" placeholder="Anything not covered above..."></textarea>
+    <label for="extra_info">{{ t.extra_info_label }}</label>
+    <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}"></textarea>
 
     <p class="salary-line">
-        Using resume: {{ active_resume.label if active_resume else "none set" }}
-        · LinkedIn: {{ active_linkedin.label if active_linkedin else "none set" }}
+        {{ t.using_resume }} {{ active_resume.label if active_resume else t.none_set }}
+        · {{ t.linkedin }} {{ active_linkedin.label if active_linkedin else t.none_set }}
     </p>
 
-    <h3>Active blockers</h3>
+    <h3>{{ t.active_blockers }}</h3>
     <ul class="blocker-list">
         {% for blocker in blockers %}
         <li>{{ blocker.text }}</li>
         {% endfor %}
     </ul>
 
-    <h3>Scoring factors</h3>
+    <h3>{{ t.scoring_factors }}</h3>
     <ul class="blocker-list">
         {% for factor in scoring_factors %}
         <li>
@@ -64,7 +64,7 @@ function renderResult(result) {
 
     let matchedFactorsHtml = "";
     if (result.matched_factors && result.matched_factors.length > 0) {
-        matchedFactorsHtml = '<h3>Matched factors</h3><ul class="matched-factor-list">';
+        matchedFactorsHtml = `<h3>${I18N.matched_factors}</h3><ul class="matched-factor-list">`;
         result.matched_factors.forEach((factor) => {
             const signClass = factor.direction === "plus" ? "factor-sign-plus" : "factor-sign-minus";
             const signChar = factor.direction === "plus" ? "+" : "-";
@@ -102,11 +102,11 @@ function renderResult(result) {
 
             <div class="pros-cons-grid">
                 <div>
-                    <h3>Pros</h3>
+                    <h3>${I18N.pros}</h3>
                     <ul class="pros">${prosHtml}</ul>
                 </div>
                 <div>
-                    <h3>Cons</h3>
+                    <h3>${I18N.cons}</h3>
                     <ul class="cons">${consHtml}</ul>
                 </div>
             </div>

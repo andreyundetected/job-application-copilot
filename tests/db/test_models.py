@@ -22,6 +22,7 @@ def test_create_job_posting(db_session):
     fetched = db_session.query(JobPosting).first()
     assert fetched.raw_text == "some job text"
     assert fetched.company == "Acme"
+    assert fetched.archived is False
 
 
 @pytest.mark.db

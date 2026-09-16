@@ -11,6 +11,16 @@ _env = Environment(
 )
 
 
-def render_structure_prompt(raw_text: str, source_label: str) -> str:
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "ru": "Russian",
+}
+
+
+def render_structure_prompt(raw_text: str, source_label: str, language: str = "en") -> str:
     template = _env.get_template("structure_prompt.jinja")
-    return template.render(raw_text=raw_text, source_label=source_label)
+    return template.render(
+        raw_text=raw_text,
+        source_label=source_label,
+        output_language=_LANGUAGE_NAMES.get(language, "English"),
+    )

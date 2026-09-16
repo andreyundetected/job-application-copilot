@@ -224,3 +224,5 @@ __marimo__/
 resume_source/
 *.sqlite3
 *.sqlite3-journal
+context.py
+ac.txt
