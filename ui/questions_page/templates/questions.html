@@ -4,166 +4,546 @@
 
 {% block content %}
 <style>
+main { max-width: 100%; width: 100%; padding-bottom: 0; }
+
+.questions-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(300px, 360px);
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
+    height: calc(100vh - 60px);
+}
+
+.copilot-panel, .questions-column, .side-column {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+}
+.copilot-panel { display: flex; flex-direction: column; overflow-y: hidden; }
+
+.copilot-panel::-webkit-scrollbar, .questions-column::-webkit-scrollbar, .side-column::-webkit-scrollbar { width: 7px; }
+.copilot-panel::-webkit-scrollbar-thumb, .questions-column::-webkit-scrollbar-thumb, .side-column::-webkit-scrollbar-thumb {
+    background-color: var(--border-hover); border-radius: 999px;
+}
+
+.chat-stream { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+.chat-message {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+.chat-message.role-user { background: var(--accent-soft); border-color: transparent; border-left: 3px solid var(--accent); }
+.chat-message.pending .loading-dot { margin-left: 6px; }
+
+.selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.selected-chip button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; padding: 0; }
+
+.select-hint { font-size: 11px; color: var(--text-tertiary); margin: 0 0 8px; }
+
+.chat-input-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; }
+.chat-input-row textarea { min-height: 44px; max-height: 100px; }
+.chat-input-row textarea:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-elevated); }
+
+.send-btn {
+    margin-top: 0 !important; width: 42px; height: 42px; padding: 0 !important;
+    border-radius: 999px !important; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+}
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.send-btn svg { width: 18px; height: 18px; }
+
 .question-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 18px 20px;
-    margin-bottom: 14px;
-}
-
-.question-text {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.question-meta {
-    display: flex;
-    gap: 6px;
+    padding: 16px 18px;
     margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
 }
+.question-card:hover { transform: translateY(-1px); border-color: var(--border-hover); }
+.question-card.flagged { border-left-color: var(--score-low); }
+.question-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.question-card.pending { opacity: 0.6; cursor: default; }
 
-.answer-textarea {
-    width: 100%;
-    min-height: 90px;
-}
+.question-text { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.question-meta { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 
-.question-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    align-items: center;
-}
+.answer-body { font-size: 13px; color: var(--text-primary); white-space: pre-wrap; line-height: 1.5; }
 
-.question-actions .btn,
-.question-actions .btn-ghost {
-    margin-top: 0;
-    padding: 7px 12px;
-    font-size: 12.5px;
-}
+.question-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.question-actions .btn, .question-actions .btn-ghost { margin-top: 0; padding: 6px 11px; font-size: 12.5px; }
 
-.notice-line {
-    font-size: 12.5px;
-    color: var(--score-mid);
-    background-color: var(--score-mid-soft);
+.notice-line { font-size: 12.5px; color: var(--score-mid); background-color: var(--score-mid-soft); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 10px; }
+.notice-line.flag { color: var(--score-low); background-color: var(--score-low-soft); }
+
+.change-inline {
+    border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    margin-bottom: 10px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    background: var(--accent-soft);
 }
+.change-inline-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 6px; }
+.change-inline-proposed { font-size: 13px; white-space: pre-wrap; margin-bottom: 8px; }
+.change-inline-buttons { display: flex; gap: 6px; }
+.change-inline-buttons .btn, .change-inline-buttons .btn-ghost { margin-top: 0; padding: 5px 10px; font-size: 12px; }
+
+.manual-add-form { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.manual-add-form.open { display: block; }
+
+.raw-text-block { font-size: 12px; color: var(--text-secondary); white-space: pre-wrap; max-height: 260px; overflow-y: auto; line-height: 1.5; }
+
+.attention-list { list-style: none; padding: 0; margin: 0; }
+.attention-list li { font-size: 12.5px; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text-secondary); }
+.attention-list li:hover { color: var(--text-primary); }
+.attention-list li:last-child { border-bottom: none; }
+
+.copy-btn { background: none; border: 1px solid var(--border); color: var(--text-secondary); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+.copy-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
 </style>
 
-<h1>{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+<div class="questions-layout">
+    <div class="side-column">
+        <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <h3 style="margin:0;">{{ t.job_info_title }}</h3>
+                {% if score is not none %}
+                <div class="score-badge" style="width:32px;height:32px;font-size:14px;{% if score >= 7 %}background-color:var(--score-high-soft);color:var(--score-high);{% elif score >= 4 %}background-color:var(--score-mid-soft);color:var(--score-mid);{% else %}background-color:var(--score-low-soft);color:var(--score-low);{% endif %}">{{ score }}</div>
+                {% endif %}
+            </div>
+            <div class="badge-row">
+                {% if location %}<span class="badge">{{ location }}</span>{% endif %}
+                {% if work_mode %}<span class="badge badge-work-mode">{{ work_mode }}</span>{% endif %}
+            </div>
+            {% if salary and salary.original_text %}<p class="salary-line">{{ salary.original_text }}</p>{% endif %}
+        </div>
 
-<div class="card">
-    <label for="raw-questions">{{ t.paste_label }}</label>
-    <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
-    <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
-    <p class="salary-line" id="process-status"></p>
-</div>
+        <div class="card">
+            <h3 style="margin:0 0 8px;">{{ t.progress_title }}</h3>
+            <p class="salary-line" id="progress-text"></p>
+            <ul class="attention-list" id="attention-list"></ul>
+        </div>
 
-<div id="questions-list">
-    {% if not questions %}
-    <p class="salary-line" id="empty-hint">{{ t.empty_state }}</p>
-    {% endif %}
-    {% for question in questions %}
-    {% include "question_card.html" %}
-    {% endfor %}
+        <div class="card">
+            <h3 style="margin:0 0 8px;">{{ t.raw_text_title }}</h3>
+            <div class="raw-text-block">{{ job.raw_text }}</div>
+        </div>
+    </div>
+
+    <div class="questions-column">
+        <div class="card">
+            <label for="raw-questions">{{ t.paste_label }}</label>
+            <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
+            <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
+            <p class="salary-line" id="process-status"></p>
+
+            <button type="button" class="btn-ghost btn" id="btn-toggle-manual" style="margin-top:18px;">{{ t.add_question_button }}</button>
+            <div class="manual-add-form" id="manual-add-form">
+                <label for="manual-question-text">{{ t.paste_label }}</label>
+                <textarea id="manual-question-text" placeholder="{{ t.manual_question_placeholder }}" style="min-height:70px;"></textarea>
+                <label for="manual-question-category">{{ t.manual_type_label }}</label>
+                <select id="manual-question-category">
+                    <option value="general">{{ t.category_general }}</option>
+                    <option value="cover_letter">{{ t.category_cover_letter }}</option>
+                    <option value="summary">{{ t.category_summary }}</option>
+                </select>
+                <label for="manual-char-limit">{{ t.manual_char_limit_label }}</label>
+                <input type="text" inputmode="numeric" id="manual-char-limit" placeholder="{{ t.manual_char_limit_placeholder }}" style="max-width:140px;">
+                <button type="button" class="btn" id="btn-add-manual">{{ t.add_question_button }}</button>
+            </div>
+        </div>
+
+        <div id="questions-list">
+            {% if not questions %}
+            <p class="salary-line" id="empty-hint">{{ t.empty_state }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="copilot-panel card">
+        <div id="chat-stream" class="chat-stream"></div>
+
+        <div id="selected-bar"></div>
+        <p class="select-hint" id="select-hint">{{ t.select_hint }}</p>
+
+        <div class="chat-input-row">
+            <textarea id="chat-input" placeholder="{{ t.chat_placeholder }}" rows="1"></textarea>
+            <button type="button" class="btn send-btn" id="btn-send" title="{{ t.send_button }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
-const I18N = {{ t | tojson }};
-const APPLICATION_ID = {{ application.id }};
+(function () {
+    const I18N = {{ t | tojson }};
+    const APPLICATION_ID = {{ application.id }};
 
-function categoryLabel(category) {
-    if (!category) return "";
-    return I18N["category_" + category] || category;
-}
+    const state = {
+        questions: {{ questions | tojson }},
+        changesByQuestion: {},
+        selectedId: null,
+    };
 
-function typeLabel(type) {
-    return I18N["type_" + type] || type;
-}
-
-function renderQuestionCard(question) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "question-card";
-    wrapper.dataset.questionId = question.id;
-
-    let noticeHtml = "";
-    if (question.needs_manual_input && question.answer_type !== "other") {
-        noticeHtml = `<div class="notice-line">${I18N.manual_review_notice}</div>`;
-    } else if (question.answer_type === "other") {
-        noticeHtml = `<div class="notice-line">${I18N.other_notice}</div>`;
-    }
-
-    const showDownload = question.answer_type === "document" && question.answer_text;
-
-    wrapper.innerHTML = `
-        <div class="question-text">${question.question_text.replace(/</g, "&lt;")}</div>
-        <div class="question-meta">
-            <span class="badge">${typeLabel(question.answer_type)}</span>
-            ${question.category ? `<span class="badge badge-tag">${categoryLabel(question.category)}</span>` : ""}
-        </div>
-        ${noticeHtml}
-        ${question.answer_type !== "other" ? `<textarea class="answer-textarea">${question.answer_text || ""}</textarea>` : ""}
-        <div class="question-actions">
-            ${question.answer_type !== "other" ? `<button type="button" class="btn save-btn">${I18N.save_button}</button>` : ""}
-            ${showDownload ? `<a class="btn-ghost btn" href="/questions/${question.id}/download?format=docx">${I18N.download_docx}</a>` : ""}
-            ${showDownload ? `<a class="btn-ghost btn" href="/questions/${question.id}/download?format=pdf">${I18N.download_pdf}</a>` : ""}
-            <button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button>
-        </div>
-    `;
-    return wrapper;
-}
-
-document.getElementById("questions-list").addEventListener("click", async (e) => {
-    const card = e.target.closest(".question-card");
-    if (!card) return;
-    const questionId = card.dataset.questionId;
-
-    if (e.target.classList.contains("save-btn")) {
-        const textarea = card.querySelector(".answer-textarea");
-        const formData = new FormData();
-        formData.append("answer_text", textarea.value);
-        await fetch(`/questions/${questionId}/answer`, { method: "POST", body: formData });
-        showToast(I18N.save_button, "success");
-    } else if (e.target.classList.contains("delete-btn")) {
-        await fetch(`/questions/${questionId}/delete`, { method: "POST" });
-        card.remove();
-    }
-});
-
-document.getElementById("btn-process").addEventListener("click", async () => {
-    const rawText = document.getElementById("raw-questions").value.trim();
-    if (!rawText) return;
-
-    document.getElementById("process-status").textContent = I18N.processing;
-
-    const formData = new FormData();
-    formData.append("raw_text", rawText);
-
-    const response = await fetch(`/questions/application/${APPLICATION_ID}/submit`, {
-        method: "POST",
-        body: formData,
+    ({{ changes | tojson }}).forEach((c) => {
+        if (c.status !== "pending") return;
+        state.changesByQuestion[c.question_id] = c;
     });
-    const data = await response.json();
 
-    pollTaskStatus([data.task_id], (tasks) => {
-        const task = tasks[0];
-        if (task.status === "done") {
-            document.getElementById("process-status").textContent = "";
-            const hint = document.getElementById("empty-hint");
-            if (hint) hint.remove();
-            const list = document.getElementById("questions-list");
-            task.result.questions.forEach((question) => {
-                list.appendChild(renderQuestionCard(question));
+    const questionsList = document.getElementById("questions-list");
+    const chatStream = document.getElementById("chat-stream");
+    const selectedBar = document.getElementById("selected-bar");
+    const selectHint = document.getElementById("select-hint");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("btn-send");
+    const attentionList = document.getElementById("attention-list");
+    const progressText = document.getElementById("progress-text");
+
+    function categoryLabel(category) {
+        return I18N["category_" + (category || "general")] || category;
+    }
+
+    function isFlagged(q) {
+        return q.needs_manual_input && q.flag_reason;
+    }
+
+    function sortedQuestions() {
+        return [...state.questions].sort((a, b) => (isFlagged(a) ? 0 : 1) - (isFlagged(b) ? 0 : 1));
+    }
+
+    function renderProgress() {
+        const total = state.questions.length;
+        const answered = state.questions.filter((q) => q.answer_text && !isFlagged(q)).length;
+        progressText.textContent = `${I18N.answered_prefix} ${answered} / ${total}`;
+
+        const flagged = state.questions.filter(isFlagged);
+        attentionList.innerHTML = "";
+        flagged.forEach((q) => {
+            const li = document.createElement("li");
+            li.textContent = q.question_text.slice(0, 60) + (q.question_text.length > 60 ? "…" : "");
+            li.addEventListener("click", () => {
+                const card = questionsList.querySelector(`[data-question-id="${q.id}"]`);
+                if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+                selectQuestion(q.id);
             });
-            document.getElementById("raw-questions").value = "";
-        } else if (task.status === "failed") {
-            document.getElementById("process-status").textContent = `Error: ${task.error}`;
+            attentionList.appendChild(li);
+        });
+    }
+
+    function questionCardHtml(q) {
+        const flagged = isFlagged(q);
+        const isPending = !!q.pending_task_id;
+        const change = state.changesByQuestion[q.id];
+
+        let noticeHtml = "";
+        if (flagged) {
+            noticeHtml = `<div class="notice-line flag">${I18N.manual_review_notice} ${(q.flag_reason || "").replace(/</g, "&lt;")}</div>`;
+        }
+
+        let bodyHtml = "";
+        if (q.answer_text) {
+            bodyHtml = `<div class="answer-body">${q.answer_text.replace(/</g, "&lt;")}</div>`;
+        } else if (!isPending) {
+            bodyHtml = `<p class="salary-line">${I18N.not_generated_yet}</p>`;
+        }
+
+        let changeHtml = "";
+        if (change) {
+            changeHtml = `
+                <div class="change-inline" data-change-id="${change.id}">
+                    <div class="change-inline-label">${I18N.proposed_change_label}</div>
+                    <div class="change-inline-proposed">${(change.proposed_text || "").replace(/</g, "&lt;")}</div>
+                    <div class="change-inline-buttons">
+                        <button type="button" class="btn approve-btn">${I18N.apply_button}</button>
+                        <button type="button" class="btn-ghost btn skip-btn">${I18N.skip_button}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        let actionsHtml = "";
+        if (q.answer_text && !isPending) {
+            actionsHtml = `<div class="question-actions"><button type="button" class="copy-btn copy-answer-btn">${I18N.copy_button}</button><button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button></div>`;
+        } else {
+            actionsHtml = `<div class="question-actions"><button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button></div>`;
+        }
+
+        return `
+            <div class="question-text">${q.question_text.replace(/</g, "&lt;")}</div>
+            <div class="question-meta">
+                <span class="badge badge-tag">${categoryLabel(q.category)}</span>
+                ${q.char_limit ? `<span class="badge">${q.char_limit} chars max</span>` : ""}
+                ${isPending ? `<span class="badge">${I18N.generating_badge} <span class="loading-dot"></span></span>` : ""}
+            </div>
+            ${noticeHtml}
+            ${bodyHtml}
+            ${changeHtml}
+            ${actionsHtml}
+        `;
+    }
+
+    function renderQuestionsList() {
+        const hint = document.getElementById("empty-hint");
+        if (state.questions.length > 0 && hint) hint.remove();
+
+        questionsList.innerHTML = "";
+        sortedQuestions().forEach((q) => {
+            const card = document.createElement("div");
+            card.className = "question-card";
+            if (isFlagged(q)) card.classList.add("flagged");
+            if (q.pending_task_id) card.classList.add("pending");
+            if (state.selectedId === q.id) card.classList.add("selected");
+            card.dataset.questionId = q.id;
+            card.innerHTML = questionCardHtml(q);
+            questionsList.appendChild(card);
+        });
+        renderProgress();
+    }
+
+    function updateQuestion(updated) {
+        const index = state.questions.findIndex((q) => q.id === updated.id);
+        if (index >= 0) state.questions[index] = updated;
+        else state.questions.push(updated);
+        renderQuestionsList();
+    }
+
+    function renderSelectedBar() {
+        selectedBar.innerHTML = "";
+        selectHint.style.display = state.selectedId ? "none" : "block";
+        if (!state.selectedId) return;
+
+        const q = state.questions.find((item) => item.id === state.selectedId);
+        if (!q) return;
+
+        const chip = document.createElement("span");
+        chip.className = "selected-chip";
+        chip.innerHTML = `${q.question_text.slice(0, 40)}${q.question_text.length > 40 ? "…" : ""} <button type="button">&times;</button>`;
+        chip.querySelector("button").addEventListener("click", () => selectQuestion(null));
+        selectedBar.appendChild(chip);
+    }
+
+    function selectQuestion(id) {
+        state.selectedId = state.selectedId === id ? null : id;
+        renderQuestionsList();
+        renderSelectedBar();
+    }
+
+    questionsList.addEventListener("click", async (e) => {
+        const card = e.target.closest(".question-card");
+        if (!card) return;
+        const questionId = parseInt(card.dataset.questionId, 10);
+
+        if (e.target.closest(".change-inline")) {
+            const changeEl = e.target.closest(".change-inline");
+            const changeId = changeEl.dataset.changeId;
+
+            if (e.target.classList.contains("approve-btn")) {
+                await fetch(`/questions/changes/${changeId}/resolve`, {
+                    method: "POST",
+                    body: new URLSearchParams({ action: "approve" }),
+                });
+                const change = state.changesByQuestion[questionId];
+                const q = state.questions.find((item) => item.id === questionId);
+                if (q && change) {
+                    q.answer_text = change.proposed_text;
+                    q.needs_manual_input = false;
+                    q.flag_reason = null;
+                }
+                delete state.changesByQuestion[questionId];
+                renderQuestionsList();
+            } else if (e.target.classList.contains("skip-btn")) {
+                await fetch(`/questions/changes/${changeId}/resolve`, {
+                    method: "POST",
+                    body: new URLSearchParams({ action: "reject" }),
+                });
+                delete state.changesByQuestion[questionId];
+                renderQuestionsList();
+            }
+            return;
+        }
+
+        if (e.target.classList.contains("copy-answer-btn")) {
+            const q = state.questions.find((item) => item.id === questionId);
+            if (q && q.answer_text) {
+                navigator.clipboard.writeText(q.answer_text);
+                showToast(I18N.copied_toast, "success");
+            }
+            return;
+        }
+
+        if (e.target.classList.contains("delete-btn")) {
+            await fetch(`/questions/${questionId}/delete`, { method: "POST" });
+            state.questions = state.questions.filter((q) => q.id !== questionId);
+            if (state.selectedId === questionId) state.selectedId = null;
+            renderQuestionsList();
+            renderSelectedBar();
+            return;
+        }
+
+        selectQuestion(questionId);
+    });
+
+    function appendChatMessage(role, text, pending) {
+        const hint = document.getElementById("empty-chat-hint");
+        if (hint) hint.remove();
+
+        const wrapper = document.createElement("div");
+        wrapper.className = `chat-message role-${role}${pending ? " pending" : ""}`;
+        wrapper.textContent = text;
+        if (pending) {
+            const dot = document.createElement("span");
+            dot.className = "loading-dot";
+            wrapper.appendChild(dot);
+        }
+        chatStream.appendChild(wrapper);
+        chatStream.scrollTop = chatStream.scrollHeight;
+        return wrapper;
+    }
+
+    let isSending = false;
+
+    function setSending(value) {
+        isSending = value;
+        chatInput.disabled = value;
+        sendBtn.disabled = value;
+        chatInput.placeholder = value ? I18N.generating_placeholder : I18N.chat_placeholder;
+    }
+
+    async function sendChat() {
+        const text = chatInput.value.trim();
+        if (isSending || !text) return;
+        setSending(true);
+        appendChatMessage("user", text, false);
+        chatInput.value = "";
+        chatInput.style.height = "auto";
+
+        const pendingWrapper = appendChatMessage("assistant", "", true);
+
+        const response = await fetch(`/questions/application/${APPLICATION_ID}/chat`, {
+            method: "POST",
+            body: new URLSearchParams({
+                user_message: text,
+                question_id: state.selectedId ? String(state.selectedId) : "",
+            }),
+        });
+        const data = await response.json();
+
+        pollTaskStatus([data.task_id], (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                pendingWrapper.classList.remove("pending");
+                pendingWrapper.textContent = task.result.message;
+                if (task.result.change) {
+                    state.changesByQuestion[task.result.change.question_id] = task.result.change;
+                    renderQuestionsList();
+                }
+                setSending(false);
+            } else if (task.status === "failed") {
+                pendingWrapper.classList.remove("pending");
+                pendingWrapper.textContent = `Error: ${task.error}`;
+                setSending(false);
+            }
+        });
+    }
+
+    sendBtn.addEventListener("click", sendChat);
+    chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
         }
     });
-});
+    chatInput.addEventListener("input", () => {
+        chatInput.style.height = "auto";
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
+    });
+
+    document.getElementById("btn-process").addEventListener("click", async () => {
+        const rawText = document.getElementById("raw-questions").value.trim();
+        if (!rawText) return;
+
+        document.getElementById("process-status").textContent = I18N.processing;
+        const response = await fetch(`/questions/application/${APPLICATION_ID}/submit`, {
+            method: "POST",
+            body: new URLSearchParams({ raw_text: rawText }),
+        });
+        const data = await response.json();
+
+        pollTaskStatus([data.task_id], (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                document.getElementById("process-status").textContent = "";
+                document.getElementById("raw-questions").value = "";
+                task.result.questions.forEach((q) => state.questions.push(q));
+                renderQuestionsList();
+            } else if (task.status === "failed") {
+                document.getElementById("process-status").textContent = `${I18N.evaluation_failed || "Failed:"} ${task.error}`;
+            }
+        });
+    });
+
+    document.getElementById("btn-toggle-manual").addEventListener("click", () => {
+        document.getElementById("manual-add-form").classList.toggle("open");
+    });
+
+    document.getElementById("btn-add-manual").addEventListener("click", async () => {
+        const questionText = document.getElementById("manual-question-text").value.trim();
+        if (!questionText) return;
+
+        const response = await fetch(`/questions/application/${APPLICATION_ID}/manual`, {
+            method: "POST",
+            body: new URLSearchParams({
+                question_text: questionText,
+                category: document.getElementById("manual-question-category").value,
+                char_limit: document.getElementById("manual-char-limit").value,
+            }),
+        });
+        const data = await response.json();
+
+        state.questions.push(data.question);
+        renderQuestionsList();
+
+        document.getElementById("manual-question-text").value = "";
+        document.getElementById("manual-char-limit").value = "";
+        document.getElementById("manual-add-form").classList.remove("open");
+    });
+
+    renderQuestionsList();
+    renderSelectedBar();
+
+    if ({{ chat_messages | length }} === 0) {
+        appendChatMessage("assistant", I18N.chat_intro, false);
+    } else {
+        {% for message in chat_messages %}
+        appendChatMessage("{{ message.role }}", {{ message.text | tojson }}, false);
+        {% endfor %}
+    }
+})();
 </script>
 {% endblock %}

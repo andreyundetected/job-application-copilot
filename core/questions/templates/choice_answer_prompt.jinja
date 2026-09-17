@@ -1,0 +1,29 @@
+{% import "_safety_block.jinja" as safety %}
+You pick the correct answer option for a single job application question, on behalf of the candidate, based only on their real background below.
+
+CANDIDATE RESUME
+{{ resume_text }}
+
+CANDIDATE LINKEDIN PROFILE
+{{ linkedin_text }}
+
+{% if extra_info %}
+ADDITIONAL CONTEXT ABOUT THE CANDIDATE
+{{ extra_info }}
+{% endif %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+{{ safety.safety_and_scope_block() }}
+
+THE APPLICATION FORM QUESTION
+{{ question_text }}
+
+THE AVAILABLE OPTIONS (pick exactly one, reproduced verbatim)
+{% for option in options %}
+- {{ option }}
+{% endfor %}
+
+TASK
+Pick the one option above that truthfully applies to the candidate, based only on their real background. Respond with that option's exact text, copied verbatim from the list above - or the escape hatch from the security rule if you can't determine it truthfully.

@@ -287,8 +287,55 @@ class FormQuestion(Base):
     question_text: Mapped[str] = mapped_column(Text)
     answer_type: Mapped[str] = mapped_column(String(32))
     category: Mapped[str] = mapped_column(String(32), nullable=True)
+    options: Mapped[list] = mapped_column(JSON, nullable=True)
+    selected_option: Mapped[str] = mapped_column(String(255), nullable=True)
+    char_limit: Mapped[int] = mapped_column(Integer, nullable=True)
     answer_text: Mapped[str] = mapped_column(Text, nullable=True)
     answer_file_path: Mapped[str] = mapped_column(String(1024), nullable=True)
     needs_manual_input: Mapped[bool] = mapped_column(Boolean, default=False)
+    flag_reason: Mapped[str] = mapped_column(Text, nullable=True)
+    pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
     application: Mapped["Application"] = relationship(back_populates="form_questions")
+    changes: Mapped[list["QuestionChange"]] = relationship(back_populates="question")
+    changes: Mapped[list["QuestionChange"]] = relationship(back_populates="question")
+
+
+
+
+
+class ApplicationChatMessage(Base):
+    __tablename__ = "application_chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    application_id: Mapped[int] = mapped_column(ForeignKey("applications.id"))
+    role: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text)
+    referenced_question_id: Mapped[int] = mapped_column(
+        ForeignKey("form_questions.id"), nullable=True
+    )
+
+    changes: Mapped[list["QuestionChange"]] = relationship(back_populates="chat_message")
+
+
+class QuestionChange(Base):
+    __tablename__ = "question_changes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    question_id: Mapped[int] = mapped_column(ForeignKey("form_questions.id"))
+    chat_message_id: Mapped[int] = mapped_column(
+        ForeignKey("application_chat_messages.id"), nullable=True
+    )
+
+    original_text: Mapped[str] = mapped_column(Text, nullable=True)
+    proposed_text: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+
+    question: Mapped["FormQuestion"] = relationship(back_populates="changes")
+    chat_message: Mapped["ApplicationChatMessage"] = relationship(back_populates="changes")

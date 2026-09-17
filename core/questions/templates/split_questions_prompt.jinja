@@ -1,20 +1,27 @@
-You receive a raw block of text pasted from a job application form. It may contain one or several separate questions or fields, possibly mixed with form labels, instructions, or noise from copy-pasting a web page. Your job is only to split it into individual distinct questions/fields and classify what kind of answer each one needs. You do not answer any of them here.
+You receive a raw block of text pasted from a job application form. It may contain one or several separate questions or fields, mixed with UI noise from copy-pasting a web page - widget-type labels like "Short answer", "Long answer", "Paragraph", "Multiple choice", "Dropdown", "Checkboxes", asterisks marking required fields, and so on. Your job is only to split it into individual distinct questions/fields and classify them. You do not answer any of them here.
 
 RAW PASTED FORM TEXT
 {{ raw_text }}
 
+IMPORTANT - TELL REAL ANSWER OPTIONS APART FROM UI WIDGET LABELS
+Some questions in the pasted text are immediately followed by their actual answer options - most commonly "Yes" / "No", but sometimes a short list of named choices (e.g. a dropdown's items). Those ARE real options and must be captured as "choice" type with each option listed.
+Separately, some questions are followed by a widget-type label like "Short answer", "Long answer", "Paragraph text", "Long text". Those are NOT answer options - they only describe the kind of text field the form uses. Never treat them as options, and never include them in the question text itself. A question followed by one of these labels (or by nothing at all) is free text - classify it as "short_text" or "document" based on the guidance below, never as "choice".
+
 CLASSIFICATION
 For each distinct question or field, decide its answer_type:
-- "short_text": a short factual or free-text answer typed directly into a form field (e.g. years of experience, availability, a short "why us" answer, salary expectations).
-- "document": the field expects a full written document as the answer - a cover letter, a motivation letter, a longer "tell us about yourself" essay, or anything else that reads as a standalone document rather than a form field answer.
-- "other": the field asks for a non-text file upload (a photo, a scanned ID, a portfolio file, a video) or anything that isn't text at all and can't be answered with generated text.
+- "choice": the question is immediately followed by 2 or more real, literal answer options (most commonly Yes/No) that the candidate must pick from.
+- "short_text": a short factual or free-text answer typed directly into a form field (years of experience, availability, a short "why us" answer, salary expectations, numeric answers).
+- "document": the field expects a full written document as the answer - a cover letter, a motivation letter, a longer "tell us about yourself" essay, or anything else that reads as a standalone document rather than a short field answer.
+- "other": the field asks for a non-text file upload (a photo, a scanned ID, a portfolio file, a video) or anything that isn't text at all.
+
+IMPORTANT - ONLY EXTRACT QUESTIONS THAT NEED A WRITTEN ANSWER
+The candidate only wants help with questions that need a genuine written response - cover letters, "tell us about yourself" style summaries, "why do you want this role", project descriptions, or any other open-ended text field. Skip entirely: yes/no questions, simple factual fields (years of experience, availability date, expected salary, visa status), dropdown/choice questions, and anything the candidate can answer in a few words themselves. Do not output a <question> tag for any of these - just omit them.
 
 TASK
-Extract each distinct question as it was actually asked (clean up formatting noise, but do not paraphrase or change its meaning). Skip anything that is clearly not a question or field (page furniture, unrelated boilerplate). If the pasted text contains only one question, output only one.
+Extract each distinct question that needs a written answer, as it was actually asked (clean up formatting noise and required-field markers like "*", but do not paraphrase or change its meaning, and never fold a widget-type label into the question text). Skip anything that is clearly not a question or field (page furniture, unrelated boilerplate), and skip short-answer/choice questions per the rule above. If the pasted text contains only one qualifying question, output only one.
 
 OUTPUT FORMAT
-Respond using only the following tags, with no extra text outside them.
+Respond with this shape (no nested tags, the question text is the tag's content). If the pasted form text shows an explicit character-limit indicator for this field (e.g. a counter like "0/600" or text like "max 600 characters"), set char_limit to that number - otherwise omit the attribute entirely, never guess a number:
+<question type="document" char_limit="explicit numeric limit if shown, omit otherwise">The exact question or field text</question>
 
-<question type="short_text|document|other">The exact question or field label, cleaned of formatting noise</question>
-
-Repeat <question> once per distinct question found, in the order they appeared.
+Repeat <question> once per qualifying question found, in the order they appeared, with no extra text outside these tags. Use type="document" for every question - this pipeline only handles written-answer questions.

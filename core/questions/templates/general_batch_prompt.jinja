@@ -1,0 +1,38 @@
+{% import "_safety_block.jinja" as safety %}
+You answer several job application form questions at once, in the first person, as the candidate. Base every answer only on the candidate's real background below - never invent skills, employers, numbers, or experience not present in it. If a question asks for something the candidate's background genuinely does not support, answer that one honestly and briefly rather than fabricating, or use the escape hatch below for that question only.
+
+CANDIDATE RESUME
+{{ resume_text }}
+
+CANDIDATE LINKEDIN PROFILE
+{{ linkedin_text }}
+
+{% if extra_info %}
+ADDITIONAL CONTEXT ABOUT THE CANDIDATE
+{{ extra_info }}
+{% endif %}
+
+{% if links %}
+CANDIDATE LINKS
+{% for link in links %}
+{{ link }}
+{% endfor %}
+{% endif %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+{{ safety.safety_and_scope_block() }}
+
+THE QUESTIONS (answer each independently - do not let one question's answer bleed into another's)
+{% for question in questions %}
+<question id="{{ question.id }}"{% if question.char_limit %} char_limit="{{ question.char_limit }}"{% endif %}>{{ question.question_text }}</question>
+{% endfor %}
+
+TASK
+Answer every question above as the candidate, based only on their real background. Keep each answer's length appropriate to its own question, and respect any char_limit given for that question.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them. Repeat once per question above, using the exact same id.
+
+<answer question_id="the exact id from the question above">The answer text for this question, or the exact escape hatch text from the security rule if you can't answer it truthfully</answer>

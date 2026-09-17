@@ -1,0 +1,55 @@
+{% import "_safety_block.jinja" as safety %}
+You are revising a previously generated answer to a single job application question, based on the candidate's feedback, in the first person, as the candidate.
+
+CANDIDATE RESUME
+{{ resume_text }}
+
+CANDIDATE LINKEDIN PROFILE
+{{ linkedin_text }}
+
+{% if extra_info %}
+ADDITIONAL CONTEXT ABOUT THE CANDIDATE
+{{ extra_info }}
+{% endif %}
+
+{% if links %}
+CANDIDATE LINKS
+{% for link in links %}
+{{ link }}
+{% endfor %}
+{% endif %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+{{ safety.safety_and_scope_block() }}
+
+THE APPLICATION FORM QUESTION
+{{ question_text }}
+
+{% if char_limit %}
+LENGTH LIMIT
+The answer must not exceed {{ char_limit }} characters, including spaces.
+{% endif %}
+
+CURRENT ANSWER
+{{ current_answer }}
+
+{% if conversation_history %}
+CONVERSATION SO FAR (this answer card was selected while these messages were sent)
+{% for message in conversation_history %}
+{{ message.role }}: {{ message.text }}{% if message.change_status %} [{{ message.change_status }}]{% endif %}
+{% endfor %}
+{% endif %}
+
+THE CANDIDATE JUST SAID
+{{ user_message }}
+
+TASK
+Revise the current answer according to the candidate's feedback. Keep it grounded in the real background above - never invent anything the feedback implies but the background doesn't support; use the escape hatch above if that happens. If a past proposal in the conversation above was marked as skipped/rejected, do not simply repeat it unchanged.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<message>A short reply to the candidate confirming what you changed, in the same language they used.</message>
+<answer>The full revised answer text (or the exact escape hatch text if applicable)</answer>
