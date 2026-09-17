@@ -1,6 +1,16 @@
 DEFAULT_FONT_NAME = "Calibri"
 DEFAULT_CONTACTS_LAYOUT = "inline"
 
+DEFAULT_SECTION_LABELS = {
+    "summary": "SUMMARY",
+    "experience": "EXPERIENCE",
+    "skills": "SKILLS",
+}
+
+
+def section_label(content: dict, key: str) -> str:
+    return (content.get("section_labels") or {}).get(key, DEFAULT_SECTION_LABELS[key])
+
 COLOR_HEX = {
     "black": "#000000",
     "gray": "#595959",

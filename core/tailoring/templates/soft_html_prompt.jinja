@@ -1,0 +1,27 @@
+You propose terminology-only edits to a candidate's resume, which is provided below as HTML, to better match a target job posting. You NEVER invent skills or experience. You only rephrase existing wording (title, job titles, skill terms) or drop/reorder items already present.
+
+RESUME (current HTML)
+{{ resume_html }}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+MATCHED FACTORS
+{% for factor in matched_factors %}
+- {{ factor.text }} ({{ factor.note }})
+{% endfor %}
+
+TASK
+Propose soft-level edits in three possible categories only: "title" (the candidate's main title line), "company_name" (rare - only if a company/role line's job title wording should change, not the company name itself), "skills" (rewording/reordering/dropping skill items, never inventing new ones).
+
+For each proposed edit, find must be the EXACT visible text (plain text only - never include HTML tags) copied character-for-character from the resume above, and must occur exactly once. If you cannot find a unique exact match, do not propose that edit. replace must also be plain text only, no HTML tags.
+
+OUTPUT FORMAT
+Respond using only this format, nothing else outside it:
+
+<change category="title|company_name|skills">
+<find>exact visible plain text from the resume, no HTML tags</find>
+<replace>proposed replacement, plain text only, no HTML tags</replace>
+</change>
+
+Repeat <change> once per proposed edit. Output nothing if you have no changes to propose.

@@ -54,7 +54,25 @@ def _map_skill_group(raw_group) -> dict:
     }
 
 
+DEFAULT_SECTION_LABELS = {
+    "summary": "SUMMARY",
+    "experience": "EXPERIENCE",
+    "skills": "SKILLS",
+}
+
+
 def _parsed_to_content(parsed: dict) -> dict:
+    section_labels = dict(DEFAULT_SECTION_LABELS)
+    summary_label = _first_or_none(parsed.get("section_label_summary", []))
+    experience_label = _first_or_none(parsed.get("section_label_experience", []))
+    skills_label = _first_or_none(parsed.get("section_label_skills", []))
+    if summary_label:
+        section_labels["summary"] = summary_label
+    if experience_label:
+        section_labels["experience"] = experience_label
+    if skills_label:
+        section_labels["skills"] = skills_label
+
     return {
         "name": _first_or_none(parsed.get("name", [])),
         "contacts": parsed.get("contact", []),
@@ -62,6 +80,7 @@ def _parsed_to_content(parsed: dict) -> dict:
         "experience": [_map_experience_entry(entry) for entry in parsed.get("experience", [])],
         "extra_sections": [_map_extra_section(section) for section in parsed.get("extra_section", [])],
         "skills": [_map_skill_group(group) for group in parsed.get("skill_group", [])],
+        "section_labels": section_labels,
     }
 
 
@@ -75,10 +94,6 @@ def structure_profile_text(provider, raw_text: str, source_label: str, language:
 
     parsed = parse_html_like(raw_response)
     return _parsed_to_content(parsed)
-
-
-def structure_resume_text(provider, raw_text: str, language: str = "en") -> dict:
-    return structure_profile_text(provider, raw_text, source_label="resume", language=language)
 
 
 def structure_linkedin_text(provider, raw_text: str, language: str = "en") -> dict:

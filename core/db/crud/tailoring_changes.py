@@ -89,3 +89,55 @@ def resolve_tailoring_change(
     session.commit()
     session.refresh(change)
     return change
+
+
+def supersede_pending_changes(
+    session: Session, session_id: int, field_paths: set[str]
+) -> list[TailoringChange]:
+    if not field_paths:
+        return []
+
+    matches = (
+        session.query(TailoringChange)
+        .filter(
+            TailoringChange.session_id == session_id,
+            TailoringChange.status == "pending",
+            TailoringChange.field_path.in_(field_paths),
+        )
+        .all()
+    )
+
+    for change in matches:
+        change.status = "superseded"
+
+    session.commit()
+    for change in matches:
+        session.refresh(change)
+
+    return matches
+
+
+def supersede_pending_changes_by_original(
+    session: Session, session_id: int, originals: set[str]
+) -> list[TailoringChange]:
+    if not originals:
+        return []
+
+    matches = (
+        session.query(TailoringChange)
+        .filter(
+            TailoringChange.session_id == session_id,
+            TailoringChange.status == "pending",
+            TailoringChange.original_text.in_(originals),
+        )
+        .all()
+    )
+
+    for change in matches:
+        change.status = "superseded"
+
+    session.commit()
+    for change in matches:
+        session.refresh(change)
+
+    return matches

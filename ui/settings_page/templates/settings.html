@@ -37,20 +37,9 @@
     </form>
     <p class="salary-line" id="resume-status"></p>
 
-    <div id="resume-parsed-blocks">
-    {% if active_resume and active_resume.structured_content %}
-    <h3>{{ t.parsed_blocks }}</h3>
-    <ul class="blocker-list">
-        {% if active_resume.structured_content.summary %}
-        <li>Summary: {{ active_resume.structured_content.summary }}</li>
-        {% endif %}
-        {% for entry in active_resume.structured_content.experience %}
-        <li>{{ entry.company }} - {{ entry.role }} ({{ entry.dates }})</li>
-        {% endfor %}
-        {% for group in active_resume.structured_content.skills %}
-        <li>{{ group.label }}: {{ group['items'] | join(', ') }}</li>
-        {% endfor %}
-    </ul>
+    <div id="resume-parsed-blocks" style="background:#fff;color:#111;padding:16px;border-radius:8px;">
+    {% if active_resume and active_resume.content_html %}
+    {{ active_resume.content_html | safe }}
     {% endif %}
     </div>
 </div>
@@ -142,9 +131,8 @@ bindAjaxForm("resume-form", (data) => {
         const task = tasks[0];
         if (task.status === "done") {
             document.getElementById("resume-status").textContent = I18N.done;
-            document.getElementById("resume-active-label").textContent =
-                I18N.active_label + " " + (task.result.structured_content.name || "uploaded resume");
-            renderParsedBlocks("resume-parsed-blocks", task.result.structured_content);
+            document.getElementById("resume-active-label").textContent = I18N.active_label + " uploaded resume";
+            document.getElementById("resume-parsed-blocks").innerHTML = task.result.content_html;
         } else if (task.status === "failed") {
             document.getElementById("resume-status").textContent = I18N.failed + " " + task.error;
         }

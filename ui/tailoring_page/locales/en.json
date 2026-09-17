@@ -1,0 +1,16 @@
+{
+    "page_title": "Resume Tailoring",
+    "propose_soft_button": "Soft",
+    "propose_medium_button": "Medium",
+    "soft_hint": "Titles, job titles, skills selection — terminology only, nothing rewritten",
+    "medium_hint": "Summary and experience — keywords woven in, not heavily rewritten",
+    "chat_placeholder": "Ask the copilot to change something...",
+    "send_button": "Send",
+    "apply_button": "Apply",
+    "skip_button": "Skip",
+    "only_this_element": "Only this element",
+    "empty_chat": "No proposals yet — click Soft or Medium, or write to the copilot directly.",
+    "level_soft": "soft",
+    "level_medium": "medium",
+    "level_custom": "chat"
+}

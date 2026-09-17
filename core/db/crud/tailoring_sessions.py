@@ -8,12 +8,14 @@ def create_tailoring_session(
     job_posting_id: int,
     resume_version_id: int,
     working_content: dict,
+    working_html: str | None = None,
     style: dict | None = None,
 ) -> TailoringSession:
     tailoring_session = TailoringSession(
         job_posting_id=job_posting_id,
         resume_version_id=resume_version_id,
         working_content=working_content,
+        working_html=working_html,
         style=style or {},
     )
     session.add(tailoring_session)
@@ -52,6 +54,18 @@ def update_style(session: Session, tailoring_session_id: int, style: dict) -> Ta
     if tailoring_session is None:
         return None
     tailoring_session.style = style
+    session.commit()
+    session.refresh(tailoring_session)
+    return tailoring_session
+
+
+def update_working_html(
+    session: Session, tailoring_session_id: int, working_html: str
+) -> TailoringSession | None:
+    tailoring_session = session.get(TailoringSession, tailoring_session_id)
+    if tailoring_session is None:
+        return None
+    tailoring_session.working_html = working_html
     session.commit()
     session.refresh(tailoring_session)
     return tailoring_session

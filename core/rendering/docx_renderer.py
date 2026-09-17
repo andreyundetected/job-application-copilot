@@ -87,9 +87,18 @@ def _add_experience_entry(document, entry, index, style):
     _add_content_blocks(document, entry.get("content", []), f"{path_prefix}.content", style)
 
 
+DEFAULT_SECTION_LABELS = {
+    "summary": "SUMMARY",
+    "experience": "EXPERIENCE",
+    "skills": "SKILLS",
+}
+
+
 def render_docx(content: dict, output_path: str, style: dict | None = None) -> str:
     style = merge_style(style)
     document = Document()
+
+    section_labels = {**DEFAULT_SECTION_LABELS, **(content.get("section_labels") or {})}
 
     _add_styled_paragraph(
         document, content["name"], "name", style, alignment=WD_ALIGN_PARAGRAPH.CENTER
@@ -99,11 +108,11 @@ def render_docx(content: dict, output_path: str, style: dict | None = None) -> s
         _add_contacts_paragraph(document, content["contacts"], style)
 
     if content.get("summary"):
-        _add_section_header(document, "SUMMARY", style)
+        _add_section_header(document, section_labels["summary"], style)
         _add_styled_paragraph(document, content["summary"], "body", style, path="summary")
 
     if content.get("experience"):
-        _add_section_header(document, "EXPERIENCE", style)
+        _add_section_header(document, section_labels["experience"], style)
         for index, entry in enumerate(content["experience"]):
             _add_experience_entry(document, entry, index, style)
 
@@ -113,7 +122,7 @@ def render_docx(content: dict, output_path: str, style: dict | None = None) -> s
         _add_content_blocks(document, section.get("content", []), f"{path_prefix}.content", style)
 
     if content.get("skills"):
-        _add_section_header(document, "SKILLS", style)
+        _add_section_header(document, section_labels["skills"], style)
         for skill_line in content["skills"]:
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
             _add_styled_paragraph(document, text, "body", style)

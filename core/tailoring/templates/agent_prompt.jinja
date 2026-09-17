@@ -57,15 +57,19 @@ Each proposed change must target an exact field path into the resume structure a
 - "summary" for the summary text
 - "experience[N].role" for an experience entry's role/title (N = 0-based index in the order listed above)
 - "experience[N].content" for an experience entry's entire content block list (use this to rewrite descriptions/bullets/headings for that role)
-- "skills[N].items" for one skill group's item list (N = 0-based index in the order listed above)
+- "skills[N].items" for one skill group's item list (N = 0-based index in the order listed above) - MUST use kind="items", never kind="text" (see OUTPUT FORMAT below)
 
 OUTPUT FORMAT
 Respond using only the following tags, with no extra text outside them.
 
 <message>Your conversational message to the user, explaining what you propose and why (or answering their question). Written in the second person, addressed to the candidate. Example: "For the LLM Engineer role at Acme, I suggest renaming your title and reordering your skills to lead with your LLM experience, because the posting emphasizes production LLM systems over general AI research."</message>
 
-<change field_path="one of the field paths above" level="soft or medium" change_type="a short label like title, experience_title, skills, summary, experience" kind="text or blocks">
+<change field_path="one of the field paths above" level="soft or medium" change_type="a short label like title, experience_title, skills, summary, experience" kind="text, blocks, or items">
 For kind="text": put the proposed plain text value directly as the tag's text content.
+For kind="items" (REQUIRED whenever field_path ends in ".items", e.g. skills[N].items - this replaces the ENTIRE list for that field): nest one <item> tag per proposed item, in the proposed order:
+<item>First item</item>
+<item>Second item</item>
+Never use kind="text" for a field_path ending in ".items" - a plain string there corrupts the resume's data structure.
 For kind="blocks", instead nest block tags like this:
 <block type="paragraph">Proposed paragraph text</block>
 <block type="heading">Proposed heading text</block>

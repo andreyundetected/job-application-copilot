@@ -10,7 +10,16 @@ def _render_content_blocks_lines(blocks):
     return lines
 
 
+DEFAULT_SECTION_LABELS = {
+    "summary": "SUMMARY",
+    "experience": "EXPERIENCE",
+    "skills": "SKILLS",
+}
+
+
 def render_txt(content: dict, output_path: str) -> str:
+    section_labels = {**DEFAULT_SECTION_LABELS, **(content.get("section_labels") or {})}
+
     lines = [content["name"]]
 
     if content.get("contacts"):
@@ -18,12 +27,12 @@ def render_txt(content: dict, output_path: str) -> str:
 
     if content.get("summary"):
         lines.append("")
-        lines.append("SUMMARY")
+        lines.append(section_labels["summary"])
         lines.append(content["summary"])
 
     if content.get("experience"):
         lines.append("")
-        lines.append("EXPERIENCE")
+        lines.append(section_labels["experience"])
         for entry in content["experience"]:
             lines.append("")
             lines.append(f"{entry['company']} - {entry['role']}")
@@ -39,7 +48,7 @@ def render_txt(content: dict, output_path: str) -> str:
 
     if content.get("skills"):
         lines.append("")
-        lines.append("SKILLS")
+        lines.append(section_labels["skills"])
         for skill_line in content["skills"]:
             lines.append(f"{skill_line['label']}: {', '.join(skill_line['items'])}")
 

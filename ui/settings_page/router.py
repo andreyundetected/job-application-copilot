@@ -11,7 +11,8 @@ from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.parsing.file_extraction import extract_text
 from core.providers.factory import get_llm_provider
-from core.structuring.pipeline import structure_linkedin_text, structure_resume_text
+from core.structuring.html_pipeline import structure_resume_to_html
+from core.structuring.pipeline import structure_linkedin_text
 from core.tasks.runner import run_tracked_task
 from ui.common.i18n import get_language, load_page_strings
 import config
@@ -109,17 +110,17 @@ def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -
     session = SessionLocal()
     try:
         provider = get_llm_provider()
-        structured_content = structure_resume_text(provider, raw_text, language=lang)
+        content_html = structure_resume_to_html(provider, raw_text)
 
         resume = crud.create_resume_version(
             session,
             source_type="resume",
             raw_text=raw_text,
-            structured_content=structured_content,
+            content_html=content_html,
             label=filename,
             is_active=True,
         )
-        return {"resume_version_id": resume.id, "structured_content": structured_content}
+        return {"resume_version_id": resume.id, "content_html": content_html}
     finally:
         session.close()
 

@@ -1,0 +1,13 @@
+<div class="change-card{% if change.status != 'pending' %} resolved{% endif %}" data-change-id="{{ change.id }}" data-field-path="{{ change.field_path or '' }}">
+    <span class="change-card-level">{{ change.level }}{% if change.target_ref %} · {{ change.target_ref }}{% endif %}</span>
+    <div class="change-card-diff">
+        <div class="change-card-original">{{ change.original_text or "" }}</div>
+        <div class="change-card-proposed">{{ change.proposed_text or "" }}</div>
+    </div>
+    {% if change.status == "pending" %}
+    <div class="change-card-buttons">
+        <button type="button" class="btn approve-btn">{{ t.apply_button }}</button>
+        <button type="button" class="btn-ghost btn skip-btn">{{ t.skip_button }}</button>
+    </div>
+    {% endif %}
+</div>

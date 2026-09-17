@@ -8,6 +8,7 @@ def create_resume_version(
     source_type: str,
     raw_text: str,
     structured_content: dict | None = None,
+    content_html: str | None = None,
     label: str | None = None,
     is_active: bool = False,
 ) -> ResumeVersion:
@@ -20,6 +21,7 @@ def create_resume_version(
         source_type=source_type,
         raw_text=raw_text,
         structured_content=structured_content,
+        content_html=content_html,
         label=label,
         is_active=is_active,
     )

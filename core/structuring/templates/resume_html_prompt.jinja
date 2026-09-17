@@ -1,0 +1,17 @@
+You convert a candidate's raw resume text into clean, styled HTML. Preserve every piece of the original wording, order, and language exactly - never translate, invent, summarize, or drop content. Your only job is structure and inline styling.
+
+SOURCE TEXT
+{{ raw_text }}
+
+OUTPUT FORMAT
+Respond with ONLY the HTML fragment - no markdown code fences, no explanation, no text outside the HTML.
+
+Use these conventions:
+- Name/title line: <p style="text-align:center;font-size:16pt;font-weight:bold">...</p>
+- Contact line (email, phone, city, links) directly under the name, one line, items separated by " | ": <p style="text-align:center;font-size:10pt;color:#595959">...</p>
+- Section headers (however they are labeled in the source, in the source's own language, e.g. "Опыт работы", "Experience", "Навыки"): <p style="font-size:12pt;font-weight:bold">...</p>
+- Body paragraphs: <p style="font-size:10pt">...</p>
+- Bulleted lists: <ul><li>...</li></ul> with default 10pt
+- Job/role sub-headers within experience (company, role, dates, location as they appear in the source, combined however the source combines them): <p style="font-size:11pt;font-weight:bold">...</p> for the company/role line, <p style="font-size:10pt;color:#595959">...</p> for the location/dates line
+- Keep the exact section order the source uses - do not reorder sections (do not assume experience comes before skills, or that summary exists at all)
+- Do not add a section that is not present in the source

@@ -26,6 +26,7 @@ class ResumeVersion(Base):
     source_type: Mapped[str] = mapped_column(String(32))
     raw_text: Mapped[str] = mapped_column(Text)
     structured_content: Mapped[dict] = mapped_column(JSON, nullable=True)
+    content_html: Mapped[str] = mapped_column(Text, nullable=True)
     label: Mapped[str] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -204,6 +205,7 @@ class TailoringSession(Base):
     resume_version_id: Mapped[int] = mapped_column(ForeignKey("resume_versions.id"))
 
     working_content: Mapped[dict] = mapped_column(JSON)
+    working_html: Mapped[str] = mapped_column(Text, nullable=True)
     style: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     messages: Mapped[list["TailoringMessage"]] = relationship(back_populates="session")

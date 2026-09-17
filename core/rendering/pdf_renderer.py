@@ -64,8 +64,17 @@ def _content_block_flowables(blocks, path_prefix, style):
     return flowables
 
 
+DEFAULT_SECTION_LABELS = {
+    "summary": "SUMMARY",
+    "experience": "EXPERIENCE",
+    "skills": "SKILLS",
+}
+
+
 def render_pdf(content: dict, output_path: str, style: dict | None = None) -> str:
     style = merge_style(style)
+
+    section_labels = {**DEFAULT_SECTION_LABELS, **(content.get("section_labels") or {})}
 
     document = SimpleDocTemplate(
         output_path,
@@ -81,7 +90,11 @@ def render_pdf(content: dict, output_path: str, style: dict | None = None) -> st
     ]
 
     if content.get("contacts"):
-        contacts_text = " | ".join(content["contacts"])
+        layout = style.get("contacts_layout", "inline")
+        if layout == "stacked":
+            contacts_text = "<br/>".join(content["contacts"])
+        else:
+            contacts_text = " | ".join(content["contacts"])
         elements.append(
             Paragraph(
                 contacts_text, _paragraph_style("contacts", style, alignment=TA_CENTER, space_after=12)
@@ -90,13 +103,19 @@ def render_pdf(content: dict, output_path: str, style: dict | None = None) -> st
 
     if content.get("summary"):
         elements.append(
-            Paragraph("SUMMARY", _paragraph_style("section_header", style, space_before=10, space_after=6))
+            Paragraph(
+                section_labels["summary"],
+                _paragraph_style("section_header", style, space_before=10, space_after=6),
+            )
         )
         elements.append(Paragraph(content["summary"], _paragraph_style("body", style, "summary")))
 
     if content.get("experience"):
         elements.append(
-            Paragraph("EXPERIENCE", _paragraph_style("section_header", style, space_before=10, space_after=6))
+            Paragraph(
+                section_labels["experience"],
+                _paragraph_style("section_header", style, space_before=10, space_after=6),
+            )
         )
         for index, entry in enumerate(content["experience"]):
             path_prefix = f"experience[{index}]"
@@ -140,7 +159,10 @@ def render_pdf(content: dict, output_path: str, style: dict | None = None) -> st
 
     if content.get("skills"):
         elements.append(
-            Paragraph("SKILLS", _paragraph_style("section_header", style, space_before=10, space_after=6))
+            Paragraph(
+                section_labels["skills"],
+                _paragraph_style("section_header", style, space_before=10, space_after=6),
+            )
         )
         for skill_line in content["skills"]:
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"

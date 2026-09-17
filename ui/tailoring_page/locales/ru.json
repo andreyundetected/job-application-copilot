@@ -1,0 +1,16 @@
+{
+    "page_title": "Подгонка резюме",
+    "propose_soft_button": "Soft",
+    "propose_medium_button": "Medium",
+    "soft_hint": "Тайтлы, должности, подбор скиллов — только терминология, ничего не переписывается",
+    "medium_hint": "Summary и experience — вплетаются ключевые слова, без сильного переписывания",
+    "chat_placeholder": "Напиши копилоту, что поменять...",
+    "send_button": "Отправить",
+    "apply_button": "Применить",
+    "skip_button": "Пропустить",
+    "only_this_element": "Только этот элемент",
+    "empty_chat": "Пока нет предложений — нажми Soft или Medium, либо напиши копилоту напрямую.",
+    "level_soft": "soft",
+    "level_medium": "medium",
+    "level_custom": "чат"
+}
