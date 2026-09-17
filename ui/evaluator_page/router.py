@@ -160,6 +160,18 @@ def _evaluate_and_save(
 
         crud.set_job_pending_task(session, job_posting_id, None)
 
+        app_settings = crud.get_app_settings(session)
+        score = result["score"]
+        if (
+            app_settings
+            and app_settings.pregenerate_enabled
+            and score is not None
+            and score >= app_settings.pregenerate_min_score
+        ):
+            from ui.tailoring_page.router import pregenerate_tailoring_context
+
+            run_tracked_task("tailoring_pregenerate", pregenerate_tailoring_context, job_posting_id, lang)
+
         return result
     finally:
         session.close()

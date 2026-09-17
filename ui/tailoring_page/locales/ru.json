@@ -12,5 +12,18 @@
     "empty_chat": "Пока нет предложений — нажми Soft или Medium, либо напиши копилоту напрямую.",
     "level_soft": "soft",
     "level_medium": "medium",
-    "level_custom": "чат"
+    "level_custom": "чат",
+    "job_info_title": "Эта вакансия",
+    "keywords_title": "Целевые кейворды",
+    "keywords_loading": "Выделяю кейворды...",
+    "raw_text_title": "Исходный текст вакансии",
+    "category_skill": "Скилл",
+    "category_tool": "Инструмент",
+    "category_title": "Тайтл",
+    "category_certification": "Сертификат",
+    "category_methodology": "Методология",
+    "category_domain": "Домен",
+    "generating_placeholder": "Копилот работает...",
+    "input_hint": "Enter — отправить, Shift+Enter — новая строка",
+    "download_button": "Скачать"
 }

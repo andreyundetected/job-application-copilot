@@ -45,12 +45,14 @@ def propose_soft_fragment_changes(
     job_posting_text: str,
     resume_html: str,
     matched_factors: list[dict],
+    keywords: list[str] | None = None,
 ) -> list[dict]:
     template = _env.get_template("soft_html_prompt.jinja")
     prompt = template.render(
         job_posting_text=job_posting_text,
         resume_html=resume_html,
         matched_factors=matched_factors,
+        keywords=keywords or [],
     )
 
     raw_response = provider.call(
@@ -91,6 +93,7 @@ def run_agent_fragment_turn(
     matched_factors: list[dict],
     conversation_history: list[dict],
     user_message: str | None = None,
+    keywords: list[str] | None = None,
 ) -> dict:
     template = _env.get_template("agent_html_prompt.jinja")
     prompt = template.render(
@@ -99,6 +102,7 @@ def run_agent_fragment_turn(
         matched_factors=matched_factors,
         conversation_history=conversation_history,
         user_message=user_message,
+        keywords=keywords or [],
     )
 
     raw_response = provider.call(

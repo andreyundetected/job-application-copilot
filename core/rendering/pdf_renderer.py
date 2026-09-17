@@ -1,11 +1,16 @@
+import html as html_module
+
 from reportlab.lib.colors import HexColor
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import ListFlowable, ListItem, Paragraph, SimpleDocTemplate, Spacer
 
 from core.rendering.base import color_hex, merge_style, resolve_style
+from core.rendering.html_export import parse_resume_html
+
+_ALIGN_MAP = {"left": TA_LEFT, "center": TA_CENTER, "right": TA_RIGHT}
 
 
 def _font_name(resolved: dict) -> str:
@@ -168,5 +173,58 @@ def render_pdf(content: dict, output_path: str, style: dict | None = None) -> st
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
             elements.append(Paragraph(text, _paragraph_style("body", style)))
 
+    document.build(elements)
+    return output_path
+
+
+def _run_to_markup(run: dict) -> str:
+    text = html_module.escape(run["text"]).replace("\n", "<br/>")
+    size = run.get("size") or 10
+    color = run.get("color") or "#000000"
+    text = f'<font color="{color}" size="{size}">{text}</font>'
+    if run.get("bold"):
+        text = f"<b>{text}</b>"
+    if run.get("italic"):
+        text = f"<i>{text}</i>"
+    return text
+
+
+def render_html_export_to_pdf(html_content: str, output_path: str) -> str:
+    blocks = parse_resume_html(html_content)
+
+    document = SimpleDocTemplate(
+        output_path,
+        pagesize=letter,
+        leftMargin=0.75 * inch,
+        rightMargin=0.75 * inch,
+        topMargin=0.6 * inch,
+        bottomMargin=0.6 * inch,
+    )
+
+    elements = []
+    bullet_buffer = []
+
+    def flush_bullets():
+        if bullet_buffer:
+            elements.append(ListFlowable(list(bullet_buffer), bulletType="bullet", leftIndent=14))
+            bullet_buffer.clear()
+
+    for block in blocks:
+        markup = "".join(_run_to_markup(run) for run in block["runs"])
+        base_size = block["runs"][0].get("size") or 10
+        style = ParagraphStyle(
+            "block",
+            alignment=_ALIGN_MAP.get(block["align"], TA_LEFT),
+            spaceAfter=6,
+            leading=base_size * 1.3,
+        )
+
+        if block["type"] == "bullet":
+            bullet_buffer.append(ListItem(Paragraph(markup, style)))
+        else:
+            flush_bullets()
+            elements.append(Paragraph(markup, style))
+
+    flush_bullets()
     document.build(elements)
     return output_path

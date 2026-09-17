@@ -1,0 +1,14 @@
+You extract the ATS-style resume keywords a candidate should try to match for this job posting - the specific terms a recruiter or applicant tracking system searches for. Focus on hard skills and technologies, tools and platforms, the job title (and close variants), certifications, methodologies, and domain-specific terms. Do not include generic soft skills like "communication" or "team player" or "fast learner".
+
+JOB POSTING
+{{ job_posting_text }}
+
+TASK
+Extract between 8 and 20 keywords total. Prioritize terms explicitly stated as required over ones that are merely preferred or nice-to-have. Use the exact wording from the posting where possible, not a paraphrase.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<keyword category="skill|tool|title|certification|methodology|domain" priority="required|preferred">The exact keyword or short phrase</keyword>
+
+Repeat <keyword> once per extracted keyword, 8 to 20 total, in descending order of importance.

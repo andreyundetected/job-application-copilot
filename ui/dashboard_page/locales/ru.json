@@ -5,9 +5,15 @@
     "job_removed_toast": "Вакансия удалена. Будет в корзине.",
     "back_link": "Назад на дашборд",
     "prepare_resume_button": "Подготовить резюме",
+    "start_application_button": "Начать подачу / вопросы",
     "job_posting_text_title": "Исходный текст вакансии",
     "matched_factors": "Совпавшие факторы",
     "pros": "Плюсы",
     "cons": "Минусы",
+    "employment_full_time": "Полная занятость",
+    "employment_part_time": "Частичная занятость",
+    "employment_contract": "Контракт",
+    "employment_internship": "Стажировка",
+    "loading_card": "Загружаем детали...",
     "job_added_toast": "Вакансия добавлена на дашборд."
 }

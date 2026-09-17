@@ -69,3 +69,15 @@ def update_working_html(
     session.commit()
     session.refresh(tailoring_session)
     return tailoring_session
+
+
+def update_extracted_keywords(
+    session: Session, tailoring_session_id: int, extracted_keywords: list
+) -> TailoringSession | None:
+    tailoring_session = session.get(TailoringSession, tailoring_session_id)
+    if tailoring_session is None:
+        return None
+    tailoring_session.extracted_keywords = extracted_keywords
+    session.commit()
+    session.refresh(tailoring_session)
+    return tailoring_session

@@ -4,15 +4,131 @@
 
 {% block content %}
 <style>
-.tailor-layout {
-    display: grid;
-    grid-template-columns: 1fr auto 380px;
-    gap: 20px;
-    align-items: start;
+main {
+    max-width: 100%;
+    width: 100%;
+    padding-bottom: 0;
 }
 
-.future-info-column {
-    min-height: 1px;
+.tailor-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(320px, 380px);
+    gap: 20px;
+    align-items: stretch;
+    width: 100%;
+    height: calc(100vh - 132px);
+}
+
+.job-info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.resume-scroll-column {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.job-info-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.keyword-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.keyword-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.keyword-bubble.priority-required {
+    background-color: var(--accent-soft);
+    border-color: transparent;
+    color: var(--accent);
+}
+
+.keyword-bubble-category {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-tertiary);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.keyword-bubble.priority-required .keyword-bubble-category {
+    color: var(--accent);
+    background: rgba(91, 141, 239, 0.18);
+}
+
+.raw-text-block {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    max-height: 340px;
+    overflow-y: auto;
+    line-height: 1.5;
+}
+
+.job-info-column,
+.resume-scroll-column,
+.chat-stream,
+.raw-text-block {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+}
+
+.job-info-column::-webkit-scrollbar,
+.resume-scroll-column::-webkit-scrollbar,
+.chat-stream::-webkit-scrollbar,
+.raw-text-block::-webkit-scrollbar {
+    width: 7px;
+}
+
+.job-info-column::-webkit-scrollbar-track,
+.resume-scroll-column::-webkit-scrollbar-track,
+.chat-stream::-webkit-scrollbar-track,
+.raw-text-block::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.job-info-column::-webkit-scrollbar-thumb,
+.resume-scroll-column::-webkit-scrollbar-thumb,
+.chat-stream::-webkit-scrollbar-thumb,
+.raw-text-block::-webkit-scrollbar-thumb {
+    background-color: var(--border-hover);
+    border-radius: 999px;
+    border: 2px solid var(--bg);
+}
+
+.job-info-column::-webkit-scrollbar-thumb:hover,
+.resume-scroll-column::-webkit-scrollbar-thumb:hover,
+.chat-stream::-webkit-scrollbar-thumb:hover,
+.raw-text-block::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent);
 }
 
 .resume-doc {
@@ -22,7 +138,7 @@
     padding: 48px 56px;
     min-height: 1000px;
     width: 794px;
-    max-width: 794px;
+    max-width: 100%;
     font-family: "Calibri", "Segoe UI", sans-serif;
     font-size: 10pt;
     outline: none;
@@ -39,12 +155,40 @@
     background-color: rgba(74, 222, 128, 0.5);
 }
 
+.resume-doc p {
+    margin: 2px 0;
+    line-height: 1.4;
+}
+
+.resume-doc ul {
+    margin: 2px 0 8px;
+    padding-left: 20px;
+}
+
+.resume-doc li {
+    margin: 1px 0;
+    line-height: 1.4;
+}
+
+.resume-doc p[style*="font-size:16pt"] {
+    margin-bottom: 2px;
+}
+
+.resume-doc p[style*="font-size:12pt"] {
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+.resume-doc p[style*="font-size:11pt"] {
+    margin-top: 10px;
+    margin-bottom: 1px;
+}
+
 .copilot-panel {
-    position: sticky;
-    top: 68px;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 100px);
+    height: 100%;
+    min-height: 0;
 }
 
 .copilot-actions {
@@ -100,6 +244,14 @@
     letter-spacing: 0.03em;
     color: var(--text-tertiary);
     margin-bottom: 6px;
+}
+
+.chat-message.pending {
+    opacity: 0.75;
+}
+
+.chat-message.pending .loading-dot {
+    margin-left: 6px;
 }
 
 .change-card {
@@ -172,6 +324,7 @@
 
 .chat-input-row {
     display: flex;
+    align-items: flex-end;
     gap: 8px;
     margin-top: 8px;
 }
@@ -179,6 +332,50 @@
 .chat-input-row textarea {
     min-height: 44px;
     max-height: 100px;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.chat-input-row textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--bg-elevated);
+}
+
+.chat-input-hint {
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.send-btn {
+    margin-top: 0 !important;
+    width: 42px;
+    height: 42px;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    box-shadow: 0 2px 10px rgba(91, 141, 239, 0.35);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
+}
+
+.send-btn:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 4px 14px rgba(91, 141, 239, 0.45);
+}
+
+.send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.send-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 .style-toolbar {
@@ -231,12 +428,61 @@
 }
 </style>
 
-<h1>{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+<div class="result-header" style="align-items:center;">
+    <h1 style="margin:0;">{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <select id="download-format" style="width:auto;padding:9px 11px;">
+            <option value="docx">DOCX</option>
+            <option value="pdf">PDF</option>
+            <option value="txt">TXT</option>
+        </select>
+        <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
+    </div>
+</div>
 
 <div class="tailor-layout">
-    <div class="future-info-column"></div>
+    <div class="job-info-column">
+        <div class="card">
+            <div class="job-info-header">
+                <h3 style="margin:0;">{{ t.job_info_title }}</h3>
+                {% if score is not none %}
+                <div class="score-badge" style="width:36px;height:36px;font-size:16px;{% if score >= 7 %}background-color:var(--score-high-soft);color:var(--score-high);{% elif score >= 4 %}background-color:var(--score-mid-soft);color:var(--score-mid);{% else %}background-color:var(--score-low-soft);color:var(--score-low);{% endif %}">{{ score }}</div>
+                {% endif %}
+            </div>
+            <div class="badge-row">
+                {% if location %}<span class="badge">{{ location }}</span>{% endif %}
+                {% if work_mode %}<span class="badge badge-work-mode">{{ work_mode }}</span>{% endif %}
+            </div>
+            {% if salary and salary.original_text %}
+            <p class="salary-line">{{ salary.original_text }}</p>
+            {% endif %}
+            {% if summary %}
+            <p class="salary-line" style="margin-top:10px;">{{ summary }}</p>
+            {% endif %}
+        </div>
 
-    <div>
+        <div class="card" id="keywords-card">
+            <h3 style="margin:0 0 4px;">{{ t.keywords_title }}</h3>
+            <div class="keyword-bubbles" id="keyword-bubbles">
+                {% for keyword in keywords %}
+                <span class="keyword-bubble priority-{{ keyword.priority }}">
+                    <span class="keyword-bubble-category">{{ t["category_" + keyword.category] if ("category_" + keyword.category) in t else keyword.category }}</span>
+                    {{ keyword.text }}
+                </span>
+                {% endfor %}
+            </div>
+            {% if not keywords %}
+            <p class="salary-line" id="keywords-empty-hint">{{ t.keywords_loading }}</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3 style="margin:0 0 8px;">{{ t.raw_text_title }}</h3>
+            <div class="raw-text-block">{{ job.raw_text }}</div>
+        </div>
+    </div>
+
+    <div class="resume-scroll-column">
         <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
     </div>
 
@@ -261,9 +507,15 @@
         </div>
 
         <div class="chat-input-row">
-            <textarea id="chat-input" placeholder="{{ t.chat_placeholder }}"></textarea>
-            <button type="button" class="btn" id="btn-send" style="margin-top:0;">{{ t.send_button }}</button>
+            <textarea id="chat-input" placeholder="{{ t.chat_placeholder }}" rows="1"></textarea>
+            <button type="button" class="btn send-btn" id="btn-send" title="{{ t.send_button }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
         </div>
+        <p class="chat-input-hint">{{ t.input_hint }}</p>
     </div>
 </div>
 
@@ -272,6 +524,7 @@
     <button type="button" id="italic-btn"><i>I</i></button>
     <div class="toolbar-sep"></div>
     <button type="button" id="size-minus">-</button>
+    <span id="size-display" style="min-width:26px;text-align:center;color:var(--text-secondary);font-variant-numeric:tabular-nums;">10</span>
     <button type="button" id="size-plus">+</button>
     <div class="toolbar-sep"></div>
     <button type="button" id="align-btn">⬅</button>
@@ -290,12 +543,43 @@
     const chatStream = document.getElementById("chat-stream");
     const resumeDoc = document.getElementById("resume-doc");
     const toolbarEl = document.getElementById("style-toolbar");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("btn-send");
+    const softBtn = document.getElementById("btn-propose-soft");
+    const mediumBtn = document.getElementById("btn-propose-medium");
 
     let saveTimeout = null;
     let savedRange = null;
     let currentAlignState = "left";
+    let isGenerating = false;
     const ALIGN_STATES = ["left", "center", "right"];
     const ALIGN_ICONS = { left: "⬅", center: "↔", right: "➡" };
+
+    function setGenerating(value) {
+        isGenerating = value;
+        chatInput.disabled = value;
+        sendBtn.disabled = value;
+        softBtn.disabled = value;
+        mediumBtn.disabled = value;
+        chatInput.placeholder = value ? I18N.generating_placeholder : I18N.chat_placeholder;
+    }
+
+    function renderKeywordBubbles(keywords) {
+        if (!keywords || !keywords.length) return;
+        const container = document.getElementById("keyword-bubbles");
+        if (container.children.length > 0) return;
+
+        const hint = document.getElementById("keywords-empty-hint");
+        if (hint) hint.remove();
+
+        keywords.forEach((keyword) => {
+            const bubble = document.createElement("span");
+            bubble.className = `keyword-bubble priority-${keyword.priority}`;
+            const categoryLabel = I18N["category_" + keyword.category] || keyword.category;
+            bubble.innerHTML = `<span class="keyword-bubble-category">${categoryLabel}</span> ${keyword.text}`;
+            container.appendChild(bubble);
+        });
+    }
 
     function stripMarksFromClone() {
         const clone = resumeDoc.cloneNode(true);
@@ -389,7 +673,10 @@
         const card = e.target.closest(".change-card");
         if (!card) return;
         const mark = resumeDoc.querySelector(`mark[data-change-id="${card.dataset.changeId}"]`);
-        if (mark) mark.classList.add("mark-linked-hover");
+        if (mark) {
+            mark.classList.add("mark-linked-hover");
+            mark.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
     });
     chatStream.addEventListener("mouseout", (e) => {
         const card = e.target.closest(".change-card");
@@ -416,6 +703,47 @@
         });
     }
 
+    function appendPendingMessage(level) {
+        const hint = document.getElementById("empty-chat-hint");
+        if (hint) hint.remove();
+
+        const wrapper = document.createElement("div");
+        wrapper.className = `chat-message role-assistant pending${level ? " level-" + level : ""}`;
+
+        const header = document.createElement("div");
+        header.className = "chat-message-header";
+        if (level === "soft" || level === "medium") {
+            header.innerHTML = `${level === "soft" ? I18N.soft_hint : I18N.medium_hint} <span class="loading-dot"></span>`;
+        } else {
+            header.innerHTML = `<span class="loading-dot"></span>`;
+        }
+        wrapper.appendChild(header);
+
+        chatStream.appendChild(wrapper);
+        chatStream.scrollTop = chatStream.scrollHeight;
+        return wrapper;
+    }
+
+    function fillPendingMessage(wrapper, text, changes, level) {
+        wrapper.classList.remove("pending");
+        wrapper.className = `chat-message role-assistant${level ? " level-" + level : ""}`;
+        wrapper.innerHTML = "";
+
+        if (level === "soft" || level === "medium") {
+            const header = document.createElement("div");
+            header.className = "chat-message-header";
+            header.textContent = level === "soft" ? I18N.soft_hint : I18N.medium_hint;
+            wrapper.appendChild(header);
+        }
+
+        const textDiv = document.createElement("div");
+        textDiv.textContent = text;
+        wrapper.appendChild(textDiv);
+
+        (changes || []).forEach((change) => wrapper.appendChild(renderChangeCard(change)));
+        chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
     function appendMessage(role, text, changes, level) {
         const hint = document.getElementById("empty-chat-hint");
         if (hint) hint.remove();
@@ -440,41 +768,77 @@
         chatStream.scrollTop = chatStream.scrollHeight;
     }
 
-    async function submitAgentTask(url, formData) {
-        const response = await fetch(url, { method: "POST", body: formData });
-        const data = await response.json();
+    async function submitAgentTask(url, formData, pendingWrapper) {
+        setGenerating(true);
+        try {
+            const response = await fetch(url, { method: "POST", body: formData });
+            const data = await response.json();
 
-        pollTaskStatus([data.task_id], (tasks) => {
-            const task = tasks[0];
-            if (task.status === "done") {
-                markSuperseded(task.result.superseded_change_ids);
-                appendMessage("assistant", task.result.message_text, task.result.changes, task.result.level);
-                refreshDoc();
-            } else if (task.status === "failed") {
-                appendMessage("assistant", `Error: ${task.error}`, [], "custom");
-            }
-        });
+            pollTaskStatus([data.task_id], (tasks) => {
+                const task = tasks[0];
+                if (task.status === "done") {
+                    markSuperseded(task.result.superseded_change_ids);
+                    renderKeywordBubbles(task.result.keywords);
+                    if (pendingWrapper) {
+                        fillPendingMessage(pendingWrapper, task.result.message_text, task.result.changes, task.result.level);
+                    } else {
+                        appendMessage("assistant", task.result.message_text, task.result.changes, task.result.level);
+                    }
+                    refreshDoc();
+                    setGenerating(false);
+                } else if (task.status === "failed") {
+                    if (pendingWrapper) {
+                        fillPendingMessage(pendingWrapper, `Error: ${task.error}`, [], null);
+                    } else {
+                        appendMessage("assistant", `Error: ${task.error}`, [], "custom");
+                    }
+                    setGenerating(false);
+                }
+            });
+        } catch (error) {
+            setGenerating(false);
+        }
     }
 
-    document.getElementById("btn-propose-soft").addEventListener("click", () => {
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData());
+    softBtn.addEventListener("click", () => {
+        if (isGenerating) return;
+        const wrapper = appendPendingMessage("soft");
+        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData(), wrapper);
     });
 
-    document.getElementById("btn-propose-medium").addEventListener("click", () => {
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData());
+    mediumBtn.addEventListener("click", () => {
+        if (isGenerating) return;
+        const wrapper = appendPendingMessage("medium");
+        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData(), wrapper);
     });
 
-    document.getElementById("btn-send").addEventListener("click", () => {
-        const input = document.getElementById("chat-input");
-        const text = input.value.trim();
+    function sendChatMessage() {
+        if (isGenerating) return;
+        const text = chatInput.value.trim();
         if (!text) return;
 
         appendMessage("user", text, [], null);
-        input.value = "";
+        chatInput.value = "";
+        chatInput.style.height = "auto";
 
+        const wrapper = appendPendingMessage(null);
         const formData = new FormData();
         formData.append("user_message", text);
-        submitAgentTask(`/tailor/session/${SESSION_ID}/message`, formData);
+        submitAgentTask(`/tailor/session/${SESSION_ID}/message`, formData, wrapper);
+    }
+
+    sendBtn.addEventListener("click", sendChatMessage);
+
+    chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    chatInput.addEventListener("input", () => {
+        chatInput.style.height = "auto";
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
     });
 
     toolbarEl.querySelectorAll("button").forEach((btn) => {
@@ -509,6 +873,19 @@
         document.getElementById("align-btn").textContent = ALIGN_ICONS[currentAlignState];
     }
 
+    function getCurrentFontSizePt(range) {
+        const node = range.startContainer.nodeType === 3
+            ? range.startContainer.parentElement
+            : range.startContainer;
+        const sizePx = parseFloat(window.getComputedStyle(node).fontSize) || 13.3;
+        return Math.round(sizePx * 0.75);
+    }
+
+    function updateSizeDisplay() {
+        if (!savedRange) return;
+        document.getElementById("size-display").textContent = getCurrentFontSizePt(savedRange);
+    }
+
     function showToolbarForSelection(range) {
         savedRange = range;
         const rect = range.getBoundingClientRect();
@@ -517,6 +894,7 @@
         toolbarEl.style.left = `${window.scrollX + rect.left}px`;
         updateAlignIcon();
         updateColorSwatch();
+        updateSizeDisplay();
     }
 
     document.addEventListener("selectionchange", () => {
@@ -555,34 +933,24 @@
         restoreSelection();
         if (!savedRange || savedRange.collapsed) return;
 
-        const startNode = savedRange.startContainer.nodeType === 3
-            ? savedRange.startContainer.parentElement
-            : savedRange.startContainer;
-        const currentSizePx = parseFloat(window.getComputedStyle(startNode).fontSize) || 13.3;
-        const currentPt = Math.round(currentSizePx * 0.75);
-        const newPt = Math.max(6, currentPt + delta);
+        const newPt = Math.max(6, getCurrentFontSizePt(savedRange) + delta);
 
-        document.execCommand("fontSize", false, "7");
+        const range = savedRange.cloneRange();
+        const fragment = range.extractContents();
+        const span = document.createElement("span");
+        span.style.fontSize = `${newPt}pt`;
+        span.appendChild(fragment);
+        range.insertNode(span);
 
-        const spans = [];
-        resumeDoc.querySelectorAll('font[size="7"]').forEach((el) => {
-            const span = document.createElement("span");
-            span.style.fontSize = `${newPt}pt`;
-            span.innerHTML = el.innerHTML;
-            el.replaceWith(span);
-            spans.push(span);
-        });
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        savedRange = newRange;
 
-        if (spans.length) {
-            const newRange = document.createRange();
-            newRange.setStartBefore(spans[0]);
-            newRange.setEndAfter(spans[spans.length - 1]);
-            savedRange = newRange;
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(newRange);
-        }
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(newRange);
 
+        document.getElementById("size-display").textContent = newPt;
         scheduleSave();
     }
 
@@ -622,9 +990,43 @@
 
     bindMarkHoverHandlers();
 
+    const downloadFormatSelect = document.getElementById("download-format");
+    const downloadBtn = document.getElementById("btn-download");
+    downloadFormatSelect.addEventListener("change", () => {
+        downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.value}`;
+    });
+
+    function launchSoftAndMedium() {
+        const softWrapper = appendPendingMessage("soft");
+        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData(), softWrapper);
+
+        const mediumWrapper = appendPendingMessage("medium");
+        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData(), mediumWrapper);
+    }
+
+    async function ensureKeywordsThenLaunch() {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/extract-keywords`, { method: "POST" });
+        const data = await response.json();
+
+        if (data.task_id === null) {
+            renderKeywordBubbles(data.keywords);
+            launchSoftAndMedium();
+            return;
+        }
+
+        pollTaskStatus([data.task_id], (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                renderKeywordBubbles(task.result.keywords);
+                launchSoftAndMedium();
+            } else if (task.status === "failed") {
+                launchSoftAndMedium();
+            }
+        });
+    }
+
     if (INITIAL_MESSAGE_COUNT === 0) {
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData());
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData());
+        ensureKeywordsThenLaunch();
     }
 })();
 </script>

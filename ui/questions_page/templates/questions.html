@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Questions{% endblock %}
+
+{% block content %}
+<style>
+.question-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+}
+
+.question-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.question-meta {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.answer-textarea {
+    width: 100%;
+    min-height: 90px;
+}
+
+.question-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.question-actions .btn,
+.question-actions .btn-ghost {
+    margin-top: 0;
+    padding: 7px 12px;
+    font-size: 12.5px;
+}
+
+.notice-line {
+    font-size: 12.5px;
+    color: var(--score-mid);
+    background-color: var(--score-mid-soft);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin-bottom: 10px;
+}
+</style>
+
+<h1>{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+
+<div class="card">
+    <label for="raw-questions">{{ t.paste_label }}</label>
+    <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
+    <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
+    <p class="salary-line" id="process-status"></p>
+</div>
+
+<div id="questions-list">
+    {% if not questions %}
+    <p class="salary-line" id="empty-hint">{{ t.empty_state }}</p>
+    {% endif %}
+    {% for question in questions %}
+    {% include "question_card.html" %}
+    {% endfor %}
+</div>
+
+<script>
+const I18N = {{ t | tojson }};
+const APPLICATION_ID = {{ application.id }};
+
+function categoryLabel(category) {
+    if (!category) return "";
+    return I18N["category_" + category] || category;
+}
+
+function typeLabel(type) {
+    return I18N["type_" + type] || type;
+}
+
+function renderQuestionCard(question) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "question-card";
+    wrapper.dataset.questionId = question.id;
+
+    let noticeHtml = "";
+    if (question.needs_manual_input && question.answer_type !== "other") {
+        noticeHtml = `<div class="notice-line">${I18N.manual_review_notice}</div>`;
+    } else if (question.answer_type === "other") {
+        noticeHtml = `<div class="notice-line">${I18N.other_notice}</div>`;
+    }
+
+    const showDownload = question.answer_type === "document" && question.answer_text;
+
+    wrapper.innerHTML = `
+        <div class="question-text">${question.question_text.replace(/</g, "&lt;")}</div>
+        <div class="question-meta">
+            <span class="badge">${typeLabel(question.answer_type)}</span>
+            ${question.category ? `<span class="badge badge-tag">${categoryLabel(question.category)}</span>` : ""}
+        </div>
+        ${noticeHtml}
+        ${question.answer_type !== "other" ? `<textarea class="answer-textarea">${question.answer_text || ""}</textarea>` : ""}
+        <div class="question-actions">
+            ${question.answer_type !== "other" ? `<button type="button" class="btn save-btn">${I18N.save_button}</button>` : ""}
+            ${showDownload ? `<a class="btn-ghost btn" href="/questions/${question.id}/download?format=docx">${I18N.download_docx}</a>` : ""}
+            ${showDownload ? `<a class="btn-ghost btn" href="/questions/${question.id}/download?format=pdf">${I18N.download_pdf}</a>` : ""}
+            <button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button>
+        </div>
+    `;
+    return wrapper;
+}
+
+document.getElementById("questions-list").addEventListener("click", async (e) => {
+    const card = e.target.closest(".question-card");
+    if (!card) return;
+    const questionId = card.dataset.questionId;
+
+    if (e.target.classList.contains("save-btn")) {
+        const textarea = card.querySelector(".answer-textarea");
+        const formData = new FormData();
+        formData.append("answer_text", textarea.value);
+        await fetch(`/questions/${questionId}/answer`, { method: "POST", body: formData });
+        showToast(I18N.save_button, "success");
+    } else if (e.target.classList.contains("delete-btn")) {
+        await fetch(`/questions/${questionId}/delete`, { method: "POST" });
+        card.remove();
+    }
+});
+
+document.getElementById("btn-process").addEventListener("click", async () => {
+    const rawText = document.getElementById("raw-questions").value.trim();
+    if (!rawText) return;
+
+    document.getElementById("process-status").textContent = I18N.processing;
+
+    const formData = new FormData();
+    formData.append("raw_text", rawText);
+
+    const response = await fetch(`/questions/application/${APPLICATION_ID}/submit`, {
+        method: "POST",
+        body: formData,
+    });
+    const data = await response.json();
+
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("process-status").textContent = "";
+            const hint = document.getElementById("empty-hint");
+            if (hint) hint.remove();
+            const list = document.getElementById("questions-list");
+            task.result.questions.forEach((question) => {
+                list.appendChild(renderQuestionCard(question));
+            });
+            document.getElementById("raw-questions").value = "";
+        } else if (task.status === "failed") {
+            document.getElementById("process-status").textContent = `Error: ${task.error}`;
+        }
+    });
+});
+</script>
+{% endblock %}

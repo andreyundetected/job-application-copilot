@@ -125,3 +125,20 @@ def job_detail_page(
 def archive_job(job_id: int, session: Session = Depends(get_session)):
     crud.archive_job_posting(session, job_id)
     return JSONResponse({"status": "ok", "id": job_id})
+
+
+@router.post("/jobs/{job_id}/start-application")
+def start_application(job_id: int, session: Session = Depends(get_session)):
+    job = crud.get_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    existing = [
+        app for app in crud.list_applications(session) if app.job_posting_id == job_id
+    ]
+    if existing:
+        application = existing[0]
+    else:
+        application = crud.create_application(session, job_posting_id=job_id)
+
+    return JSONResponse({"application_id": application.id})

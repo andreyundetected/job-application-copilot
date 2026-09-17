@@ -8,6 +8,9 @@
 <div class="card">
     <h3>{{ t.contacts_links }}</h3>
     <form method="post" action="/settings/profile" id="profile-form">
+        <label for="full_name">{{ t.full_name_label }}</label>
+        <input type="text" name="full_name" id="full_name" value="{{ profile.full_name if profile else '' }}">
+
         <label for="email">{{ t.email_label }}</label>
         <input type="text" name="email" id="email" value="{{ profile.email if profile else '' }}">
 
@@ -64,6 +67,22 @@
     </ul>
     {% endif %}
     </div>
+</div>
+
+<div class="card">
+    <h3>{{ t.pregenerate_title }}</h3>
+    <p class="salary-line">{{ t.pregenerate_hint }}</p>
+    <form id="pregenerate-form">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+            <input type="checkbox" name="pregenerate_enabled" id="pregenerate_enabled" {% if pregenerate_enabled %}checked{% endif %} style="width:auto;">
+            <span>{{ t.pregenerate_enabled_label }}</span>
+        </label>
+
+        <label for="pregenerate_min_score">{{ t.pregenerate_min_score_label }}</label>
+        <input type="text" inputmode="numeric" name="pregenerate_min_score" id="pregenerate_min_score" value="{{ pregenerate_min_score }}" style="max-width:80px;">
+
+        <button type="submit" class="btn">{{ t.btn_save }}</button>
+    </form>
 </div>
 
 <h1>{{ t.matching_title }}</h1>
@@ -123,6 +142,15 @@
 const I18N = {{ t | tojson }};
 
 bindAjaxForm("profile-form", () => {});
+
+document.getElementById("pregenerate-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append("pregenerate_enabled", document.getElementById("pregenerate_enabled").checked ? "true" : "");
+    formData.append("pregenerate_min_score", document.getElementById("pregenerate_min_score").value);
+    await fetch("/settings/pregenerate", { method: "POST", body: formData });
+    showToast(I18N.done, "success");
+});
 
 bindAjaxForm("resume-form", (data) => {
     document.getElementById("resume-status").textContent = I18N.parsing_resume;

@@ -63,6 +63,16 @@
     <button type="button" class="btn" onclick="window.location.href='/tailor?job_id={{ job.id }}'">
         {{ t.prepare_resume_button }}
     </button>
+    <button type="button" class="btn-ghost btn" id="btn-start-application">
+        {{ t.start_application_button }}
+    </button>
+    <script>
+    document.getElementById("btn-start-application").addEventListener("click", async () => {
+        const response = await fetch("/jobs/{{ job.id }}/start-application", { method: "POST" });
+        const data = await response.json();
+        window.location.href = `/questions?application_id=${data.application_id}`;
+    });
+    </script>
 </div>
 
 <div class="card">

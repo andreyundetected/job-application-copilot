@@ -11,6 +11,13 @@ MATCHED FACTORS
 - {{ factor.text }} ({{ factor.note }})
 {% endfor %}
 
+{% if keywords %}
+TARGET KEYWORDS (from ATS keyword extraction - prioritize surfacing/matching these where truthful, especially in the title and skills selection)
+{% for keyword in keywords %}
+- {{ keyword }}
+{% endfor %}
+{% endif %}
+
 TASK
 Propose soft-level edits in three possible categories only: "title" (the candidate's main title line), "company_name" (rare - only if a company/role line's job title wording should change, not the company name itself), "skills" (rewording/reordering/dropping skill items, never inventing new ones).
 

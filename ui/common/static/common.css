@@ -29,10 +29,18 @@
     box-sizing: border-box;
 }
 
+html {
+    width: 100%;
+    overflow-x: hidden;
+}
+
 body {
     font-family: "Inter", "Segoe UI", -apple-system, sans-serif;
     margin: 0;
     padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
     background-color: var(--bg);
     color: var(--text-primary);
     line-height: 1.55;

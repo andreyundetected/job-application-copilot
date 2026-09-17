@@ -12,5 +12,18 @@
     "empty_chat": "No proposals yet — click Soft or Medium, or write to the copilot directly.",
     "level_soft": "soft",
     "level_medium": "medium",
-    "level_custom": "chat"
+    "level_custom": "chat",
+    "job_info_title": "This vacancy",
+    "keywords_title": "Target keywords",
+    "keywords_loading": "Extracting keywords...",
+    "raw_text_title": "Original posting",
+    "category_skill": "Skill",
+    "category_tool": "Tool",
+    "category_title": "Title",
+    "category_certification": "Certification",
+    "category_methodology": "Methodology",
+    "category_domain": "Domain",
+    "generating_placeholder": "Copilot is working...",
+    "input_hint": "Enter to send, Shift+Enter for a new line",
+    "download_button": "Download"
 }

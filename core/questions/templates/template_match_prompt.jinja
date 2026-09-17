@@ -1,0 +1,13 @@
+You classify a single job application question into one of a small fixed set of common categories, or "none" if it doesn't match any of them.
+
+QUESTION
+{{ question_text }}
+
+CATEGORIES
+- "cover_letter": asks for a cover letter, motivation letter, or a "why do you want to work here / why are you a good fit" essay-style answer.
+- "summary": asks for a short "tell us about yourself", professional summary, or general introduction that isn't a full cover letter.
+- "none": anything else.
+
+Respond with only one tag, nothing else outside it.
+
+<category>cover_letter|summary|none</category>

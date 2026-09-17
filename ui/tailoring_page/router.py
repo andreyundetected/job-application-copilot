@@ -1,21 +1,34 @@
+import re
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 from sqlalchemy.orm import Session
 
+import config
 from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.parsing.html_sanitize import sanitize_html
 from core.providers.factory import get_llm_provider
+from core.rendering.docx_renderer import render_html_export_to_docx
+from core.rendering.pdf_renderer import render_html_export_to_pdf
+from core.rendering.txt_renderer import render_html_export_to_txt
 from core.tailoring.fragment_pipeline import (
     propose_medium_fragment_changes,
     propose_soft_fragment_changes,
     run_agent_fragment_turn,
 )
 from core.tailoring.html_diff import apply_fragment, strip_marks, wrap_highlights
+from core.tailoring.keyword_extraction import extract_tailoring_keywords
 from core.tasks.runner import run_tracked_task
 from ui.common.i18n import get_language, load_page_strings
+
+_DOWNLOAD_MEDIA_TYPES = {
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pdf": "application/pdf",
+    "txt": "text/plain",
+}
 
 router = APIRouter(prefix="/tailor")
 
@@ -33,6 +46,21 @@ def _get_matched_factors(session: Session, job_posting_id: int) -> list[dict]:
     if not evaluations:
         return []
     return (evaluations[0].checked_keywords or {}).get("matched_factors", [])
+
+
+def _get_job_context(session: Session, job_posting_id: int) -> dict:
+    evaluations = crud.list_evaluations_for_job(session, job_posting_id)
+    latest_evaluation = evaluations[0] if evaluations else None
+    checked = (latest_evaluation.checked_keywords or {}) if latest_evaluation else {}
+    salary = checked.get("salary") or {}
+
+    return {
+        "score": latest_evaluation.fit_score if latest_evaluation else None,
+        "location": checked.get("location"),
+        "work_mode": checked.get("work_mode"),
+        "salary": salary,
+        "summary": checked.get("summary"),
+    }
 
 
 def _serialize_change(change) -> dict:
@@ -68,6 +96,40 @@ def _get_or_create_session(session: Session, job_id: int):
     )
 
 
+def _ensure_keywords(session: Session, tailoring_session, job, provider=None) -> list[dict]:
+    if tailoring_session.extracted_keywords:
+        return tailoring_session.extracted_keywords
+
+    provider = provider or get_llm_provider()
+    keywords = extract_tailoring_keywords(provider, job.raw_text)
+    crud.update_extracted_keywords(session, tailoring_session.id, keywords)
+    return keywords
+
+
+def _keyword_texts(keywords: list[dict]) -> list[str]:
+    return [k["text"] for k in keywords]
+
+
+def _soft_message_text(lang: str) -> str:
+    return (
+        "Soft-изменения: заголовок, названия должностей и подбор скиллов под вакансию "
+        "(только терминология, ничего не переписывается по сути)."
+        if lang == "ru"
+        else "Soft changes: title, job titles and skills selection matched to the posting "
+        "(terminology only, nothing rewritten in substance)."
+    )
+
+
+def _medium_message_text(lang: str) -> str:
+    return (
+        "Medium-изменения: точечные правки summary и experience под ключевые слова вакансии "
+        "(добавляем нужные слова в нужные места, не переписываем сильно)."
+        if lang == "ru"
+        else "Medium changes: targeted summary/experience edits weaving in the posting's keywords "
+        "(words inserted in the right places, not a heavy rewrite)."
+    )
+
+
 def _store_changes_with_dedup(
     session: Session, session_id: int, message_id: int, changes: list[dict]
 ) -> tuple[list, list]:
@@ -80,6 +142,65 @@ def _store_changes_with_dedup(
 def _pending_changes_for_render(session: Session, session_id: int) -> list[dict]:
     changes = crud.list_tailoring_changes_for_session(session, session_id)
     return [_serialize_change(c) for c in changes if c.status == "pending"]
+
+
+def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None:
+    """Runs keyword extraction + soft + medium proposals ahead of time, right after a
+    high-scoring evaluation, so the tailoring page opens already populated. Guarded by
+    the app_settings pregenerate toggle and min-score threshold - see evaluator_page router."""
+    session = SessionLocal()
+    try:
+        resume = crud.get_active_resume_version(session, "resume")
+        if resume is None or not resume.content_html:
+            return
+
+        tailoring_session = crud.get_tailoring_session_for_job(session, job_posting_id)
+        if tailoring_session is None:
+            tailoring_session = crud.create_tailoring_session(
+                session,
+                job_posting_id=job_posting_id,
+                resume_version_id=resume.id,
+                working_content={},
+                working_html=resume.content_html,
+            )
+
+        if crud.list_tailoring_messages(session, tailoring_session.id):
+            return
+
+        job = crud.get_job_posting(session, job_posting_id)
+        if job is None:
+            return
+
+        matched_factors = _get_matched_factors(session, job_posting_id)
+        provider = get_llm_provider()
+        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+        keyword_texts = _keyword_texts(keywords)
+
+        soft_changes = propose_soft_fragment_changes(
+            provider,
+            job_posting_text=job.raw_text,
+            resume_html=tailoring_session.working_html or "",
+            matched_factors=matched_factors,
+            keywords=keyword_texts,
+        )
+        soft_message = crud.create_tailoring_message(
+            session, tailoring_session.id, role="assistant", text=_soft_message_text(lang)
+        )
+        _store_changes_with_dedup(session, tailoring_session.id, soft_message.id, soft_changes)
+
+        medium_changes = propose_medium_fragment_changes(
+            provider,
+            job_posting_text=job.raw_text,
+            resume_html=tailoring_session.working_html or "",
+            matched_factors=matched_factors,
+            keywords=keyword_texts,
+        )
+        medium_message = crud.create_tailoring_message(
+            session, tailoring_session.id, role="assistant", text=_medium_message_text(lang)
+        )
+        _store_changes_with_dedup(session, tailoring_session.id, medium_message.id, medium_changes)
+    finally:
+        session.close()
 
 
 @router.get("", response_class=HTMLResponse)
@@ -104,6 +225,8 @@ def tailor_page(
     for change in changes:
         changes_by_message.setdefault(change.message_id, []).append(_serialize_change(change))
 
+    job_context = _get_job_context(session, job_id)
+
     return templates.TemplateResponse(
         "tailor.html",
         {
@@ -113,10 +236,83 @@ def tailor_page(
             "resume_html": highlighted_html,
             "messages": messages,
             "changes_by_message": changes_by_message,
+            "keywords": tailoring_session.extracted_keywords or [],
+            **job_context,
             "lang": lang,
             "t": load_page_strings("ui/tailoring_page", lang),
         },
     )
+
+
+@router.post("/session/{session_id}/extract-keywords")
+def extract_keywords(
+    session_id: int,
+    session: Session = Depends(get_session),
+):
+    tailoring_session = crud.get_tailoring_session(session, session_id)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if tailoring_session.extracted_keywords:
+        return JSONResponse({"task_id": None, "keywords": tailoring_session.extracted_keywords})
+
+    task_id = run_tracked_task("tailoring_keywords", _run_extract_keywords, session_id)
+    return JSONResponse({"task_id": task_id})
+
+
+def _run_extract_keywords(session_id: int) -> dict:
+    session = SessionLocal()
+    try:
+        tailoring_session = crud.get_tailoring_session(session, session_id)
+        job = crud.get_job_posting(session, tailoring_session.job_posting_id)
+
+        provider = get_llm_provider()
+        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+
+        return {"keywords": keywords}
+    finally:
+        session.close()
+
+
+def _filename_segment(value: str | None, fallback: str) -> str:
+    value = (value or "").strip() or fallback
+    cleaned = re.sub(r"[^\w\s-]", "", value, flags=re.UNICODE)
+    cleaned = re.sub(r"\s+", "-", cleaned.strip())
+    return cleaned or fallback
+
+
+@router.get("/session/{session_id}/download")
+def download_resume(
+    session_id: int,
+    format: str = "docx",
+    session: Session = Depends(get_session),
+):
+    if format not in _DOWNLOAD_MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported format")
+
+    tailoring_session = crud.get_tailoring_session(session, session_id)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    job = crud.get_job_posting(session, tailoring_session.job_posting_id)
+    profile = crud.get_candidate_profile(session)
+    html_content = strip_marks(tailoring_session.working_html or "")
+
+    name_part = _filename_segment(profile.full_name if profile else None, "Resume")
+    role_part = _filename_segment(job.title if job else None, "Role")
+    company_part = _filename_segment(job.company if job else None, "Company")
+
+    output_filename = f"{name_part}_{role_part}_{company_part}.{format}"
+    output_path = str(config.OUTPUT_DIR / output_filename)
+
+    if format == "docx":
+        render_html_export_to_docx(html_content, output_path)
+    elif format == "pdf":
+        render_html_export_to_pdf(html_content, output_path)
+    else:
+        render_html_export_to_txt(html_content, output_path)
+
+    return FileResponse(output_path, media_type=_DOWNLOAD_MEDIA_TYPES[format], filename=output_filename)
 
 
 @router.get("/session/{session_id}/render")
@@ -167,21 +363,19 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
         matched_factors = _get_matched_factors(session, job.id)
 
         provider = get_llm_provider()
+        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+
         changes = propose_soft_fragment_changes(
             provider,
             job_posting_text=job.raw_text,
             resume_html=tailoring_session.working_html or "",
             matched_factors=matched_factors,
+            keywords=_keyword_texts(keywords),
         )
 
-        text = (
-            "Soft-изменения: заголовок, названия должностей и подбор скиллов под вакансию "
-            "(только терминология, ничего не переписывается по сути)."
-            if lang == "ru"
-            else "Soft changes: title, job titles and skills selection matched to the posting "
-            "(terminology only, nothing rewritten in substance)."
+        message = crud.create_tailoring_message(
+            session, session_id, role="assistant", text=_soft_message_text(lang)
         )
-        message = crud.create_tailoring_message(session, session_id, role="assistant", text=text)
         created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
 
         return {
@@ -190,6 +384,7 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
             "level": "soft",
             "changes": [_serialize_change(c) for c in created],
             "superseded_change_ids": [c.id for c in superseded],
+            "keywords": keywords,
         }
     finally:
         session.close()
@@ -215,25 +410,22 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
         matched_factors = _get_matched_factors(session, job.id)
-        keywords = [factor.get("text", "") for factor in matched_factors]
 
         provider = get_llm_provider()
+        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+        keyword_texts = _keyword_texts(keywords)
+
         changes = propose_medium_fragment_changes(
             provider,
             job_posting_text=job.raw_text,
             resume_html=tailoring_session.working_html or "",
             matched_factors=matched_factors,
-            keywords=keywords,
+            keywords=keyword_texts,
         )
 
-        text = (
-            "Medium-изменения: точечные правки summary и experience под ключевые слова вакансии "
-            "(добавляем нужные слова в нужные места, не переписываем сильно)."
-            if lang == "ru"
-            else "Medium changes: targeted summary/experience edits weaving in the posting's keywords "
-            "(words inserted in the right places, not a heavy rewrite)."
+        message = crud.create_tailoring_message(
+            session, session_id, role="assistant", text=_medium_message_text(lang)
         )
-        message = crud.create_tailoring_message(session, session_id, role="assistant", text=text)
         created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
 
         return {
@@ -242,6 +434,7 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
             "level": "medium",
             "changes": [_serialize_change(c) for c in created],
             "superseded_change_ids": [c.id for c in superseded],
+            "keywords": keywords,
         }
     finally:
         session.close()
@@ -276,6 +469,8 @@ def _run_agent_turn(session_id: int, history_dicts: list[dict], user_message: st
         matched_factors = _get_matched_factors(session, job.id)
 
         provider = get_llm_provider()
+        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+
         result = run_agent_fragment_turn(
             provider,
             job_posting_text=job.raw_text,
@@ -283,6 +478,7 @@ def _run_agent_turn(session_id: int, history_dicts: list[dict], user_message: st
             matched_factors=matched_factors,
             conversation_history=history_dicts,
             user_message=user_message,
+            keywords=_keyword_texts(keywords),
         )
 
         message = crud.create_tailoring_message(
@@ -298,6 +494,7 @@ def _run_agent_turn(session_id: int, history_dicts: list[dict], user_message: st
             "level": "custom",
             "changes": [_serialize_change(c) for c in created],
             "superseded_change_ids": [c.id for c in superseded],
+            "keywords": keywords,
         }
     finally:
         session.close()

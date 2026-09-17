@@ -11,6 +11,13 @@ MATCHED FACTORS
 - {{ factor.text }} ({{ factor.note }})
 {% endfor %}
 
+{% if keywords %}
+TARGET KEYWORDS (from ATS keyword extraction - keep these in mind when proposing or discussing edits)
+{% for keyword in keywords %}
+- {{ keyword }}
+{% endfor %}
+{% endif %}
+
 {% if conversation_history %}
 CONVERSATION SO FAR
 {% for message in conversation_history %}

@@ -9,6 +9,7 @@ def get_candidate_profile(session: Session) -> CandidateProfile | None:
 
 def upsert_candidate_profile(
     session: Session,
+    full_name: str | None = None,
     email: str | None = None,
     github_url: str | None = None,
     linkedin_url: str | None = None,
@@ -21,6 +22,7 @@ def upsert_candidate_profile(
         profile = CandidateProfile()
         session.add(profile)
 
+    profile.full_name = full_name
     profile.email = email
     profile.github_url = github_url
     profile.linkedin_url = linkedin_url

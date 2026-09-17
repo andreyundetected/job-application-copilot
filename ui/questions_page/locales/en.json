@@ -1,0 +1,19 @@
+{
+    "page_title": "Application Questions",
+    "paste_label": "Paste the questions from the application form",
+    "paste_placeholder": "Paste the full text of the form - all fields and questions at once...",
+    "process_button": "Process questions",
+    "processing": "Splitting and answering questions...",
+    "empty_state": "No questions processed yet - paste the form text above.",
+    "type_short_text": "Short answer",
+    "type_document": "Document",
+    "type_other": "Non-text file",
+    "category_cover_letter": "Cover letter",
+    "category_summary": "Summary",
+    "manual_review_notice": "This needs your manual review - the agent flagged it instead of answering automatically.",
+    "other_notice": "This field needs a non-text file upload - handle it yourself.",
+    "save_button": "Save",
+    "delete_button": "Delete",
+    "download_docx": "Download .docx",
+    "download_pdf": "Download .pdf"
+}

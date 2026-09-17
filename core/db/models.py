@@ -58,11 +58,20 @@ class CandidateProfile(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
     )
+    full_name: Mapped[str] = mapped_column(String(255), nullable=True)
     email: Mapped[str] = mapped_column(String(255), nullable=True)
     github_url: Mapped[str] = mapped_column(String(512), nullable=True)
     linkedin_url: Mapped[str] = mapped_column(String(512), nullable=True)
     extra_links: Mapped[list] = mapped_column(JSON, nullable=True)
     extra_info: Mapped[str] = mapped_column(Text, nullable=True)
+
+
+class AppSettings(Base):
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    pregenerate_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    pregenerate_min_score: Mapped[int] = mapped_column(Integer, default=7)
 
 
 class JobPosting(Base):
@@ -207,6 +216,7 @@ class TailoringSession(Base):
     working_content: Mapped[dict] = mapped_column(JSON)
     working_html: Mapped[str] = mapped_column(Text, nullable=True)
     style: Mapped[dict] = mapped_column(JSON, nullable=True)
+    extracted_keywords: Mapped[list] = mapped_column(JSON, nullable=True)
 
     messages: Mapped[list["TailoringMessage"]] = relationship(back_populates="session")
     changes: Mapped[list["TailoringChange"]] = relationship(back_populates="session")
@@ -272,10 +282,13 @@ class FormQuestion(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     application_id: Mapped[int] = mapped_column(ForeignKey("applications.id"))
+    order: Mapped[int] = mapped_column(Integer, default=0)
 
     question_text: Mapped[str] = mapped_column(Text)
     answer_type: Mapped[str] = mapped_column(String(32))
+    category: Mapped[str] = mapped_column(String(32), nullable=True)
     answer_text: Mapped[str] = mapped_column(Text, nullable=True)
     answer_file_path: Mapped[str] = mapped_column(String(1024), nullable=True)
+    needs_manual_input: Mapped[bool] = mapped_column(Boolean, default=False)
 
     application: Mapped["Application"] = relationship(back_populates="form_questions")

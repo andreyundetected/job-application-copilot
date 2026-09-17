@@ -3,6 +3,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
 
 from core.rendering.base import color_hex, merge_style, resolve_style
+from core.rendering.html_export import parse_resume_html
 
 
 def _rgb(color_name: str) -> RGBColor:
@@ -126,6 +127,40 @@ def render_docx(content: dict, output_path: str, style: dict | None = None) -> s
         for skill_line in content["skills"]:
             text = f"{skill_line['label']}: {', '.join(skill_line['items'])}"
             _add_styled_paragraph(document, text, "body", style)
+
+    document.save(output_path)
+    return output_path
+
+
+def render_html_export_to_docx(html_content: str, output_path: str, font_name: str = "Calibri") -> str:
+    blocks = parse_resume_html(html_content)
+    document = Document()
+
+    for block in blocks:
+        paragraph = document.add_paragraph(style="List Bullet" if block["type"] == "bullet" else None)
+        if block["align"] == "center":
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        elif block["align"] == "right":
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+        for run_data in block["runs"]:
+            if run_data["text"] == "\n":
+                paragraph.add_run().add_break()
+                continue
+
+            run = paragraph.add_run(run_data["text"])
+            run.font.name = font_name
+            run.font.size = Pt(run_data.get("size") or 10)
+            run.bold = bool(run_data.get("bold"))
+            run.italic = bool(run_data.get("italic"))
+
+            color = run_data.get("color")
+            if color:
+                hex_value = color.lstrip("#")
+                if len(hex_value) == 6:
+                    run.font.color.rgb = RGBColor(
+                        int(hex_value[0:2], 16), int(hex_value[2:4], 16), int(hex_value[4:6], 16)
+                    )
 
     document.save(output_path)
     return output_path

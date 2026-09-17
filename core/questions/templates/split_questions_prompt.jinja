@@ -1,0 +1,20 @@
+You receive a raw block of text pasted from a job application form. It may contain one or several separate questions or fields, possibly mixed with form labels, instructions, or noise from copy-pasting a web page. Your job is only to split it into individual distinct questions/fields and classify what kind of answer each one needs. You do not answer any of them here.
+
+RAW PASTED FORM TEXT
+{{ raw_text }}
+
+CLASSIFICATION
+For each distinct question or field, decide its answer_type:
+- "short_text": a short factual or free-text answer typed directly into a form field (e.g. years of experience, availability, a short "why us" answer, salary expectations).
+- "document": the field expects a full written document as the answer - a cover letter, a motivation letter, a longer "tell us about yourself" essay, or anything else that reads as a standalone document rather than a form field answer.
+- "other": the field asks for a non-text file upload (a photo, a scanned ID, a portfolio file, a video) or anything that isn't text at all and can't be answered with generated text.
+
+TASK
+Extract each distinct question as it was actually asked (clean up formatting noise, but do not paraphrase or change its meaning). Skip anything that is clearly not a question or field (page furniture, unrelated boilerplate). If the pasted text contains only one question, output only one.
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<question type="short_text|document|other">The exact question or field label, cleaned of formatting noise</question>
+
+Repeat <question> once per distinct question found, in the order they appeared.

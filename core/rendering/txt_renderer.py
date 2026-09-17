@@ -1,3 +1,22 @@
+from core.rendering.html_export import parse_resume_html
+
+
+def render_html_export_to_txt(html_content: str, output_path: str) -> str:
+    blocks = parse_resume_html(html_content)
+    lines = []
+
+    for block in blocks:
+        text = "".join(run["text"] for run in block["runs"]).replace("\n", " ").strip()
+        if not text:
+            continue
+        lines.append(f"- {text}" if block["type"] == "bullet" else text)
+
+    with open(output_path, "w", encoding="utf-8") as file:
+        file.write("\n".join(lines))
+
+    return output_path
+
+
 def _render_content_blocks_lines(blocks):
     lines = []
     for block in blocks or []:

@@ -1,5 +1,6 @@
 {
     "about_me_title": "About Me",
+    "full_name_label": "Full name",
     "contacts_links": "Contacts and links",
     "email_label": "Email",
     "github_label": "GitHub",
@@ -33,5 +34,9 @@
     "parsing_linkedin": "Parsing LinkedIn text...",
     "done": "Done.",
     "failed": "Failed:",
-    "summary_prefix": "Summary:"
+    "summary_prefix": "Summary:",
+    "pregenerate_title": "Acceleration",
+    "pregenerate_hint": "Pre-run keyword extraction and the soft/medium proposals right after evaluation, instead of waiting until you open the tailoring page. Uses a bit more tokens per evaluated job, but the tailoring page opens already filled in. Only affects manual review - automated auto-apply flows already do this at a high enough score.",
+    "pregenerate_enabled_label": "Pre-generate tailoring suggestions",
+    "pregenerate_min_score_label": "Minimum fit score to trigger pre-generation"
 }

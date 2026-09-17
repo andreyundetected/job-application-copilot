@@ -41,6 +41,7 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
     active_linkedin = crud.get_active_resume_version(session, "linkedin")
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
+    app_settings = crud.get_app_settings(session)
 
     return {
         "request": request,
@@ -49,6 +50,8 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
         "active_linkedin": active_linkedin,
         "blockers": blockers,
         "scoring_factors": scoring_factors,
+        "pregenerate_enabled": app_settings.pregenerate_enabled if app_settings else False,
+        "pregenerate_min_score": app_settings.pregenerate_min_score if app_settings else 7,
         "lang": lang,
         "t": load_page_strings("ui/settings_page", lang),
     }
@@ -65,6 +68,7 @@ def settings_page(
 
 @router.post("/profile")
 def update_profile(
+    full_name: str = Form(""),
     email: str = Form(""),
     github_url: str = Form(""),
     linkedin_url: str = Form(""),
@@ -76,6 +80,7 @@ def update_profile(
 
     crud.upsert_candidate_profile(
         session,
+        full_name=full_name or None,
         email=email or None,
         github_url=github_url or None,
         linkedin_url=linkedin_url or None,
@@ -189,3 +194,17 @@ def add_scoring_factor(
 def delete_scoring_factor(factor_id: int, session: Session = Depends(get_session)):
     crud.delete_scoring_factor(session, factor_id)
     return JSONResponse({"status": "ok", "id": factor_id})
+
+
+@router.post("/pregenerate")
+def update_pregenerate_settings(
+    pregenerate_enabled: bool = Form(False),
+    pregenerate_min_score: int = Form(7),
+    session: Session = Depends(get_session),
+):
+    crud.upsert_app_settings(
+        session,
+        pregenerate_enabled=pregenerate_enabled,
+        pregenerate_min_score=pregenerate_min_score,
+    )
+    return JSONResponse({"status": "ok"})
