@@ -4,7 +4,8 @@
 
 {% block content %}
 <style>
-main { max-width: 100%; width: 100%; padding-bottom: 0; }
+main { max-width: 100%; width: 100%; padding: 16px 20px 8px; }
+html, body { height: 100%; overflow: hidden; }
 
 .questions-layout {
     display: grid;
@@ -12,7 +13,7 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
     gap: 20px;
     align-items: stretch;
     width: 100%;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 52px - 24px);
 }
 
 .copilot-panel, .questions-column, .side-column {
@@ -22,7 +23,85 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
     scrollbar-width: thin;
     scrollbar-color: var(--border-hover) transparent;
 }
-.copilot-panel { display: flex; flex-direction: column; overflow-y: hidden; }
+.copilot-panel { display: flex; flex-direction: column; overflow-y: hidden; position: relative; }
+
+.add-questions-trigger {
+    width: 100%;
+    margin: 0 0 12px !important;
+    padding: 12px 14px !important;
+    border: 1.5px dashed var(--border-hover) !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius) !important;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+.add-questions-trigger:hover {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+}
+.add-questions-trigger svg {
+    width: 16px;
+    height: 16px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+.modal-overlay.open {
+    display: flex;
+}
+.modal-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    width: 560px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.modal-close:hover {
+    color: var(--text-primary);
+    background: var(--bg-input);
+}
+.modal-box textarea {
+    min-height: 160px;
+}
 
 .copilot-panel::-webkit-scrollbar, .questions-column::-webkit-scrollbar, .side-column::-webkit-scrollbar { width: 7px; }
 .copilot-panel::-webkit-scrollbar-thumb, .questions-column::-webkit-scrollbar-thumb, .side-column::-webkit-scrollbar-thumb {
@@ -122,6 +201,37 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
 
 .copy-btn { background: none; border: 1px solid var(--border); color: var(--text-secondary); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
 .copy-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+.download-format-select { width: auto; padding: 5px 8px; font-size: 11px; margin-top: 0; }
+.download-answer-btn { padding: 5px 10px !important; font-size: 12px; }
+
+textarea.answer-body-editable {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px dashed transparent;
+    border-radius: 6px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    outline: none;
+    cursor: text;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+textarea.answer-body-editable:hover {
+    border-color: var(--border);
+    background-color: var(--bg-input);
+}
+textarea.answer-body-editable:focus {
+    border-color: var(--accent);
+    background-color: var(--bg-input);
+    cursor: text;
+}
+.answer-body-pending {
+    opacity: 0.6;
+}
 </style>
 
 <div class="questions-layout">
@@ -153,28 +263,6 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
     </div>
 
     <div class="questions-column">
-        <div class="card">
-            <label for="raw-questions">{{ t.paste_label }}</label>
-            <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
-            <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
-            <p class="salary-line" id="process-status"></p>
-
-            <button type="button" class="btn-ghost btn" id="btn-toggle-manual" style="margin-top:18px;">{{ t.add_question_button }}</button>
-            <div class="manual-add-form" id="manual-add-form">
-                <label for="manual-question-text">{{ t.paste_label }}</label>
-                <textarea id="manual-question-text" placeholder="{{ t.manual_question_placeholder }}" style="min-height:70px;"></textarea>
-                <label for="manual-question-category">{{ t.manual_type_label }}</label>
-                <select id="manual-question-category">
-                    <option value="general">{{ t.category_general }}</option>
-                    <option value="cover_letter">{{ t.category_cover_letter }}</option>
-                    <option value="summary">{{ t.category_summary }}</option>
-                </select>
-                <label for="manual-char-limit">{{ t.manual_char_limit_label }}</label>
-                <input type="text" inputmode="numeric" id="manual-char-limit" placeholder="{{ t.manual_char_limit_placeholder }}" style="max-width:140px;">
-                <button type="button" class="btn" id="btn-add-manual">{{ t.add_question_button }}</button>
-            </div>
-        </div>
-
         <div id="questions-list">
             {% if not questions %}
             <p class="salary-line" id="empty-hint">{{ t.empty_state }}</p>
@@ -183,6 +271,14 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
     </div>
 
     <div class="copilot-panel card">
+        <button type="button" class="btn-ghost btn add-questions-trigger" id="btn-open-attach">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            {{ t.open_paste_button }}
+        </button>
+
         <div id="chat-stream" class="chat-stream"></div>
 
         <div id="selected-bar"></div>
@@ -197,6 +293,18 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
                 </svg>
             </button>
         </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="attach-modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>{{ t.paste_label }}</h3>
+            <button type="button" class="modal-close" id="btn-attach-close">&times;</button>
+        </div>
+        <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
+        <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
+        <p class="salary-line" id="process-status"></p>
     </div>
 </div>
 
@@ -267,10 +375,12 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
         }
 
         let bodyHtml = "";
-        if (q.answer_text) {
-            bodyHtml = `<div class="answer-body">${q.answer_text.replace(/</g, "&lt;")}</div>`;
-        } else if (!isPending) {
-            bodyHtml = `<p class="salary-line">${I18N.not_generated_yet}</p>`;
+        if (isPending) {
+            bodyHtml = q.answer_text
+                ? `<div class="answer-body answer-body-pending">${q.answer_text.replace(/</g, "&lt;")}</div>`
+                : `<p class="salary-line">${I18N.not_generated_yet}</p>`;
+        } else {
+            bodyHtml = `<textarea class="answer-body answer-body-editable" data-question-id="${q.id}" placeholder="${I18N.not_generated_yet}">${(q.answer_text || "").replace(/</g, "&lt;")}</textarea>`;
         }
 
         let changeHtml = "";
@@ -289,7 +399,17 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
 
         let actionsHtml = "";
         if (q.answer_text && !isPending) {
-            actionsHtml = `<div class="question-actions"><button type="button" class="copy-btn copy-answer-btn">${I18N.copy_button}</button><button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button></div>`;
+            let downloadHtml = "";
+            if (q.category === "cover_letter") {
+                downloadHtml = `
+                    <select class="download-format-select" data-question-id="${q.id}">
+                        <option value="docx">DOCX</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                    <button type="button" class="btn-ghost btn download-answer-btn" data-question-id="${q.id}">${I18N.download_answer_button}</button>
+                `;
+            }
+            actionsHtml = `<div class="question-actions"><button type="button" class="copy-btn copy-answer-btn">${I18N.copy_button}</button>${downloadHtml}<button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button></div>`;
         } else {
             actionsHtml = `<div class="question-actions"><button type="button" class="btn-ghost btn delete-btn" style="margin-left:auto;">${I18N.delete_button}</button></div>`;
         }
@@ -324,6 +444,7 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
             questionsList.appendChild(card);
         });
         renderProgress();
+        autoSizeEditableTextareas();
     }
 
     function updateQuestion(updated) {
@@ -335,7 +456,16 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
 
     function renderSelectedBar() {
         selectedBar.innerHTML = "";
+
+        if (state.questions.length === 0) {
+            selectHint.textContent = I18N.no_questions_hint;
+            selectHint.style.display = "block";
+            return;
+        }
+
+        selectHint.textContent = I18N.select_hint;
         selectHint.style.display = state.selectedId ? "none" : "block";
+
         if (!state.selectedId) return;
 
         const q = state.questions.find((item) => item.id === state.selectedId);
@@ -352,6 +482,7 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
         state.selectedId = state.selectedId === id ? null : id;
         renderQuestionsList();
         renderSelectedBar();
+        updateChatInputState();
     }
 
     questionsList.addEventListener("click", async (e) => {
@@ -388,6 +519,20 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
             return;
         }
 
+        if (e.target.classList.contains("download-format-select")) {
+            return;
+        }
+
+        if (e.target.classList.contains("download-answer-btn")) {
+            const format = card.querySelector(".download-format-select").value;
+            window.location.href = `/questions/${questionId}/download?format=${format}`;
+            return;
+        }
+
+        if (e.target.classList.contains("answer-body-editable")) {
+            return;
+        }
+
         if (e.target.classList.contains("copy-answer-btn")) {
             const q = state.questions.find((item) => item.id === questionId);
             if (q && q.answer_text) {
@@ -398,16 +543,54 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
         }
 
         if (e.target.classList.contains("delete-btn")) {
-            await fetch(`/questions/${questionId}/delete`, { method: "POST" });
+            const response = await fetch(`/questions/${questionId}/delete`, { method: "POST" });
+            if (!response.ok) {
+                showToast(I18N.delete_failed_toast, "danger");
+                return;
+            }
             state.questions = state.questions.filter((q) => q.id !== questionId);
             if (state.selectedId === questionId) state.selectedId = null;
             renderQuestionsList();
             renderSelectedBar();
+            updateChatInputState();
+            return;
+        }
+
+        const clickedQuestion = state.questions.find((item) => item.id === questionId);
+        if (clickedQuestion && clickedQuestion.pending_task_id) {
             return;
         }
 
         selectQuestion(questionId);
     });
+
+    questionsList.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("answer-body-editable")) return;
+        e.target.style.height = "auto";
+        e.target.style.height = e.target.scrollHeight + "px";
+    });
+
+    questionsList.addEventListener("focusout", async (e) => {
+        if (!e.target.classList.contains("answer-body-editable")) return;
+        const questionId = parseInt(e.target.dataset.questionId, 10);
+        const newText = e.target.value;
+        const q = state.questions.find((item) => item.id === questionId);
+        if (!q || q.answer_text === newText) return;
+
+        await fetch(`/questions/${questionId}/answer`, {
+            method: "POST",
+            body: new URLSearchParams({ answer_text: newText }),
+        });
+
+        updateQuestion({ ...q, answer_text: newText, needs_manual_input: false, flag_reason: null });
+    });
+
+    function autoSizeEditableTextareas() {
+        questionsList.querySelectorAll(".answer-body-editable").forEach((el) => {
+            el.style.height = "auto";
+            el.style.height = el.scrollHeight + "px";
+        });
+    }
 
     function appendChatMessage(role, text, pending) {
         const hint = document.getElementById("empty-chat-hint");
@@ -428,37 +611,50 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
 
     let isSending = false;
 
+    function updateChatInputState() {
+        const disabled = isSending || !state.selectedId;
+        chatInput.disabled = disabled;
+        sendBtn.disabled = disabled;
+        chatInput.placeholder = isSending ? I18N.generating_placeholder : I18N.chat_placeholder;
+    }
+
     function setSending(value) {
         isSending = value;
-        chatInput.disabled = value;
-        sendBtn.disabled = value;
-        chatInput.placeholder = value ? I18N.generating_placeholder : I18N.chat_placeholder;
+        updateChatInputState();
     }
 
     async function sendChat() {
         const text = chatInput.value.trim();
-        if (isSending || !text) return;
+        if (isSending || !text || !state.selectedId) return;
         setSending(true);
         appendChatMessage("user", text, false);
         chatInput.value = "";
         chatInput.style.height = "auto";
 
         const pendingWrapper = appendChatMessage("assistant", "", true);
+        const editingQuestionId = state.selectedId;
 
         const response = await fetch(`/questions/application/${APPLICATION_ID}/chat`, {
             method: "POST",
             body: new URLSearchParams({
                 user_message: text,
-                question_id: state.selectedId ? String(state.selectedId) : "",
+                question_id: String(editingQuestionId),
             }),
         });
         const data = await response.json();
+
+        const editingQuestion = state.questions.find((item) => item.id === editingQuestionId);
+        if (editingQuestion) {
+            updateQuestion({ ...editingQuestion, pending_task_id: data.task_id });
+        }
 
         pollTaskStatus([data.task_id], (tasks) => {
             const task = tasks[0];
             if (task.status === "done") {
                 pendingWrapper.classList.remove("pending");
                 pendingWrapper.textContent = task.result.message;
+                const q = state.questions.find((item) => item.id === editingQuestionId);
+                if (q) updateQuestion({ ...q, pending_task_id: null });
                 if (task.result.change) {
                     state.changesByQuestion[task.result.change.question_id] = task.result.change;
                     renderQuestionsList();
@@ -467,6 +663,8 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
             } else if (task.status === "failed") {
                 pendingWrapper.classList.remove("pending");
                 pendingWrapper.textContent = `Error: ${task.error}`;
+                const q = state.questions.find((item) => item.id === editingQuestionId);
+                if (q) updateQuestion({ ...q, pending_task_id: null });
                 setSending(false);
             }
         });
@@ -500,42 +698,74 @@ main { max-width: 100%; width: 100%; padding-bottom: 0; }
             if (task.status === "done") {
                 document.getElementById("process-status").textContent = "";
                 document.getElementById("raw-questions").value = "";
-                task.result.questions.forEach((q) => state.questions.push(q));
+                document.getElementById("attach-modal-overlay").classList.remove("open");
+
+                const stubQuestions = task.result.questions;
+                stubQuestions.forEach((q) => state.questions.push(q));
                 renderQuestionsList();
+                renderSelectedBar();
+                updateChatInputState();
+
+                const genTaskIds = [...new Set(stubQuestions.map((q) => q.pending_task_id).filter(Boolean))];
+                if (genTaskIds.length > 0) {
+                    pollTaskStatus(genTaskIds, (genTasks) => {
+                        genTasks.forEach((genTask) => {
+                            if (genTask.status === "done") {
+                                genTask.result.questions.forEach((q) => updateQuestion(q));
+                                renderSelectedBar();
+                                updateChatInputState();
+                            } else if (genTask.status === "failed") {
+                                stubQuestions
+                                    .filter((q) => q.pending_task_id === genTask.id)
+                                    .forEach((q) =>
+                                        updateQuestion({
+                                            ...q,
+                                            pending_task_id: null,
+                                            needs_manual_input: true,
+                                            flag_reason: genTask.error,
+                                        })
+                                    );
+                                renderSelectedBar();
+                                updateChatInputState();
+                            }
+                        });
+                    });
+                }
             } else if (task.status === "failed") {
                 document.getElementById("process-status").textContent = `${I18N.evaluation_failed || "Failed:"} ${task.error}`;
             }
         });
     });
 
-    document.getElementById("btn-toggle-manual").addEventListener("click", () => {
-        document.getElementById("manual-add-form").classList.toggle("open");
+    const attachModal = document.getElementById("attach-modal-overlay");
+    const openAttachBtn = document.getElementById("btn-open-attach");
+    const closeAttachBtn = document.getElementById("btn-attach-close");
+
+    function openAttachModal() {
+        attachModal.classList.add("open");
+        document.getElementById("raw-questions").focus();
+    }
+
+    function closeAttachModal() {
+        attachModal.classList.remove("open");
+    }
+
+    openAttachBtn.addEventListener("click", openAttachModal);
+    closeAttachBtn.addEventListener("click", closeAttachModal);
+
+    attachModal.addEventListener("click", (e) => {
+        if (e.target === attachModal) closeAttachModal();
     });
 
-    document.getElementById("btn-add-manual").addEventListener("click", async () => {
-        const questionText = document.getElementById("manual-question-text").value.trim();
-        if (!questionText) return;
-
-        const response = await fetch(`/questions/application/${APPLICATION_ID}/manual`, {
-            method: "POST",
-            body: new URLSearchParams({
-                question_text: questionText,
-                category: document.getElementById("manual-question-category").value,
-                char_limit: document.getElementById("manual-char-limit").value,
-            }),
-        });
-        const data = await response.json();
-
-        state.questions.push(data.question);
-        renderQuestionsList();
-
-        document.getElementById("manual-question-text").value = "";
-        document.getElementById("manual-char-limit").value = "";
-        document.getElementById("manual-add-form").classList.remove("open");
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && attachModal.classList.contains("open")) {
+            closeAttachModal();
+        }
     });
 
     renderQuestionsList();
     renderSelectedBar();
+    updateChatInputState();
 
     if ({{ chat_messages | length }} === 0) {
         appendChatMessage("assistant", I18N.chat_intro, false);

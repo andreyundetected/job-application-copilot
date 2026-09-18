@@ -64,3 +64,43 @@ def update_application_notes(
     session.commit()
     session.refresh(application)
     return application
+
+
+def move_application_status(
+    session: Session, application_id: int, status: str
+) -> Application | None:
+    application = session.get(Application, application_id)
+    if application is None:
+        return None
+    application.status = status
+    if status == "applied" and application.applied_at is None:
+        application.applied_at = datetime.datetime.utcnow()
+    session.commit()
+    session.refresh(application)
+    return application
+
+
+def update_application_interview(
+    session: Session,
+    application_id: int,
+    interview_at: datetime.datetime | None,
+    interview_notes: str | None = None,
+) -> Application | None:
+    application = session.get(Application, application_id)
+    if application is None:
+        return None
+    application.interview_at = interview_at
+    if interview_notes is not None:
+        application.interview_notes = interview_notes
+    session.commit()
+    session.refresh(application)
+    return application
+
+
+def delete_application(session: Session, application_id: int) -> bool:
+    application = session.get(Application, application_id)
+    if application is None:
+        return False
+    session.delete(application)
+    session.commit()
+    return True

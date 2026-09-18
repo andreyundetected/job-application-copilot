@@ -1,0 +1,14 @@
+{
+    "page_title": "Job Tracker",
+    "status_draft": "Draft",
+    "status_applied": "Applied",
+    "status_interviewing": "Interviewing",
+    "status_offer": "Offer",
+    "status_rejected": "Rejected",
+    "status_withdrawn": "Withdrawn",
+    "unknown_company": "Unknown company",
+    "unknown_role": "Unknown role",
+    "set_interview": "Set interview",
+    "move_failed_toast": "Couldn't move the card, please try again.",
+    "delete_failed_toast": "Couldn't remove the card, please try again."
+}

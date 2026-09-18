@@ -1,3 +1,4 @@
+import datetime
 import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -103,6 +104,65 @@ def _gather_context(session: Session, application_id: int) -> dict:
     }
 
 
+def _build_unified_history(
+    session: Session, application_id: int, exclude_message_id: int | None = None, max_chars: int = 6000
+) -> list[dict]:
+    questions = crud.list_form_questions_for_application(session, application_id)
+    changes = crud.list_changes_for_application(session, application_id)
+    chat_messages = crud.list_chat_messages(session, application_id)
+
+    events: list[tuple] = []
+
+    for message in chat_messages:
+        if message.id == exclude_message_id:
+            continue
+        tag = f"[id={message.referenced_question_id}] " if message.referenced_question_id else ""
+        events.append((message.created_at, f"{tag}{message.role}: {message.text}"))
+
+    known_text: dict[int, str] = {}
+
+    for change in changes:
+        events.append(
+            (
+                change.created_at,
+                f"[id={change.question_id}] агент-технически: изменил \"{(change.original_text or '')[:300]}\" "
+                f"на \"{(change.proposed_text or '')[:300]}\"",
+            )
+        )
+        if change.status in ("approved", "rejected") and change.resolved_at:
+            action = "Apply" if change.status == "approved" else "Skip"
+            events.append(
+                (change.resolved_at, f"[id={change.question_id}] пользователь-технически: нажал {action}")
+            )
+        if change.status == "approved":
+            known_text[change.question_id] = change.proposed_text
+        elif change.question_id not in known_text:
+            known_text[change.question_id] = change.original_text
+
+    now = datetime.datetime.utcnow()
+    for question in questions:
+        baseline = known_text.get(question.id)
+        current = question.answer_text or ""
+        if baseline is not None and current != baseline:
+            events.append(
+                (now, f"[id={question.id}] пользователь-технически: поменял текст на \"{current[:500]}\"")
+            )
+
+    events.sort(key=lambda item: item[0] or now)
+    lines = [text for _, text in events]
+
+    total = 0
+    trimmed: list[str] = []
+    for line in reversed(lines):
+        total += len(line)
+        if total > max_chars:
+            break
+        trimmed.append(line)
+    trimmed.reverse()
+
+    return [{"role": "system", "text": line} for line in trimmed]
+
+
 def _job_side_info(session: Session, job) -> dict:
     if job is None:
         return {"score": None, "location": None, "work_mode": None, "salary": {}, "summary": None}
@@ -162,11 +222,11 @@ def submit_questions(
     if application is None:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    task_id = run_tracked_task("questions_split", _run_split_and_generate, application_id, raw_text)
+    task_id = run_tracked_task("questions_split", _run_split_only, application_id, raw_text)
     return JSONResponse({"task_id": task_id})
 
 
-def _run_split_and_generate(application_id: int, raw_text: str) -> dict:
+def _run_split_only(application_id: int, raw_text: str) -> dict:
     session = SessionLocal()
     try:
         provider = get_llm_provider()
@@ -175,69 +235,83 @@ def _run_split_and_generate(application_id: int, raw_text: str) -> dict:
         existing_count = len(crud.list_form_questions_for_application(session, application_id))
         created = crud.bulk_create_form_questions(session, application_id, prepared, order_offset=existing_count)
 
-        context = _gather_context(session, application_id)
+        if not created:
+            return {"questions": []}
 
         by_category: dict[str, list] = {"cover_letter": [], "summary": [], "general": []}
         for question in created:
             by_category.setdefault(question.category or "general", []).append(question)
 
-        answers_by_id: dict[int, dict] = {}
-
-        if by_category["cover_letter"]:
-            payload = [
-                {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit}
-                for q in by_category["cover_letter"]
-            ]
-            answers_by_id.update(
-                generate_cover_letter_answers(
-                    provider,
-                    payload,
-                    job_posting_text=context["job_posting_text"],
-                    resume_text=context["resume_text"],
-                    linkedin_text=context["linkedin_text"],
-                    extra_info=context["extra_info"],
-                    links=context["links"],
-                )
+        for category, questions_in_category in by_category.items():
+            if not questions_in_category:
+                continue
+            gen_task_id = run_tracked_task(
+                f"questions_generate_{category}",
+                _run_generate_category,
+                application_id,
+                category,
+                [q.id for q in questions_in_category],
             )
+            for question in questions_in_category:
+                crud.set_question_pending_task(session, question.id, gen_task_id)
 
-        if by_category["summary"]:
-            payload = [
-                {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit}
-                for q in by_category["summary"]
-            ]
-            answers_by_id.update(
-                generate_summary_answers(
-                    provider,
-                    payload,
-                    job_posting_text=context["job_posting_text"],
-                    resume_text=context["resume_text"],
-                    linkedin_text=context["linkedin_text"],
-                    extra_info=context["extra_info"],
-                    links=context["links"],
-                )
+        stub_questions = [crud.get_form_question(session, question.id) for question in created]
+
+        return {"questions": [_serialize_question(q) for q in stub_questions]}
+    finally:
+        session.close()
+
+
+def _run_generate_category(application_id: int, category: str, question_ids: list[int]) -> dict:
+    session = SessionLocal()
+    try:
+        questions = [q for q in (crud.get_form_question(session, qid) for qid in question_ids) if q is not None]
+        if not questions:
+            return {"questions": []}
+
+        context = _gather_context(session, application_id)
+        provider = get_llm_provider()
+
+        payload = [
+            {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit} for q in questions
+        ]
+
+        if category == "cover_letter":
+            answers_by_id = generate_cover_letter_answers(
+                provider,
+                payload,
+                job_posting_text=context["job_posting_text"],
+                resume_text=context["resume_text"],
+                linkedin_text=context["linkedin_text"],
+                extra_info=context["extra_info"],
+                links=context["links"],
             )
-
-        if by_category["general"]:
-            payload = [
-                {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit}
-                for q in by_category["general"]
-            ]
-            answers_by_id.update(
-                generate_general_answers_initial(
-                    provider,
-                    payload,
-                    job_posting_text=context["job_posting_text"],
-                    resume_text=context["resume_text"],
-                    linkedin_text=context["linkedin_text"],
-                    extra_info=context["extra_info"],
-                    links=context["links"],
-                )
+        elif category == "summary":
+            answers_by_id = generate_summary_answers(
+                provider,
+                payload,
+                job_posting_text=context["job_posting_text"],
+                resume_text=context["resume_text"],
+                linkedin_text=context["linkedin_text"],
+                extra_info=context["extra_info"],
+                links=context["links"],
+            )
+        else:
+            answers_by_id = generate_general_answers_initial(
+                provider,
+                payload,
+                job_posting_text=context["job_posting_text"],
+                resume_text=context["resume_text"],
+                linkedin_text=context["linkedin_text"],
+                extra_info=context["extra_info"],
+                links=context["links"],
             )
 
         updated_questions = []
-        for question in created:
+        for question in questions:
             result = answers_by_id.get(question.id)
             if result is None:
+                crud.set_question_pending_task(session, question.id, None)
                 continue
             updated = crud.set_question_generation_result(
                 session,
@@ -247,13 +321,7 @@ def _run_split_and_generate(application_id: int, raw_text: str) -> dict:
                 needs_manual_input=result["needs_manual_input"],
                 flag_reason=result["flag_reason"],
             )
-            crud.create_question_change(
-                session,
-                question_id=question.id,
-                chat_message_id=None,
-                original_text="",
-                proposed_text=result["answer_text"] or "",
-            )
+            crud.set_question_pending_task(session, question.id, None)
             updated_questions.append(updated)
 
         return {"questions": [_serialize_question(q) for q in updated_questions]}
@@ -340,11 +408,10 @@ def _run_chat_turn(
     try:
         context = _gather_context(session, application_id)
         provider = get_llm_provider()
+        history_dicts = _build_unified_history(session, application_id, exclude_message_id=user_msg_id)
 
         if selected_question_id is None:
             questions = crud.list_form_questions_for_application(session, application_id)
-            history = crud.list_chat_messages(session, application_id)
-            history_dicts = [{"role": m.role, "text": m.text} for m in history if m.id != user_msg_id]
 
             reply_text = run_advisor_chat(
                 provider,
@@ -373,25 +440,6 @@ def _run_chat_turn(
             reply_text = "That question no longer exists."
             assistant_msg = crud.create_chat_message(session, application_id, role="assistant", text=reply_text)
             return {"message_id": assistant_msg.id, "message": reply_text, "change": None}
-
-        history = crud.list_chat_messages(session, application_id)
-        changes_for_question = {
-            c.chat_message_id: c
-            for c in crud.list_changes_for_application(session, application_id)
-            if c.question_id == question.id
-        }
-
-        history_dicts = []
-        for m in history:
-            if m.id == user_msg_id:
-                continue
-            if m.referenced_question_id != question.id:
-                continue
-            entry = {"role": m.role, "text": m.text}
-            change = changes_for_question.get(m.id)
-            if change:
-                entry["change_status"] = change.status
-            history_dicts.append(entry)
 
         current_answer = question.answer_text or "(no answer yet)"
 

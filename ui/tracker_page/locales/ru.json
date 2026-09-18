@@ -1,0 +1,14 @@
+{
+    "page_title": "Трекер вакансий",
+    "status_draft": "Черновик",
+    "status_applied": "Откликнулся",
+    "status_interviewing": "Интервью",
+    "status_offer": "Оффер",
+    "status_rejected": "Отказ",
+    "status_withdrawn": "Отозвано",
+    "unknown_company": "Неизвестная компания",
+    "unknown_role": "Неизвестная роль",
+    "set_interview": "Указать интервью",
+    "move_failed_toast": "Не удалось переместить карточку, попробуй ещё раз.",
+    "delete_failed_toast": "Не удалось удалить карточку, попробуй ещё раз."
+}

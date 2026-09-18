@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Tracker{% endblock %}
+
+{% block content %}
+<style>
+main { max-width: 100%; width: 100%; padding: 16px 20px 8px; }
+html, body { height: 100%; overflow: hidden; }
+
+.tracker-board {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 52px - 24px - 48px);
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.tracker-column {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    min-height: 0;
+}
+
+.tracker-column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tracker-column-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tracker-column-count {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--bg-input);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.tracker-column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+    transition: background-color 0.12s ease;
+}
+
+.tracker-column-body.drag-over {
+    background-color: var(--accent-soft);
+}
+
+.tracker-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: grab;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+    position: relative;
+}
+
+.tracker-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+}
+
+.tracker-card.dragging {
+    opacity: 0.4;
+}
+
+.tracker-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.tracker-card-company {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tracker-card-role {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+}
+
+.tracker-card-score {
+    font-size: 11px;
+    font-weight: 700;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tracker-card-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.tracker-card:hover .tracker-card-remove {
+    opacity: 1;
+}
+
+.tracker-card-remove:hover {
+    color: var(--score-low);
+    background-color: var(--score-low-soft);
+}
+
+.tracker-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.tracker-card-badges .badge {
+    font-size: 10.5px;
+    padding: 2px 7px;
+}
+
+.tracker-card-interview {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+}
+
+.tracker-card-interview-empty {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+}
+.tracker-card-interview-empty:hover {
+    color: var(--text-secondary);
+}
+
+.interview-editor {
+    margin-top: 8px;
+    display: none;
+    gap: 6px;
+    flex-direction: column;
+}
+.interview-editor.open {
+    display: flex;
+}
+.interview-editor input[type="datetime-local"] {
+    font-size: 11.5px;
+    padding: 6px 8px;
+}
+.interview-editor .btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    margin-top: 0;
+}
+</style>
+
+<h1>{{ t.page_title }}</h1>
+
+<div class="tracker-board" id="tracker-board">
+    {% for status in statuses %}
+    <div class="tracker-column">
+        <div class="tracker-column-header">
+            <span class="tracker-column-title">{{ t["status_" + status] }}</span>
+            <span class="tracker-column-count" id="count-{{ status }}">{{ columns[status] | length }}</span>
+        </div>
+        <div class="tracker-column-body" data-status="{{ status }}">
+            {% for card in columns[status] %}
+            <div class="tracker-card" draggable="true" data-application-id="{{ card.application_id }}" data-job-id="{{ card.job_id }}">
+                <button type="button" class="tracker-card-remove" data-application-id="{{ card.application_id }}">&times;</button>
+                <div class="tracker-card-top">
+                    <div>
+                        <div class="tracker-card-company">{{ card.company or t.unknown_company }}</div>
+                        <div class="tracker-card-role">{{ card.role or t.unknown_role }}</div>
+                    </div>
+                    {% if card.score is not none %}
+                    <div class="tracker-card-score {% if card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">{{ card.score }}</div>
+                    {% endif %}
+                </div>
+                <div class="tracker-card-badges">
+                    {% if card.location %}<span class="badge">{{ card.location }}</span>{% endif %}
+                    {% if card.work_mode %}<span class="badge badge-work-mode">{{ card.work_mode }}</span>{% endif %}
+                    {% if card.source_platform %}<span class="badge">{{ card.source_platform }}</span>{% endif %}
+                </div>
+                {% if card.interview_at %}
+                <div class="tracker-card-interview interview-trigger" data-application-id="{{ card.application_id }}">📅 <span class="interview-display"></span></div>
+                {% else %}
+                <div class="tracker-card-interview-empty interview-trigger" data-application-id="{{ card.application_id }}">+ {{ t.set_interview }}</div>
+                {% endif %}
+                <div class="interview-editor" data-application-id="{{ card.application_id }}">
+                    <input type="datetime-local" class="interview-input">
+                    <button type="button" class="btn save-interview-btn">{{ t.btn_save }}</button>
+                </div>
+                <script>
+                (function(){
+                    var raw = {{ card.interview_at | tojson }};
+                    if (raw) {
+                        var el = document.currentScript.previousElementSibling.previousElementSibling.querySelector(".interview-display");
+                        if (el) {
+                            var d = new Date(raw);
+                            el.textContent = d.toLocaleString();
+                        }
+                    }
+                })();
+                </script>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+const I18N = {{ t | tojson }};
+const board = document.getElementById("tracker-board");
+
+let draggedCard = null;
+
+board.addEventListener("dragstart", (e) => {
+    const card = e.target.closest(".tracker-card");
+    if (!card) return;
+    draggedCard = card;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+});
+
+board.addEventListener("dragend", (e) => {
+    const card = e.target.closest(".tracker-card");
+    if (card) card.classList.remove("dragging");
+    document.querySelectorAll(".tracker-column-body.drag-over").forEach((el) => el.classList.remove("drag-over"));
+});
+
+board.querySelectorAll(".tracker-column-body").forEach((columnBody) => {
+    columnBody.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        columnBody.classList.add("drag-over");
+    });
+    columnBody.addEventListener("dragleave", () => {
+        columnBody.classList.remove("drag-over");
+    });
+    columnBody.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        columnBody.classList.remove("drag-over");
+        if (!draggedCard) return;
+
+        const fromColumn = draggedCard.closest(".tracker-column-body");
+        const newStatus = columnBody.dataset.status;
+        const applicationId = draggedCard.dataset.applicationId;
+
+        columnBody.appendChild(draggedCard);
+        updateCounts();
+
+        const response = await fetch(`/tracker/applications/${applicationId}/move`, {
+            method: "POST",
+            body: new URLSearchParams({ status: newStatus }),
+        });
+        if (!response.ok) {
+            fromColumn.appendChild(draggedCard);
+            updateCounts();
+            showToast(I18N.move_failed_toast, "danger");
+        }
+    });
+});
+
+function updateCounts() {
+    document.querySelectorAll(".tracker-column-body").forEach((columnBody) => {
+        const status = columnBody.dataset.status;
+        const countEl = document.getElementById(`count-${status}`);
+        if (countEl) countEl.textContent = columnBody.querySelectorAll(".tracker-card").length;
+    });
+}
+
+board.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("tracker-card-remove")) {
+        e.stopPropagation();
+        const applicationId = e.target.dataset.applicationId;
+        const response = await fetch(`/tracker/applications/${applicationId}/delete`, { method: "POST" });
+        if (response.ok) {
+            const card = e.target.closest(".tracker-card");
+            card.remove();
+            updateCounts();
+        } else {
+            showToast(I18N.delete_failed_toast, "danger");
+        }
+        return;
+    }
+
+    if (e.target.closest(".interview-trigger")) {
+        e.stopPropagation();
+        const applicationId = e.target.closest(".interview-trigger").dataset.applicationId;
+        const editor = board.querySelector(`.interview-editor[data-application-id="${applicationId}"]`);
+        editor.classList.toggle("open");
+        return;
+    }
+
+    if (e.target.classList.contains("save-interview-btn")) {
+        e.stopPropagation();
+        const editor = e.target.closest(".interview-editor");
+        const applicationId = editor.dataset.applicationId;
+        const value = editor.querySelector(".interview-input").value;
+
+        await fetch(`/tracker/applications/${applicationId}/interview`, {
+            method: "POST",
+            body: new URLSearchParams({ interview_at: value }),
+        });
+        window.location.reload();
+        return;
+    }
+
+    if (e.target.classList.contains("interview-input")) {
+        return;
+    }
+
+    const card = e.target.closest(".tracker-card");
+    if (card && card.dataset.jobId && card.dataset.jobId !== "None") {
+        window.location.href = `/jobs/${card.dataset.jobId}`;
+    }
+});
+</script>
+{% endblock %}

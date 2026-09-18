@@ -158,6 +158,8 @@ class Application(Base):
 
     status: Mapped[str] = mapped_column(String(32), default="draft")
     applied_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    interview_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    interview_notes: Mapped[str] = mapped_column(Text, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     source_platform: Mapped[str] = mapped_column(String(128), nullable=True)
 
@@ -328,6 +330,7 @@ class QuestionChange(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )
+    resolved_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     question_id: Mapped[int] = mapped_column(ForeignKey("form_questions.id"))
     chat_message_id: Mapped[int] = mapped_column(
         ForeignKey("application_chat_messages.id"), nullable=True

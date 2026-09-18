@@ -145,9 +145,20 @@ def update_form_question_char_limit(
 
 
 def delete_form_question(session: Session, form_question_id: int) -> bool:
+    from core.db.models import ApplicationChatMessage, QuestionChange
+
     question = session.get(FormQuestion, form_question_id)
     if question is None:
         return False
+
+    session.query(QuestionChange).filter(
+        QuestionChange.question_id == form_question_id
+    ).delete(synchronize_session=False)
+
+    session.query(ApplicationChatMessage).filter(
+        ApplicationChatMessage.referenced_question_id == form_question_id
+    ).update({ApplicationChatMessage.referenced_question_id: None}, synchronize_session=False)
+
     session.delete(question)
     session.commit()
     return True

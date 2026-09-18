@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import Session
 
 from core.db.models import QuestionChange
@@ -32,6 +34,7 @@ def resolve_question_change(session: Session, change_id: int, status: str) -> Qu
     if change is None:
         return None
     change.status = status
+    change.resolved_at = datetime.datetime.utcnow()
     session.commit()
     session.refresh(change)
     return change

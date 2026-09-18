@@ -9,6 +9,7 @@ from ui.questions_page.router import router as questions_router
 from ui.settings_page.router import router as settings_router
 from ui.tailoring_page.router import router as tailoring_router
 from ui.tasks_page.router import router as tasks_router
+from ui.tracker_page.router import router as tracker_router
 
 app = FastAPI(title="Resume Tailoring Pipeline")
 
@@ -20,6 +21,7 @@ app.include_router(settings_router)
 app.include_router(tasks_router)
 app.include_router(tailoring_router)
 app.include_router(questions_router)
+app.include_router(tracker_router)
 app.include_router(language_router)
 
 
