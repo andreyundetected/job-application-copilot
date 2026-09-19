@@ -406,9 +406,10 @@ class AutomationSettings(Base):
     auto_archive_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_tailor_soft_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_tailor_medium_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    query_chunk_size: Mapped[int] = mapped_column(Integer, default=8)
     serpent_num_per_query: Mapped[int] = mapped_column(Integer, default=30)
     default_time_range: Mapped[str] = mapped_column(String(8), default="w1")
+    target_sites: Mapped[list] = mapped_column(JSON, nullable=True)
+    max_query_words: Mapped[int] = mapped_column(Integer, default=32)
     saved_queries: Mapped[list] = mapped_column(JSON, nullable=True)
     serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
 

@@ -145,6 +145,29 @@ def test_run_single_query_handles_search_error_gracefully(monkeypatch, db_sessio
 
     assert created == []
 
+    refreshed_run = automation_runs_crud.get_automation_run(db_session, run.id)
+    assert "sample query" in refreshed_run.error
+    assert "boom" in refreshed_run.error
+
+
+@pytest.mark.automation
+def test_process_search_result_records_warning_on_unexpected_error(monkeypatch, db_session):
+    resumes_crud.create_resume_version(db_session, source_type="resume", raw_text="resume text", is_active=True)
+    run, search_result = _make_run_and_search_result(db_session)
+
+    def _boom(url):
+        raise RuntimeError("extraction exploded")
+
+    monkeypatch.setattr(pipeline, "extract_job_text", _boom)
+
+    promoted = pipeline._process_search_result(
+        db_session, run.id, search_result.id, "resume", "linkedin", [], [], None
+    )
+
+    assert promoted is False
+    refreshed_run = automation_runs_crud.get_automation_run(db_session, run.id)
+    assert "extraction exploded" in refreshed_run.error
+
 
 @pytest.mark.automation
 def test_process_search_result_creates_job_and_passes(monkeypatch, db_session):

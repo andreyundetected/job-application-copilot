@@ -42,6 +42,26 @@ def test_mark_run_started_and_finished(db_session):
 
 
 @pytest.mark.db
+def test_append_run_warning_sets_error_when_empty(db_session):
+    run = automation_runs_crud.create_automation_run(db_session)
+
+    updated = automation_runs_crud.append_run_warning(db_session, run.id, "Sample warning")
+
+    assert updated.error == "Sample warning"
+    assert updated.status == "pending"
+
+
+@pytest.mark.db
+def test_append_run_warning_accumulates_messages(db_session):
+    run = automation_runs_crud.create_automation_run(db_session)
+
+    automation_runs_crud.append_run_warning(db_session, run.id, "First warning")
+    updated = automation_runs_crud.append_run_warning(db_session, run.id, "Second warning")
+
+    assert updated.error == "First warning\nSecond warning"
+
+
+@pytest.mark.db
 def test_mark_run_failed_records_error(db_session):
     run = automation_runs_crud.create_automation_run(db_session)
 

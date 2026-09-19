@@ -13,6 +13,15 @@ class _FakeResponse:
         return self._json_data
 
 
+def _raw_response(organic):
+    return {
+        "success": True,
+        "query": "sample query",
+        "results": {"organic": organic},
+        "metadata": {"totalOrganicResults": len(organic)},
+    }
+
+
 @pytest.mark.discovery
 def test_search_returns_parsed_results(monkeypatch):
     provider = SerpentSearchProvider(api_key="fake-key", base_url="https://apiserpent.com/api/search/quick")
@@ -25,20 +34,12 @@ def test_search_returns_parsed_results(monkeypatch):
         assert headers["X-API-Key"] == "fake-key"
         return _FakeResponse(
             200,
-            {
-                "organic_results": [
-                    {
-                        "title": "Sample Job A",
-                        "link": "https://boards.greenhouse.io/a/jobs/1",
-                        "snippet": "Snippet A",
-                    },
-                    {
-                        "title": "Sample Job B",
-                        "link": "https://jobs.lever.co/b/2",
-                        "snippet": "Snippet B",
-                    },
+            _raw_response(
+                [
+                    {"title": "Sample Job A", "url": "https://boards.greenhouse.io/a/jobs/1", "snippet": "Snippet A"},
+                    {"title": "Sample Job B", "url": "https://jobs.lever.co/b/2", "snippet": "Snippet B"},
                 ]
-            },
+            ),
         )
 
     monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
@@ -59,7 +60,7 @@ def test_search_passes_date_param_when_given(monkeypatch):
 
     def fake_get(url, params=None, headers=None, timeout=None):
         captured["params"] = params
-        return _FakeResponse(200, {"organic_results": []})
+        return _FakeResponse(200, _raw_response([]))
 
     monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
 
@@ -75,7 +76,7 @@ def test_search_omits_date_param_when_not_given(monkeypatch):
 
     def fake_get(url, params=None, headers=None, timeout=None):
         captured["params"] = params
-        return _FakeResponse(200, {"organic_results": []})
+        return _FakeResponse(200, _raw_response([]))
 
     monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
 
@@ -91,7 +92,7 @@ def test_search_clamps_num_to_valid_range(monkeypatch):
 
     def fake_get(url, params=None, headers=None, timeout=None):
         captured["params"] = params
-        return _FakeResponse(200, {"organic_results": []})
+        return _FakeResponse(200, _raw_response([]))
 
     monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
 
@@ -107,12 +108,12 @@ def test_search_skips_results_without_url(monkeypatch):
     def fake_get(url, params=None, headers=None, timeout=None):
         return _FakeResponse(
             200,
-            {
-                "organic_results": [
+            _raw_response(
+                [
                     {"title": "No URL here", "snippet": "Snippet"},
-                    {"title": "Has URL", "link": "https://jobs.ashbyhq.com/c/3", "snippet": "Snippet C"},
+                    {"title": "Has URL", "url": "https://jobs.ashbyhq.com/c/3", "snippet": "Snippet C"},
                 ]
-            },
+            ),
         )
 
     monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
@@ -122,6 +123,47 @@ def test_search_skips_results_without_url(monkeypatch):
     assert result["returned_count"] == 2
     assert len(result["results"]) == 1
     assert result["results"][0]["url"] == "https://jobs.ashbyhq.com/c/3"
+
+
+@pytest.mark.discovery
+def test_search_raises_when_success_is_false(monkeypatch):
+    provider = SerpentSearchProvider(api_key="fake-key", base_url="https://apiserpent.com/api/search/quick")
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        return _FakeResponse(200, {"success": False, "error": "invalid api key"})
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
+
+    with pytest.raises(SerpentSearchError):
+        provider.search("sample query", num=10)
+
+
+@pytest.mark.discovery
+def test_search_raises_when_results_shape_unexpected(monkeypatch):
+    provider = SerpentSearchProvider(api_key="fake-key", base_url="https://apiserpent.com/api/search/quick")
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        return _FakeResponse(200, {"success": True, "organic_results": []})
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
+
+    with pytest.raises(SerpentSearchError):
+        provider.search("sample query", num=10)
+
+
+@pytest.mark.discovery
+def test_search_does_not_raise_when_organic_present_but_empty(monkeypatch):
+    provider = SerpentSearchProvider(api_key="fake-key", base_url="https://apiserpent.com/api/search/quick")
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        return _FakeResponse(200, _raw_response([]))
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.get", fake_get)
+
+    result = provider.search("sample query", num=10)
+
+    assert result["results"] == []
+    assert result["returned_count"] == 0
 
 
 @pytest.mark.discovery

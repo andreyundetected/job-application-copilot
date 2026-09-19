@@ -5,9 +5,7 @@ from core.db.crud import automation_settings as automation_settings_crud
 
 @pytest.mark.db
 def test_get_automation_settings_returns_none_when_empty(db_session):
-    result = automation_settings_crud.get_automation_settings(db_session)
-
-    assert result is None
+    assert automation_settings_crud.get_automation_settings(db_session) is None
 
 
 @pytest.mark.db
@@ -19,19 +17,15 @@ def test_upsert_automation_settings_creates_with_defaults(db_session):
     assert settings.quick_filter_enabled is True
     assert settings.auto_tailor_soft_enabled is False
     assert settings.auto_tailor_medium_enabled is False
-    assert settings.query_chunk_size == 8
     assert settings.serpent_num_per_query == 30
     assert settings.default_time_range == "w1"
+    assert settings.max_query_words == 32
+    assert settings.target_sites == [
+        "boards.greenhouse.io",
+        "jobs.lever.co",
+        "jobs.ashbyhq.com",
+    ]
     assert settings.saved_queries == []
-
-
-@pytest.mark.db
-def test_upsert_automation_settings_updates_serpent_num_per_query(db_session):
-    automation_settings_crud.upsert_automation_settings(db_session)
-
-    updated = automation_settings_crud.upsert_automation_settings(db_session, serpent_num_per_query=50)
-
-    assert updated.serpent_num_per_query == 50
 
 
 @pytest.mark.db
@@ -50,21 +44,44 @@ def test_upsert_automation_settings_updates_existing(db_session):
 
 @pytest.mark.db
 def test_upsert_automation_settings_preserves_unspecified_fields(db_session):
-    automation_settings_crud.upsert_automation_settings(
-        db_session, query_chunk_size=5, default_time_range="d1"
-    )
+    automation_settings_crud.upsert_automation_settings(db_session, max_query_words=20, default_time_range="d1")
 
     updated = automation_settings_crud.upsert_automation_settings(db_session, min_score_to_proceed=8)
 
-    assert updated.query_chunk_size == 5
+    assert updated.max_query_words == 20
     assert updated.default_time_range == "d1"
     assert updated.min_score_to_proceed == 8
 
 
 @pytest.mark.db
-def test_upsert_automation_settings_stores_saved_queries(db_session):
-    presets = [{"label": "AI Engineer roles", "terms": ["AI Engineer", "LLM Engineer"]}]
+def test_upsert_automation_settings_updates_target_sites(db_session):
+    automation_settings_crud.upsert_automation_settings(db_session)
 
-    settings = automation_settings_crud.upsert_automation_settings(db_session, saved_queries=presets)
+    updated = automation_settings_crud.upsert_automation_settings(
+        db_session, target_sites=["boards.greenhouse.io", "example.com"]
+    )
 
-    assert settings.saved_queries == presets
+    assert updated.target_sites == ["boards.greenhouse.io", "example.com"]
+
+
+@pytest.mark.db
+def test_upsert_automation_settings_stores_saved_queries_as_flat_strings(db_session):
+    queries = ['(site:example.com) ("AI Engineer" OR "LLM Engineer")']
+
+    settings = automation_settings_crud.upsert_automation_settings(db_session, saved_queries=queries)
+
+    assert settings.saved_queries == queries
+
+
+@pytest.mark.db
+def test_get_automation_settings_returns_lowest_id_when_duplicates_exist(db_session):
+    from core.db.models import AutomationSettings
+
+    older = AutomationSettings(min_score_to_proceed=5)
+    newer = AutomationSettings(min_score_to_proceed=9)
+    db_session.add_all([older, newer])
+    db_session.commit()
+
+    result = automation_settings_crud.get_automation_settings(db_session)
+
+    assert result.id == min(older.id, newer.id)

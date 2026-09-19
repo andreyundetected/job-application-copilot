@@ -32,11 +32,19 @@ class SerpentSearchProvider:
             )
 
         data = response.json()
-        organic_results = data.get("organic_results", [])
+
+        if not data.get("success", True):
+            raise SerpentSearchError(f"Serpent search unsuccessful: {str(data)[:300]}")
+
+        results_block = data.get("results")
+        if not isinstance(results_block, dict) or "organic" not in results_block:
+            raise SerpentSearchError(f"Unexpected Serpent response shape: {str(data)[:300]}")
+
+        organic_results = results_block.get("organic") or []
 
         results = []
         for item in organic_results:
-            url = item.get("link") or item.get("url")
+            url = item.get("url") or item.get("link")
             if not url:
                 continue
             results.append(

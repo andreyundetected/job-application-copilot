@@ -105,7 +105,8 @@ def _run_single_query(session: Session, run, query_text: str, settings) -> list[
         search_response = provider.search(
             query_text, num=settings.serpent_num_per_query, date=settings.default_time_range
         )
-    except SerpentSearchError:
+    except SerpentSearchError as error:
+        crud.append_run_warning(session, run.id, f"Search failed for '{query_text}': {error}")
         return []
 
     crud.create_usage_log(
@@ -253,7 +254,10 @@ def _process_search_result(
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
         return True
-    except Exception:
+    except Exception as error:
+        crud.append_run_warning(
+            session, run_id, f"Failed to process search_result {search_result_id}: {error}"
+        )
         return False
 
 

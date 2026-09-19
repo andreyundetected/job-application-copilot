@@ -80,6 +80,16 @@ def mark_run_failed(session: Session, run_id: int, error: str) -> AutomationRun 
     return run
 
 
+def append_run_warning(session: Session, run_id: int, message: str) -> AutomationRun | None:
+    run = session.get(AutomationRun, run_id)
+    if run is None:
+        return None
+    run.error = f"{run.error}\n{message}" if run.error else message
+    session.commit()
+    session.refresh(run)
+    return run
+
+
 def increment_run_counters(session: Session, run_id: int, **deltas: int) -> AutomationRun | None:
     run = session.get(AutomationRun, run_id)
     if run is None:
