@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Automation{% endblock %}
+
+{% block content %}
+<style>
+.run-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+}
+
+.run-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.run-status-badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+.run-status-pending, .run-status-running {
+    background-color: var(--score-mid-soft);
+    color: var(--score-mid);
+}
+
+.run-status-done {
+    background-color: var(--score-high-soft);
+    color: var(--score-high);
+}
+
+.run-status-failed {
+    background-color: var(--score-low-soft);
+    color: var(--score-low);
+}
+
+.run-counters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.range-toggle {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.range-toggle button {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background-color: var(--bg-input);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.range-toggle button.active {
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tailoring-matrix-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.tailoring-matrix-row:last-child {
+    border-bottom: none;
+}
+
+.tailoring-matrix-row input[type="checkbox"] {
+    width: auto;
+}
+
+.preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.preset-row:last-child {
+    border-bottom: none;
+}
+
+.queries-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+</style>
+
+<h1>{{ t.page_title }}</h1>
+
+<div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.settings_title }}</h3>
+    <form id="settings-form">
+        <label for="min_score_to_proceed">{{ t.min_score_label }}</label>
+        <input type="text" inputmode="numeric" name="min_score_to_proceed" id="min_score_to_proceed"
+               value="{{ settings.min_score_to_proceed }}" style="max-width:80px;">
+
+        <label for="max_score_to_archive">{{ t.max_score_label }}</label>
+        <input type="text" inputmode="numeric" name="max_score_to_archive" id="max_score_to_archive"
+               value="{{ settings.max_score_to_archive }}" style="max-width:80px;">
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:16px;">
+            <input type="checkbox" name="quick_filter_enabled" id="quick_filter_enabled"
+                   {% if settings.quick_filter_enabled %}checked{% endif %} style="width:auto;">
+            <span>{{ t.quick_filter_label }}</span>
+        </label>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <input type="checkbox" name="auto_archive_enabled" id="auto_archive_enabled"
+                   {% if settings.auto_archive_enabled %}checked{% endif %} style="width:auto;">
+            <span>{{ t.auto_archive_label }}</span>
+        </label>
+
+        <label for="query_chunk_size">{{ t.chunk_size_label }}</label>
+        <input type="text" inputmode="numeric" name="query_chunk_size" id="query_chunk_size"
+               value="{{ settings.query_chunk_size }}" style="max-width:80px;">
+
+        <label for="serpent_num_per_query">{{ t.num_per_query_label }}</label>
+        <input type="text" inputmode="numeric" name="serpent_num_per_query" id="serpent_num_per_query"
+               value="{{ settings.serpent_num_per_query }}" style="max-width:80px;">
+
+        <input type="hidden" name="default_time_range" id="default_time_range" value="{{ settings.default_time_range }}">
+        <label>{{ t.time_range_label }}</label>
+        <div class="range-toggle" id="settings-range-toggle">
+            <button type="button" data-range="d1">{{ t.range_day }}</button>
+            <button type="button" data-range="w1">{{ t.range_week }}</button>
+            <button type="button" data-range="m1">{{ t.range_month }}</button>
+        </div>
+
+        <button type="submit" class="btn">{{ t.btn_save }}</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.tailoring_title }}</h3>
+    <p class="salary-line">{{ t.tailoring_hint }}</p>
+    <div id="tailoring-matrix">
+        {% for row in tailoring_matrix %}
+        <div class="tailoring-matrix-row">
+            <input type="checkbox" class="tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}"
+                   {% if row.auto_apply %}checked{% endif %}>
+            <span class="badge">{{ t["level_" + row.level] }}</span>
+            <span>{{ t["change_type_" + row.change_type] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.presets_title }}</h3>
+    <div id="presets-list">
+        {% for preset in settings.saved_queries or [] %}
+        <div class="preset-row" data-index="{{ loop.index0 }}">
+            <span>{{ preset.label }} ({{ preset.terms | length }})</span>
+            <span>
+                <button type="button" class="btn-ghost btn load-preset-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.load_preset_button }}</button>
+                <button type="button" class="btn-ghost btn delete-preset-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% if not settings.saved_queries %}
+    <p class="salary-line" id="no-presets-hint">{{ t.no_presets }}</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.run_title }}</h3>
+    <form id="run-form">
+        <label for="terms_text">{{ t.terms_label }}</label>
+        <textarea name="terms_text" id="terms_text" placeholder="{{ t.terms_placeholder }}"></textarea>
+        <button type="button" class="btn-ghost btn" id="btn-suggest-terms">{{ t.suggest_terms_button }}</button>
+        <div class="queries-preview" id="queries-preview"></div>
+
+        <label>
+            <input type="text" style="display:none;">
+        </label>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-top:12px;">
+            <div style="flex:1;">
+                <label for="preset_label" style="margin-top:0;">{{ t.preset_label_placeholder }}</label>
+                <input type="text" id="preset_label" placeholder="{{ t.preset_label_placeholder }}">
+            </div>
+            <button type="button" class="btn-ghost btn" id="btn-save-preset" style="margin-top:0;">{{ t.save_preset_button }}</button>
+        </div>
+
+        <input type="hidden" name="time_range" id="run_time_range" value="{{ settings.default_time_range }}">
+        <label>{{ t.time_range_label }}</label>
+        <div class="range-toggle" id="run-range-toggle">
+            <button type="button" data-range="d1">{{ t.range_day }}</button>
+            <button type="button" data-range="w1">{{ t.range_week }}</button>
+            <button type="button" data-range="m1">{{ t.range_month }}</button>
+        </div>
+
+        <label for="chunk_size">{{ t.chunk_size_label }}</label>
+        <input type="text" inputmode="numeric" name="chunk_size" id="chunk_size" value="{{ settings.query_chunk_size }}" style="max-width:80px;">
+
+        <label for="num_per_query">{{ t.num_per_query_label }}</label>
+        <input type="text" inputmode="numeric" name="num_per_query" id="num_per_query" value="{{ settings.serpent_num_per_query }}" style="max-width:80px;">
+
+        <label for="max_results_override">{{ t.results_cap_label }}</label>
+        <input type="text" inputmode="numeric" name="max_results_override" id="max_results_override" placeholder="{{ t.results_cap_placeholder }}" style="max-width:120px;">
+
+        <label for="max_queries_override">{{ t.queries_cap_label }}</label>
+        <input type="text" inputmode="numeric" name="max_queries_override" id="max_queries_override" placeholder="{{ t.queries_cap_placeholder }}" style="max-width:120px;">
+
+        <button type="submit" class="btn" id="btn-start-run">{{ t.start_run_button }}</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.history_title }}</h3>
+    <div id="runs-list">
+        {% if not runs %}
+        <p class="salary-line" id="no-runs-hint">{{ t.no_runs }}</p>
+        {% endif %}
+        {% for run in runs %}
+        <div class="run-card" data-run-id="{{ run.id }}" data-status="{{ run.status }}">
+            <div class="run-card-top">
+                <span>#{{ run.id }} · {{ run.created_at }}</span>
+                <span class="run-status-badge run-status-{{ run.status }}">{{ t["status_" + run.status] }}</span>
+            </div>
+            <div class="run-counters">
+                <span>{{ t.found_label }}: {{ run.found_count }}</span>
+                <span>{{ t.scraped_label }}: {{ run.scraped_count }}</span>
+                <span>{{ t.evaluated_label }}: {{ run.evaluated_count }}</span>
+                <span>{{ t.passed_label }}: {{ run.passed_count }}</span>
+                <span>{{ t.archived_label }}: {{ run.archived_count }}</span>
+                {% set usage = usage_by_run.get(run.id) %}
+                {% if usage %}
+                <span>{{ t.tokens_label }}: {{ usage.total_tokens }}</span>
+                {% if usage.estimated_cost %}
+                <span>{{ t.cost_label }}: {{ "%.4f"|format(usage.estimated_cost) }}</span>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+const I18N = {{ t | tojson }};
+
+function initRangeToggle(containerId, hiddenInputId) {
+    const container = document.getElementById(containerId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+
+    container.querySelectorAll("button").forEach((btn) => {
+        if (btn.dataset.range === hiddenInput.value) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+            container.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            hiddenInput.value = btn.dataset.range;
+        });
+    });
+}
+
+initRangeToggle("settings-range-toggle", "default_time_range");
+initRangeToggle("run-range-toggle", "run_time_range");
+
+document.getElementById("settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const response = await fetch("/automation/settings", { method: "POST", body: formData });
+    if (response.ok) {
+        showToast(I18N.settings_saved_toast, "success");
+    } else {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+    }
+});
+
+document.getElementById("tailoring-matrix").addEventListener("change", async (event) => {
+    if (!event.target.classList.contains("tailoring-checkbox")) return;
+    const formData = new FormData();
+    formData.append("level", event.target.dataset.level);
+    formData.append("change_type", event.target.dataset.changeType);
+    formData.append("auto_apply", event.target.checked ? "true" : "");
+    await fetch("/automation/tailoring-permissions", { method: "POST", body: formData });
+});
+
+function updateQueriesPreview() {
+    const text = document.getElementById("terms_text").value;
+    const terms = text.split("\n").map((line) => line.trim()).filter(Boolean);
+    const chunkSize = Math.max(1, parseInt(document.getElementById("chunk_size").value, 10) || 1);
+    const queryCount = terms.length === 0 ? 0 : Math.ceil(terms.length / chunkSize);
+    document.getElementById("queries-preview").textContent =
+        `${I18N.queries_preview_prefix} ${queryCount} ${I18N.queries_preview_suffix}`;
+}
+
+document.getElementById("terms_text").addEventListener("input", updateQueriesPreview);
+document.getElementById("chunk_size").addEventListener("input", updateQueriesPreview);
+updateQueriesPreview();
+
+document.getElementById("btn-suggest-terms").addEventListener("click", async () => {
+    const btn = document.getElementById("btn-suggest-terms");
+    btn.disabled = true;
+    btn.textContent = I18N.suggesting;
+
+    const response = await fetch("/automation/suggest-terms", { method: "POST" });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+        btn.disabled = false;
+        btn.textContent = I18N.suggest_terms_button;
+        return;
+    }
+    const data = await response.json();
+
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            document.getElementById("terms_text").value = task.result.terms.join("\n");
+            updateQueriesPreview();
+            btn.disabled = false;
+            btn.textContent = I18N.suggest_terms_button;
+        } else if (task.status === "failed") {
+            showToast(task.error, "danger");
+            btn.disabled = false;
+            btn.textContent = I18N.suggest_terms_button;
+        }
+    });
+});
+
+document.getElementById("btn-save-preset").addEventListener("click", async () => {
+    const label = document.getElementById("preset_label").value.trim();
+    const termsText = document.getElementById("terms_text").value;
+    if (!label || !termsText.trim()) return;
+
+    const formData = new FormData();
+    formData.append("label", label);
+    formData.append("terms_text", termsText);
+
+    const response = await fetch("/automation/saved-queries", { method: "POST", body: formData });
+    if (!response.ok) return;
+
+    document.getElementById("preset_label").value = "";
+    window.location.reload();
+});
+
+document.getElementById("presets-list").addEventListener("click", async (event) => {
+    const row = event.target.closest(".preset-row");
+    if (!row) return;
+    const index = row.dataset.index;
+
+    if (event.target.classList.contains("load-preset-btn")) {
+        const presets = {{ (settings.saved_queries or []) | tojson }};
+        const preset = presets[parseInt(index, 10)];
+        if (preset) {
+            document.getElementById("terms_text").value = preset.terms.join("\n");
+            updateQueriesPreview();
+        }
+        return;
+    }
+
+    if (event.target.classList.contains("delete-preset-btn")) {
+        await fetch(`/automation/saved-queries/${index}/delete`, { method: "POST" });
+        window.location.reload();
+    }
+});
+
+function renderRunCard(run) {
+    const usageParts = [];
+    if (run.usage) {
+        if (run.usage.total_tokens) usageParts.push(`${I18N.tokens_label}: ${run.usage.total_tokens}`);
+        if (run.usage.estimated_cost) usageParts.push(`${I18N.cost_label}: ${run.usage.estimated_cost.toFixed(4)}`);
+    }
+
+    return `
+        <div class="run-card" data-run-id="${run.id}" data-status="${run.status}">
+            <div class="run-card-top">
+                <span>#${run.id} · ${run.created_at || ""}</span>
+                <span class="run-status-badge run-status-${run.status}">${I18N["status_" + run.status]}</span>
+            </div>
+            <div class="run-counters">
+                <span>${I18N.found_label}: ${run.found_count}</span>
+                <span>${I18N.scraped_label}: ${run.scraped_count}</span>
+                <span>${I18N.evaluated_label}: ${run.evaluated_count}</span>
+                <span>${I18N.passed_label}: ${run.passed_count}</span>
+                <span>${I18N.archived_label}: ${run.archived_count}</span>
+                ${usageParts.map((p) => `<span>${p}</span>`).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function pollRun(runId) {
+    const poll = async () => {
+        const response = await fetch(`/automation/runs/${runId}`);
+        if (!response.ok) return;
+        const run = await response.json();
+
+        const existing = document.querySelector(`.run-card[data-run-id="${runId}"]`);
+        const html = renderRunCard(run);
+        if (existing) {
+            existing.outerHTML = html;
+        } else {
+            const hint = document.getElementById("no-runs-hint");
+            if (hint) hint.remove();
+            document.getElementById("runs-list").insertAdjacentHTML("afterbegin", html);
+        }
+
+        if (run.status === "pending" || run.status === "running") {
+            setTimeout(poll, 2000);
+        } else if (run.status === "failed") {
+            showToast(I18N.run_failed_toast, "danger");
+        }
+    };
+    poll();
+}
+
+document.querySelectorAll('.run-card[data-status="running"], .run-card[data-status="pending"]').forEach((card) => {
+    pollRun(parseInt(card.dataset.runId, 10));
+});
+
+document.getElementById("run-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const startBtn = document.getElementById("btn-start-run");
+    startBtn.disabled = true;
+    startBtn.textContent = I18N.starting_run;
+
+    const formData = new FormData(event.target);
+    const response = await fetch("/automation/runs", { method: "POST", body: formData });
+
+    startBtn.disabled = false;
+    startBtn.textContent = I18N.start_run_button;
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+        return;
+    }
+
+    const data = await response.json();
+    showToast(I18N.run_started_toast, "success");
+    pollRun(data.run_id);
+});
+</script>
+{% endblock %}

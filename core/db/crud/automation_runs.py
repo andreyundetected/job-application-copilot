@@ -1,0 +1,95 @@
+import datetime
+
+from sqlalchemy.orm import Session
+
+from core.db.models import AutomationRun
+
+_COUNTER_FIELDS = {
+    "found_count",
+    "quick_filtered_count",
+    "scraped_count",
+    "evaluated_count",
+    "passed_count",
+    "archived_count",
+}
+
+
+def create_automation_run(
+    session: Session,
+    queries_planned: list | None = None,
+    max_results_override: int | None = None,
+    max_queries_override: int | None = None,
+) -> AutomationRun:
+    run = AutomationRun(
+        queries_planned=queries_planned,
+        max_results_override=max_results_override,
+        max_queries_override=max_queries_override,
+    )
+    session.add(run)
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def get_automation_run(session: Session, run_id: int) -> AutomationRun | None:
+    return session.get(AutomationRun, run_id)
+
+
+def list_automation_runs(session: Session, limit: int = 20) -> list[AutomationRun]:
+    return (
+        session.query(AutomationRun)
+        .order_by(AutomationRun.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def mark_run_started(session: Session, run_id: int) -> AutomationRun | None:
+    run = session.get(AutomationRun, run_id)
+    if run is None:
+        return None
+    run.status = "running"
+    run.started_at = datetime.datetime.utcnow()
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def mark_run_finished(
+    session: Session, run_id: int, status: str = "done"
+) -> AutomationRun | None:
+    run = session.get(AutomationRun, run_id)
+    if run is None:
+        return None
+    run.status = status
+    run.finished_at = datetime.datetime.utcnow()
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def mark_run_failed(session: Session, run_id: int, error: str) -> AutomationRun | None:
+    run = session.get(AutomationRun, run_id)
+    if run is None:
+        return None
+    run.status = "failed"
+    run.error = error
+    run.finished_at = datetime.datetime.utcnow()
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def increment_run_counters(session: Session, run_id: int, **deltas: int) -> AutomationRun | None:
+    run = session.get(AutomationRun, run_id)
+    if run is None:
+        return None
+
+    for field, delta in deltas.items():
+        if field not in _COUNTER_FIELDS:
+            raise ValueError(f"Unknown automation run counter: {field}")
+        setattr(run, field, getattr(run, field) + delta)
+
+    session.commit()
+    session.refresh(run)
+    return run

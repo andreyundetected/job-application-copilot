@@ -1,6 +1,6 @@
 import pytest
 
-from core.structuring.pipeline import structure_resume_text, structure_linkedin_text
+from core.structuring.pipeline import structure_profile_text, structure_linkedin_text
 
 
 class _FakeProvider:
@@ -40,7 +40,7 @@ _SAMPLE_RESPONSE = """
 def test_structure_resume_text_maps_all_fields():
     provider = _FakeProvider(_SAMPLE_RESPONSE)
 
-    content = structure_resume_text(provider, "raw resume text")
+    content = structure_profile_text(provider, "raw resume text", source_label="resume")
 
     assert content["name"] == "Sample Name | Software Engineer"
     assert content["contacts"] == ["City, Country", "sample@example.com"]
@@ -67,7 +67,7 @@ def test_structure_resume_text_maps_all_fields():
 def test_structure_resume_text_handles_missing_optional_sections():
     provider = _FakeProvider("<name>Only Name</name>")
 
-    content = structure_resume_text(provider, "raw resume text")
+    content = structure_profile_text(provider, "raw resume text", source_label="resume")
 
     assert content["name"] == "Only Name"
     assert content["contacts"] == []
@@ -104,7 +104,7 @@ def test_structure_resume_text_handles_multiple_projects_under_one_role():
     """
     provider = _FakeProvider(response)
 
-    content = structure_resume_text(provider, "raw text")
+    content = structure_profile_text(provider, "raw text", source_label="resume")
 
     experience = content["experience"][0]
     assert len(experience["content"]) == 5

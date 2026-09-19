@@ -9,11 +9,28 @@ def create_job_posting(
     company: str | None = None,
     title: str | None = None,
     source_url: str | None = None,
+    source: str = "manual",
 ) -> JobPosting:
     job = JobPosting(
-        raw_text=raw_text, company=company, title=title, source_url=source_url
+        raw_text=raw_text,
+        company=company,
+        title=title,
+        source_url=source_url,
+        source=source,
     )
     session.add(job)
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def update_job_pipeline_stage(
+    session: Session, job_posting_id: int, pipeline_stage: str
+) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.pipeline_stage = pipeline_stage
     session.commit()
     session.refresh(job)
     return job

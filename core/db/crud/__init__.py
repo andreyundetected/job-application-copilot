@@ -15,3 +15,7 @@ from core.db.crud.tailoring_messages import *
 from core.db.crud.tailoring_permissions import *
 from core.db.crud.application_chat import *
 from core.db.crud.question_changes import *
+from core.db.crud.automation_settings import *
+from core.db.crud.automation_runs import *
+from core.db.crud.search_results import *
+from core.db.crud.api_usage_log import *

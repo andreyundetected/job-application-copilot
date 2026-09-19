@@ -4,6 +4,7 @@ sqlalchemy
 python-docx
 python-dotenv
 openai
+requests
 jinja2
 python-multipart
 pytest

@@ -17,4 +17,5 @@ class OpenAIProvider(BaseLLMProvider):
                 {"role": "user", "content": user_prompt},
             ],
         )
+        self.last_usage = self._extract_usage(response)
         return response.choices[0].message.content

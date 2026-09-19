@@ -29,3 +29,8 @@ DATA_DIR.mkdir(exist_ok=True)
 UPLOADS_DIR.mkdir(exist_ok=True)
 
 TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
+
+SERPENT_API_KEY = os.getenv("SERPENT_API_KEY", "")
+SERPENT_BASE_URL = os.getenv("SERPENT_BASE_URL", "https://apiserpent.com/api/search/quick")
+
+AUTOMATION_MAX_WORKERS = int(os.getenv("AUTOMATION_MAX_WORKERS", "10"))

@@ -1,0 +1,7 @@
+DISCOVERED = "discovered"
+SCRAPED = "scraped"
+EVALUATED = "evaluated"
+PASSED = "passed"
+NEEDS_REVIEW = "needs_review"
+ARCHIVED_AUTO = "archived_auto"
+TAILORED = "tailored"

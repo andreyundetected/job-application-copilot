@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from core.db.session import init_db
+from ui.automation_page.router import router as automation_router
 from ui.dashboard_page.router import router as dashboard_router
 from ui.evaluator_page.router import router as evaluator_router
 from ui.language_router import router as language_router
@@ -22,6 +23,7 @@ app.include_router(tasks_router)
 app.include_router(tailoring_router)
 app.include_router(questions_router)
 app.include_router(tracker_router)
+app.include_router(automation_router)
 app.include_router(language_router)
 
 

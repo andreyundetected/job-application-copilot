@@ -72,3 +72,34 @@ def test_unarchive_job_posting(db_session):
     restored = jobs_crud.unarchive_job_posting(db_session, job.id)
 
     assert restored.archived is False
+
+
+@pytest.mark.db
+def test_create_job_posting_defaults_source_to_manual(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+
+    assert job.source == "manual"
+    assert job.pipeline_stage is None
+
+
+@pytest.mark.db
+def test_create_job_posting_with_automation_source(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
+
+    assert job.source == "automation"
+
+
+@pytest.mark.db
+def test_update_job_pipeline_stage(db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
+
+    updated = jobs_crud.update_job_pipeline_stage(db_session, job.id, "evaluated")
+
+    assert updated.pipeline_stage == "evaluated"
+
+
+@pytest.mark.db
+def test_update_job_pipeline_stage_not_found(db_session):
+    result = jobs_crud.update_job_pipeline_stage(db_session, 999, "evaluated")
+
+    assert result is None

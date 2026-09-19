@@ -3,6 +3,7 @@ import datetime
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     JSON,
@@ -91,6 +92,8 @@ class JobPosting(Base):
     employment_type: Mapped[str] = mapped_column(String(64), nullable=True)
     tags: Mapped[list] = mapped_column(JSON, nullable=True)
     pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    source: Mapped[str] = mapped_column(String(16), default="manual")
+    pipeline_stage: Mapped[str] = mapped_column(String(32), nullable=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="job_posting"
@@ -300,7 +303,6 @@ class FormQuestion(Base):
 
     application: Mapped["Application"] = relationship(back_populates="form_questions")
     changes: Mapped[list["QuestionChange"]] = relationship(back_populates="question")
-    changes: Mapped[list["QuestionChange"]] = relationship(back_populates="question")
 
 
 
@@ -342,3 +344,99 @@ class QuestionChange(Base):
 
     question: Mapped["FormQuestion"] = relationship(back_populates="changes")
     chat_message: Mapped["ApplicationChatMessage"] = relationship(back_populates="changes")
+
+
+class AutomationRun(Base):
+    __tablename__ = "automation_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    started_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    queries_planned: Mapped[list] = mapped_column(JSON, nullable=True)
+    max_results_override: Mapped[int] = mapped_column(Integer, nullable=True)
+    max_queries_override: Mapped[int] = mapped_column(Integer, nullable=True)
+    found_count: Mapped[int] = mapped_column(Integer, default=0)
+    quick_filtered_count: Mapped[int] = mapped_column(Integer, default=0)
+    scraped_count: Mapped[int] = mapped_column(Integer, default=0)
+    evaluated_count: Mapped[int] = mapped_column(Integer, default=0)
+    passed_count: Mapped[int] = mapped_column(Integer, default=0)
+    archived_count: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str] = mapped_column(Text, nullable=True)
+
+    search_results: Mapped[list["SearchResult"]] = relationship(
+        back_populates="automation_run"
+    )
+
+
+class SearchResult(Base):
+    __tablename__ = "search_results"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    automation_run_id: Mapped[int] = mapped_column(ForeignKey("automation_runs.id"))
+    query_text: Mapped[str] = mapped_column(Text)
+    source_platform: Mapped[str] = mapped_column(String(32), nullable=True)
+    title: Mapped[str] = mapped_column(String(512), nullable=True)
+    snippet: Mapped[str] = mapped_column(Text, nullable=True)
+    url: Mapped[str] = mapped_column(String(1024))
+    url_normalized: Mapped[str] = mapped_column(String(1024), unique=True)
+    quick_filter_verdict: Mapped[str] = mapped_column(String(16), nullable=True)
+    promoted_job_posting_id: Mapped[int] = mapped_column(
+        ForeignKey("job_postings.id"), nullable=True
+    )
+
+    automation_run: Mapped["AutomationRun"] = relationship(
+        back_populates="search_results"
+    )
+
+
+class AutomationSettings(Base):
+    __tablename__ = "automation_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    min_score_to_proceed: Mapped[int] = mapped_column(Integer, default=6)
+    max_score_to_archive: Mapped[int] = mapped_column(Integer, default=3)
+    quick_filter_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_archive_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_tailor_soft_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_tailor_medium_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    query_chunk_size: Mapped[int] = mapped_column(Integer, default=8)
+    serpent_num_per_query: Mapped[int] = mapped_column(Integer, default=30)
+    default_time_range: Mapped[str] = mapped_column(String(8), default="w1")
+    saved_queries: Mapped[list] = mapped_column(JSON, nullable=True)
+    serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
+
+
+class ApiUsageLog(Base):
+    __tablename__ = "api_usage_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    provider: Mapped[str] = mapped_column(String(32))
+    operation: Mapped[str] = mapped_column(String(32))
+    automation_run_id: Mapped[int] = mapped_column(
+        ForeignKey("automation_runs.id"), nullable=True
+    )
+    search_result_id: Mapped[int] = mapped_column(
+        ForeignKey("search_results.id"), nullable=True
+    )
+    job_posting_id: Mapped[int] = mapped_column(
+        ForeignKey("job_postings.id"), nullable=True
+    )
+    requested_num: Mapped[int] = mapped_column(Integer, nullable=True)
+    returned_count: Mapped[int] = mapped_column(Integer, nullable=True)
+    model: Mapped[str] = mapped_column(String(128), nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
+    reasoning_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
+    estimated_cost: Mapped[float] = mapped_column(Float, nullable=True)
+    raw_usage: Mapped[dict] = mapped_column(JSON, nullable=True)
