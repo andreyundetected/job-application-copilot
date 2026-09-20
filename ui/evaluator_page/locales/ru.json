@@ -4,6 +4,8 @@
     "job_posting_placeholder": "Вставь текст вакансии сюда...",
     "extra_info_label": "Доп. контекст (необязательно)",
     "extra_info_placeholder": "Всё, что не покрыто выше...",
+    "source_url_label": "Ссылка на вакансию (необязательно)",
+    "source_url_placeholder": "https://...",
     "using_resume": "Используется резюме:",
     "linkedin": "LinkedIn:",
     "none_set": "не задано",

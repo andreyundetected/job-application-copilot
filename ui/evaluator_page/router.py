@@ -54,10 +54,11 @@ def evaluator_page(
 def run_evaluation(
     job_posting_text: str = Form(...),
     extra_info: str = Form(""),
+    source_url: str = Form(""),
     session: Session = Depends(get_session),
     lang: str = Depends(get_language),
 ):
-    job = crud.create_job_posting(session, raw_text=job_posting_text)
+    job = crud.create_job_posting(session, raw_text=job_posting_text, source_url=source_url or None)
 
     task_id = run_tracked_task(
         "job_quick_extract", _quick_extract_and_save, job.id, job_posting_text, extra_info or None, lang

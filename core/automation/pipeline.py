@@ -1,15 +1,18 @@
+import logging
 from concurrent.futures import as_completed
 
 from sqlalchemy.orm import Session
 
 import config
+
+logger = logging.getLogger(__name__)
 from core.automation import stages
 from core.automation.executor import submit_automation_task
 from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery.ats_extractor import detect_platform, extract_job_text
 from core.discovery.quick_filter import quick_filter_search_results
-from core.discovery.search_provider import SerpentSearchError, SerpentSearchProvider
+from core.discovery.search_provider import SerpentSearchError, get_search_provider
 from core.discovery.url_utils import normalize_url
 from core.evaluator.pipeline import evaluate_job_posting
 from core.providers.factory import get_llm_provider
@@ -99,13 +102,16 @@ def _run_search_and_process(session: Session, run, settings) -> None:
 
 
 def _run_single_query(session: Session, run, query_text: str, settings) -> list[dict]:
-    provider = SerpentSearchProvider()
+    provider = get_search_provider()
+
+    logger.info("[run %s] searching: %r", run.id, query_text)
 
     try:
         search_response = provider.search(
             query_text, num=settings.serpent_num_per_query, date=settings.default_time_range
         )
     except SerpentSearchError as error:
+        logger.error("[run %s] search failed for %r: %s", run.id, query_text, error)
         crud.append_run_warning(session, run.id, f"Search failed for '{query_text}': {error}")
         return []
 
@@ -119,6 +125,10 @@ def _run_single_query(session: Session, run, query_text: str, settings) -> list[
         raw_usage=search_response["raw_response"],
     )
 
+    if search_response["returned_count"] == 0:
+        logger.warning("[run %s] 0 results for query: %r", run.id, query_text)
+        crud.append_run_warning(session, run.id, f"0 search results for query: '{query_text}'")
+
     payload = [
         {
             "query_text": query_text,
@@ -131,7 +141,22 @@ def _run_single_query(session: Session, run, query_text: str, settings) -> list[
         for item in search_response["results"]
     ]
 
-    created = crud.bulk_create_search_results(session, run.id, payload)
+    created, dedup_stats = crud.bulk_create_search_results(session, run.id, payload)
+    logger.info(
+        "[run %s] query %r: %s parsed / %s created / %s already-known-from-past-runs / %s intra-batch-dupes",
+        run.id,
+        query_text,
+        len(search_response["results"]),
+        len(created),
+        dedup_stats["skipped_already_known"],
+        dedup_stats["skipped_intra_batch"],
+    )
+    if dedup_stats["skipped_already_known"] > 0 and not created:
+        crud.append_run_warning(
+            session,
+            run.id,
+            f"All {dedup_stats['skipped_already_known']} results for '{query_text}' were already scraped in a previous run",
+        )
     crud.increment_run_counters(session, run.id, found_count=len(created))
 
     return [{"id": row.id, "title": row.title, "snippet": row.snippet, "url": row.url} for row in created]
@@ -148,10 +173,20 @@ def _apply_quick_filter(
 ) -> list[dict]:
     provider = get_llm_provider()
 
-    verdicts = quick_filter_search_results(
-        provider, search_results, resume_text, linkedin_text, blockers, extra_info
-    )
-    _log_llm_usage(session, provider, run.id, "quick_filter")
+    try:
+        verdicts = quick_filter_search_results(
+            provider, search_results, resume_text, linkedin_text, blockers, extra_info
+        )
+        _log_llm_usage(session, provider, run.id, "quick_filter")
+    except Exception as error:
+        logger.error(
+            "[run %s] quick filter LLM call failed (provider=%s): %s - failing open, all %s results proceed",
+            run.id, config.LLM_PROVIDER, error, len(search_results),
+        )
+        crud.append_run_warning(
+            session, run.id, f"Quick filter LLM call failed ({error}); all results proceeded unfiltered"
+        )
+        return search_results
 
     proceeding = []
     for result in search_results:
@@ -159,6 +194,17 @@ def _apply_quick_filter(
         crud.set_quick_filter_verdict(session, result["id"], verdict)
         if verdict == "proceed":
             proceeding.append(result)
+
+    logger.info(
+        "[run %s] quick filter: %s in / %s proceeding",
+        run.id,
+        len(search_results),
+        len(proceeding),
+    )
+    if search_results and not proceeding:
+        crud.append_run_warning(
+            session, run.id, f"Quick filter skipped all {len(search_results)} results this batch"
+        )
 
     crud.increment_run_counters(session, run.id, quick_filtered_count=len(search_results))
     return proceeding
@@ -189,6 +235,10 @@ def _process_search_result(
 
         job_text = extract_job_text(search_result.url)
         if job_text is None:
+            logger.warning(
+                "[run %s] job scrape failed for search_result %s (url=%s), see extract_job_text logs above",
+                run_id, search_result_id, search_result.url,
+            )
             return False
 
         job = crud.create_job_posting(
@@ -199,15 +249,25 @@ def _process_search_result(
         crud.increment_run_counters(session, run_id, scraped_count=1)
 
         provider = get_llm_provider()
-        result = evaluate_job_posting(
-            provider,
-            job_posting_text=job_text,
-            resume_text=resume_text,
-            linkedin_text=linkedin_text,
-            blockers=blockers,
-            scoring_factors=scoring_factors,
-            extra_info=extra_info,
-        )
+        try:
+            result = evaluate_job_posting(
+                provider,
+                job_posting_text=job_text,
+                resume_text=resume_text,
+                linkedin_text=linkedin_text,
+                blockers=blockers,
+                scoring_factors=scoring_factors,
+                extra_info=extra_info,
+            )
+        except Exception as error:
+            logger.error(
+                "[run %s] evaluation LLM call failed for job %s (provider=%s): %s",
+                run_id, job.id, config.LLM_PROVIDER, error,
+            )
+            crud.append_run_warning(
+                session, run_id, f"Evaluation failed for job {job.id} ({job.source_url}): {error}"
+            )
+            return False
         _log_llm_usage(session, provider, run_id, "evaluation", job_posting_id=job.id)
 
         crud.update_job_quick_meta(
@@ -317,10 +377,15 @@ def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_arc
 
 def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_result: dict, settings) -> None:
     if not settings.auto_tailor_soft_enabled and not settings.auto_tailor_medium_enabled:
+        logger.info("[run %s] job %s: auto-tailoring disabled in settings, skipping", run_id, job.id)
         return
 
     resume = crud.get_active_resume_version(session, "resume")
     if resume is None or not resume.content_html:
+        logger.warning(
+            "[run %s] job %s: auto-tailoring skipped - no active resume with content_html", run_id, job.id
+        )
+        crud.append_run_warning(session, run_id, "Auto-tailor skipped: no active resume HTML set")
         return
 
     tailoring_session = crud.get_tailoring_session_for_job(session, job.id)

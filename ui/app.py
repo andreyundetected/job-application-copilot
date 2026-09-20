@@ -1,7 +1,17 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from core.db.session import init_db
+from core.db.crud.tailoring_permissions import seed_default_tailoring_permissions
+from core.db.session import SessionLocal, init_db
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
+logging.getLogger("core").setLevel(logging.INFO)
 from ui.automation_page.router import router as automation_router
 from ui.dashboard_page.router import router as dashboard_router
 from ui.evaluator_page.router import router as evaluator_router
@@ -30,3 +40,9 @@ app.include_router(language_router)
 @app.on_event("startup")
 def on_startup():
     init_db()
+
+    session = SessionLocal()
+    try:
+        seed_default_tailoring_permissions(session)
+    finally:
+        session.close()

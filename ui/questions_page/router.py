@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -24,6 +25,8 @@ from core.tasks.runner import run_tracked_task
 from ui.common.i18n import get_language, load_page_strings
 
 router = APIRouter(prefix="/questions")
+
+logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="ui/questions_page/templates")
 templates.env.loader = ChoiceLoader(
@@ -56,6 +59,7 @@ def _serialize_question(question) -> dict:
         "needs_manual_input": question.needs_manual_input,
         "flag_reason": question.flag_reason,
         "pending_task_id": question.pending_task_id,
+        "template_label": question.template_label,
     }
 
 
@@ -229,14 +233,27 @@ def submit_questions(
 def _run_split_only(application_id: int, raw_text: str) -> dict:
     session = SessionLocal()
     try:
+        logger.info("[app %s] splitting questions from pasted text (%s chars)", application_id, len(raw_text))
+
         provider = get_llm_provider()
-        prepared = split_and_prepare_questions(provider, raw_text=raw_text)
+        custom_templates = crud.list_question_templates(session)
+        prepared = split_and_prepare_questions(provider, raw_text=raw_text, custom_templates=custom_templates)
+
+        logger.info("[app %s] split result: %s questions found: %s", application_id, len(prepared), [q["question_text"][:60] for q in prepared])
 
         existing_count = len(crud.list_form_questions_for_application(session, application_id))
         created = crud.bulk_create_form_questions(session, application_id, prepared, order_offset=existing_count)
 
         if not created:
+            logger.warning("[app %s] no qualifying open-ended questions extracted from pasted text", application_id)
             return {"questions": []}
+
+        app_settings = crud.get_app_settings(session)
+        auto_answer_enabled = app_settings.auto_answer_questions_enabled if app_settings else True
+
+        if not auto_answer_enabled:
+            logger.info("[app %s] auto-answer disabled in settings, leaving %s questions unanswered", application_id, len(created))
+            return {"questions": [_serialize_question(q) for q in created]}
 
         by_category: dict[str, list] = {"cover_letter": [], "summary": [], "general": []}
         for question in created:
@@ -245,6 +262,10 @@ def _run_split_only(application_id: int, raw_text: str) -> dict:
         for category, questions_in_category in by_category.items():
             if not questions_in_category:
                 continue
+            logger.info(
+                "[app %s] launching generation task for category=%s, %s questions",
+                application_id, category, len(questions_in_category),
+            )
             gen_task_id = run_tracked_task(
                 f"questions_generate_{category}",
                 _run_generate_category,
@@ -267,13 +288,24 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
     try:
         questions = [q for q in (crud.get_form_question(session, qid) for qid in question_ids) if q is not None]
         if not questions:
+            logger.warning("[app %s] generate_category(%s): no matching questions found for ids=%s", application_id, category, question_ids)
             return {"questions": []}
 
         context = _gather_context(session, application_id)
+        logger.info(
+            "[app %s] generate_category(%s): resume_len=%s linkedin_len=%s job_text_len=%s",
+            application_id, category, len(context["resume_text"]), len(context["linkedin_text"]), len(context["job_posting_text"]),
+        )
         provider = get_llm_provider()
 
         payload = [
-            {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit} for q in questions
+            {
+                "id": q.id,
+                "question_text": q.question_text,
+                "char_limit": q.char_limit,
+                "template_instructions": q.template_instructions,
+            }
+            for q in questions
         ]
 
         if category == "cover_letter":
@@ -307,10 +339,13 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
                 links=context["links"],
             )
 
+        logger.info("[app %s] generate_category(%s): got answers for %s/%s questions", application_id, category, len(answers_by_id), len(questions))
+
         updated_questions = []
         for question in questions:
             result = answers_by_id.get(question.id)
             if result is None:
+                logger.warning("[app %s] question %s: no answer returned by LLM, leaving unanswered", application_id, question.id)
                 crud.set_question_pending_task(session, question.id, None)
                 continue
             updated = crud.set_question_generation_result(

@@ -26,6 +26,12 @@
     <p class="salary-line">{{ salary.original_text }}</p>
     {% endif %}
 
+    {% if job.source_url %}
+    <p class="salary-line">
+        <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">{{ t.original_posting_link }}</a>
+    </p>
+    {% endif %}
+
     {% if matched_factors %}
     <h3>{{ t.matched_factors }}</h3>
     <ul class="matched-factor-list">

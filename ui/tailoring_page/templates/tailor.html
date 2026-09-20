@@ -155,6 +155,35 @@ main {
     background-color: rgba(74, 222, 128, 0.5);
 }
 
+.resume-doc mark.approved-mark {
+    background-color: rgba(91, 141, 239, 0.28);
+    cursor: pointer;
+}
+
+.resume-doc mark.approved-mark:hover {
+    background-color: rgba(91, 141, 239, 0.48);
+}
+
+.history-btn {
+    background-color: var(--bg-input) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border) !important;
+    width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
 .resume-doc p {
     margin: 2px 0;
     line-height: 1.4;
@@ -431,6 +460,8 @@ main {
 <div class="result-header" style="align-items:center;">
     <h1 style="margin:0;">{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
     <div style="display:flex;gap:8px;align-items:center;">
+        <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
+        <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
         <select id="download-format" style="width:auto;padding:9px 11px;">
             <option value="docx">DOCX</option>
             <option value="pdf">PDF</option>
@@ -555,6 +586,77 @@ main {
     const ALIGN_STATES = ["left", "center", "right"];
     const ALIGN_ICONS = { left: "⬅", center: "↔", right: "➡" };
 
+    const UNDO_STACK_LIMIT = 50;
+    let undoStack = [];
+    let redoStack = [];
+    let isApplyingHistory = false;
+    const undoBtn = document.getElementById("btn-undo");
+    const redoBtn = document.getElementById("btn-redo");
+
+    function updateHistoryButtons() {
+        undoBtn.disabled = undoStack.length < 2;
+        redoBtn.disabled = redoStack.length === 0;
+    }
+
+    function pushHistorySnapshot() {
+        if (isApplyingHistory) return;
+        const snapshot = stripMarksFromClone();
+        if (undoStack.length && undoStack[undoStack.length - 1] === snapshot) {
+            updateHistoryButtons();
+            return;
+        }
+        undoStack.push(snapshot);
+        if (undoStack.length > UNDO_STACK_LIMIT) undoStack.shift();
+        redoStack = [];
+        updateHistoryButtons();
+    }
+
+    async function applyHistorySnapshot(html) {
+        isApplyingHistory = true;
+        resumeDoc.innerHTML = html;
+        bindMarkHoverHandlers();
+        await persistDoc();
+        isApplyingHistory = false;
+        updateHistoryButtons();
+    }
+
+    async function undoHistory() {
+        if (undoStack.length < 2) return;
+        const current = undoStack.pop();
+        redoStack.push(current);
+        const previous = undoStack[undoStack.length - 1];
+        await applyHistorySnapshot(previous);
+    }
+
+    async function redoHistory() {
+        if (!redoStack.length) return;
+        const snapshot = redoStack.pop();
+        undoStack.push(snapshot);
+        await applyHistorySnapshot(snapshot);
+    }
+
+    async function flushPendingSave() {
+        clearTimeout(saveTimeout);
+        await persistDoc();
+    }
+
+    undoBtn.addEventListener("click", undoHistory);
+    redoBtn.addEventListener("click", redoHistory);
+
+    document.addEventListener("keydown", (e) => {
+        const isMac = navigator.platform.toUpperCase().includes("MAC");
+        const modifier = isMac ? e.metaKey : e.ctrlKey;
+        if (!modifier || e.key.toLowerCase() !== "z") return;
+        if (document.activeElement && document.activeElement.tagName === "TEXTAREA") return;
+
+        e.preventDefault();
+        if (e.shiftKey) {
+            redoHistory();
+        } else {
+            undoHistory();
+        }
+    });
+
     function setGenerating(value) {
         isGenerating = value;
         chatInput.disabled = value;
@@ -593,6 +695,7 @@ main {
         const formData = new FormData();
         formData.append("html_content", stripMarksFromClone());
         await fetch(`/tailor/session/${SESSION_ID}/manual-edit`, { method: "POST", body: formData });
+        if (!isApplyingHistory) pushHistorySnapshot();
     }
 
     function scheduleSave() {
@@ -604,6 +707,25 @@ main {
     resumeDoc.addEventListener("blur", () => {
         clearTimeout(saveTimeout);
         persistDoc();
+    });
+
+    resumeDoc.addEventListener("click", async (e) => {
+        const mark = e.target.closest("mark.approved-mark");
+        if (!mark) return;
+        e.preventDefault();
+
+        const confirmed = window.confirm(I18N.revert_confirm_text);
+        if (!confirmed) return;
+
+        await flushPendingSave();
+
+        const changeId = mark.dataset.changeId;
+        const response = await fetch(`/tailor/changes/${changeId}/revert`, { method: "POST" });
+        const data = await response.json();
+        if (data.status === "error") {
+            showToast(data.detail || "Revert failed", "danger");
+        }
+        await refreshDoc();
     });
 
     function bindMarkHoverHandlers() {
@@ -624,6 +746,7 @@ main {
         const data = await response.json();
         resumeDoc.innerHTML = data.html;
         bindMarkHoverHandlers();
+        if (!isApplyingHistory) pushHistorySnapshot();
     }
 
     function renderChangeCard(change) {
@@ -648,6 +771,10 @@ main {
         const card = e.target.closest(".change-card");
         if (!card) return;
         const changeId = card.dataset.changeId;
+
+        if (e.target.classList.contains("approve-btn") || e.target.classList.contains("skip-btn")) {
+            await flushPendingSave();
+        }
 
         if (e.target.classList.contains("approve-btn")) {
             const response = await resolveChange(changeId, "approve");
@@ -989,6 +1116,8 @@ main {
     });
 
     bindMarkHoverHandlers();
+    pushHistorySnapshot();
+    updateHistoryButtons();
 
     const downloadFormatSelect = document.getElementById("download-format");
     const downloadBtn = document.getElementById("btn-download");

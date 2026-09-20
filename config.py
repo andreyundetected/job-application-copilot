@@ -33,4 +33,11 @@ TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
 SERPENT_API_KEY = os.getenv("SERPENT_API_KEY", "")
 SERPENT_BASE_URL = os.getenv("SERPENT_BASE_URL", "https://apiserpent.com/api/search/quick")
 
+SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
+SERPER_BASE_URL = os.getenv("SERPER_BASE_URL", "https://google.serper.dev/search")
+
+# Order to try configured search providers in; a provider is skipped entirely if its
+# API key is empty. On failure, the next provider in the list is tried automatically.
+SEARCH_PROVIDER_ORDER = os.getenv("SEARCH_PROVIDER_ORDER", "serpent,serper")
+
 AUTOMATION_MAX_WORKERS = int(os.getenv("AUTOMATION_MAX_WORKERS", "10"))

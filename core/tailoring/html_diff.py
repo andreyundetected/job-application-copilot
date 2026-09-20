@@ -86,15 +86,30 @@ def strip_marks(html_content: str) -> str:
     return _MARK_RE.sub(r"\1", html_content)
 
 
-def wrap_highlights(html_content: str, changes: list[dict]) -> str:
+def wrap_highlights(
+    html_content: str,
+    changes: list[dict],
+    search_field: str = "original_text",
+    css_class: str | None = None,
+) -> str:
+    """Wraps each change's search_field text (found in html_content) in a <mark>.
+    Pending changes (default) search for original_text, so the yellow "about to
+    change" highlight sits on the text still in place. Approved changes instead
+    search for proposed_text (already baked into working_html) and get a distinct
+    css_class plus a title attribute holding the original text, for hover-preview
+    and click-to-revert on the frontend."""
     result = html_content
     for change in changes:
-        original = change.get("original_text") or ""
-        found = find_html_range(result, original)
+        search_text = change.get(search_field) or ""
+        found = find_html_range(result, search_text)
         if found is None:
             continue
         start, end = found
         segment = result[start:end]
-        marked = f'<mark data-change-id="{change["id"]}">{segment}</mark>'
+        class_attr = f' class="{css_class}"' if css_class else ""
+        title_attr = ""
+        if search_field == "proposed_text" and change.get("original_text"):
+            title_attr = f' title="{html_module.escape(change["original_text"])}"'
+        marked = f'<mark data-change-id="{change["id"]}"{class_attr}{title_attr}>{segment}</mark>'
         result = result[:start] + marked + result[end:]
     return result

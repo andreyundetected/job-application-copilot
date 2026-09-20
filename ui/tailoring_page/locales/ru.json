@@ -25,5 +25,8 @@
     "category_domain": "Домен",
     "generating_placeholder": "Копилот работает...",
     "input_hint": "Enter — отправить, Shift+Enter — новая строка",
-    "download_button": "Скачать"
+    "download_button": "Скачать",
+    "undo_button": "Отменить (Ctrl+Z)",
+    "redo_button": "Повторить (Ctrl+Shift+Z)",
+    "revert_confirm_text": "Откатить это на изначальную версию?"
 }

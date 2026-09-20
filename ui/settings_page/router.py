@@ -42,6 +42,7 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
     app_settings = crud.get_app_settings(session)
+    question_templates = crud.list_question_templates(session)
 
     return {
         "request": request,
@@ -50,8 +51,10 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
         "active_linkedin": active_linkedin,
         "blockers": blockers,
         "scoring_factors": scoring_factors,
+        "question_templates": question_templates,
         "pregenerate_enabled": app_settings.pregenerate_enabled if app_settings else False,
         "pregenerate_min_score": app_settings.pregenerate_min_score if app_settings else 7,
+        "auto_answer_questions_enabled": app_settings.auto_answer_questions_enabled if app_settings else True,
         "lang": lang,
         "t": load_page_strings("ui/settings_page", lang),
     }
@@ -196,6 +199,36 @@ def delete_scoring_factor(factor_id: int, session: Session = Depends(get_session
     return JSONResponse({"status": "ok", "id": factor_id})
 
 
+@router.post("/question-templates")
+def add_question_template(
+    label: str = Form(...),
+    trigger_phrases_text: str = Form(...),
+    instructions: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    phrases = [p.strip() for p in trigger_phrases_text.split(",") if p.strip()]
+    if not phrases:
+        raise HTTPException(status_code=400, detail="At least one trigger phrase is required")
+
+    template = crud.create_question_template(
+        session, label=label, trigger_phrases=phrases, instructions=instructions
+    )
+    return JSONResponse(
+        {
+            "id": template.id,
+            "label": template.label,
+            "trigger_phrases": template.trigger_phrases,
+            "instructions": template.instructions,
+        }
+    )
+
+
+@router.post("/question-templates/{template_id}/delete")
+def delete_question_template(template_id: int, session: Session = Depends(get_session)):
+    crud.delete_question_template(session, template_id)
+    return JSONResponse({"status": "ok", "id": template_id})
+
+
 @router.post("/pregenerate")
 def update_pregenerate_settings(
     pregenerate_enabled: bool = Form(False),
@@ -206,5 +239,17 @@ def update_pregenerate_settings(
         session,
         pregenerate_enabled=pregenerate_enabled,
         pregenerate_min_score=pregenerate_min_score,
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/auto-answer")
+def update_auto_answer_settings(
+    auto_answer_questions_enabled: bool = Form(False),
+    session: Session = Depends(get_session),
+):
+    crud.upsert_app_settings(
+        session,
+        auto_answer_questions_enabled=auto_answer_questions_enabled,
     )
     return JSONResponse({"status": "ok"})

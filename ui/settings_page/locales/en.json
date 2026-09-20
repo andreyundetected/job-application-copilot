@@ -38,5 +38,16 @@
     "pregenerate_title": "Acceleration",
     "pregenerate_hint": "Pre-run keyword extraction and the soft/medium proposals right after evaluation, instead of waiting until you open the tailoring page. Uses a bit more tokens per evaluated job, but the tailoring page opens already filled in. Only affects manual review - automated auto-apply flows already do this at a high enough score.",
     "pregenerate_enabled_label": "Pre-generate tailoring suggestions",
-    "pregenerate_min_score_label": "Minimum fit score to trigger pre-generation"
+    "pregenerate_min_score_label": "Minimum fit score to trigger pre-generation",
+    "question_templates_title": "Question templates",
+    "question_templates_hint": "Custom auto-answer rules. When a pasted question contains one of the trigger phrases, the copilot follows your instructions when drafting an answer. Built-in cover letter / summary detection still runs separately.",
+    "template_label_label": "Template name",
+    "template_label_placeholder": "e.g. Why this company",
+    "template_triggers_label": "Trigger phrases (comma-separated)",
+    "template_triggers_placeholder": "e.g. why do you want to work here, why this company",
+    "template_instructions_label": "Instructions for the copilot",
+    "template_instructions_placeholder": "e.g. Keep it under 3 sentences, mention our product focus...",
+    "add_template_button": "Add template",
+    "auto_answer_title": "Auto-answer",
+    "auto_answer_enabled_label": "Automatically generate answers (cover letter, summary, and general questions) right after splitting a pasted form"
 }

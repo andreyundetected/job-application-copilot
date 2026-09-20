@@ -48,7 +48,7 @@ def _eval_result(score: int, verdict: bool = True) -> dict:
 
 def _make_run_and_search_result(db_session, url="https://boards.greenhouse.io/a/jobs/1"):
     run = automation_runs_crud.create_automation_run(db_session)
-    created = search_results_crud.bulk_create_search_results(
+    created, _ = search_results_crud.bulk_create_search_results(
         db_session, run.id, [{"query_text": "q", "url": url, "url_normalized": url}]
     )
     return run, created[0]
@@ -107,7 +107,7 @@ def test_run_single_query_creates_search_results_and_logs_usage(monkeypatch, db_
         def search(self, query, num=None, date=None):
             return fake_response
 
-    monkeypatch.setattr(pipeline, "SerpentSearchProvider", _FakeProvider)
+    monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
 
     created = pipeline._run_single_query(db_session, run, "sample query", settings)
 
@@ -139,7 +139,7 @@ def test_run_single_query_handles_search_error_gracefully(monkeypatch, db_sessio
         def search(self, query, num=None, date=None):
             raise pipeline.SerpentSearchError("boom")
 
-    monkeypatch.setattr(pipeline, "SerpentSearchProvider", _FakeProvider)
+    monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
 
     created = pipeline._run_single_query(db_session, run, "sample query", settings)
 
@@ -411,7 +411,7 @@ def test_run_automation_pipeline_stops_early_at_results_cap(monkeypatch, db_sess
                 "raw_response": {},
             }
 
-    monkeypatch.setattr(pipeline, "SerpentSearchProvider", _FakeProvider)
+    monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
     monkeypatch.setattr(pipeline, "extract_job_text", lambda url: "Sample job text")
     monkeypatch.setattr(pipeline, "get_llm_provider", lambda: _FakeLLMProvider())
     monkeypatch.setattr(pipeline, "evaluate_job_posting", lambda *a, **k: _eval_result(9))
@@ -455,7 +455,7 @@ def test_run_automation_pipeline_processes_multiple_results_when_uncapped(monkey
         future.set_result(func(*args, **kwargs))
         return future
 
-    monkeypatch.setattr(pipeline, "SerpentSearchProvider", _FakeProvider)
+    monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
     monkeypatch.setattr(pipeline, "extract_job_text", lambda url: "Sample job text")
     monkeypatch.setattr(pipeline, "get_llm_provider", lambda: _FakeLLMProvider())
     monkeypatch.setattr(pipeline, "evaluate_job_posting", lambda *a, **k: _eval_result(9))

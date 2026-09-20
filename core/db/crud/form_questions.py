@@ -54,6 +54,8 @@ def bulk_create_form_questions(
             answer_text=question.get("answer_text"),
             needs_manual_input=question.get("needs_manual_input", False),
             flag_reason=question.get("flag_reason"),
+            template_label=question.get("template_label"),
+            template_instructions=question.get("template_instructions"),
             order=order_offset + index,
         )
         session.add(row)

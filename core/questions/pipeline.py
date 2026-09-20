@@ -130,12 +130,23 @@ def classify_template_category(provider, question_text: str) -> str:
     return category
 
 
-def split_and_prepare_questions(provider, raw_text: str) -> list[dict]:
+def split_and_prepare_questions(provider, raw_text: str, custom_templates: list | None = None) -> list[dict]:
+    """custom_templates: list of QuestionTemplate rows (label, trigger_phrases, instructions),
+    checked against each extracted question before falling back to the built-in
+    cover_letter/summary/general classification."""
+    from core.db.crud.question_templates import match_question_template
+
     questions = split_and_classify_questions(provider, raw_text)
+    custom_templates = custom_templates or []
 
     results = []
     for question in questions:
+        matched_template = match_question_template(custom_templates, question["question_text"])
+        template_label = matched_template.label if matched_template else None
+        template_instructions = matched_template.instructions if matched_template else None
+
         category = classify_template_category(provider, question["question_text"])
+
         results.append(
             {
                 "question_text": question["question_text"],
@@ -145,6 +156,8 @@ def split_and_prepare_questions(provider, raw_text: str) -> list[dict]:
                 "char_limit": question.get("char_limit"),
                 "needs_manual_input": False,
                 "flag_reason": None,
+                "template_label": template_label,
+                "template_instructions": template_instructions,
             }
         )
 
@@ -234,7 +247,9 @@ def generate_general_answers_initial(
     links: list[str] | None = None,
 ) -> dict[int, dict]:
     """One batched call answering every 'general' (non cover_letter/summary)
-    open-ended question at once."""
+    open-ended question at once. questions may carry an optional
+    'template_instructions' key (from a matched custom QuestionTemplate),
+    surfaced per-question in the prompt."""
     if not questions:
         return {}
 

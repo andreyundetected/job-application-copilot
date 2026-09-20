@@ -4,6 +4,8 @@
     "job_posting_placeholder": "Paste the job posting here...",
     "extra_info_label": "Additional context (optional)",
     "extra_info_placeholder": "Anything not covered above...",
+    "source_url_label": "Job posting URL (optional)",
+    "source_url_placeholder": "https://...",
     "using_resume": "Using resume:",
     "linkedin": "LinkedIn:",
     "none_set": "none set",

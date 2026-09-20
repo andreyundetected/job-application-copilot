@@ -26,7 +26,10 @@ TARGET JOB POSTING
 
 THE QUESTIONS (answer each independently - do not let one question's answer bleed into another's)
 {% for question in questions %}
-<question id="{{ question.id }}"{% if question.char_limit %} char_limit="{{ question.char_limit }}"{% endif %}>{{ question.question_text }}</question>
+<question id="{{ question.id }}"{% if question.char_limit %} char_limit="{{ question.char_limit }}"{% endif %}>{{ question.question_text }}{% if question.template_instructions %}
+
+Additional guidance for this specific question (follow this closely): {{ question.template_instructions }}
+{% endif %}</question>
 {% endfor %}
 
 TASK

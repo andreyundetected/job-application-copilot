@@ -73,6 +73,7 @@ class AppSettings(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     pregenerate_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     pregenerate_min_score: Mapped[int] = mapped_column(Integer, default=7)
+    auto_answer_questions_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class JobPosting(Base):
@@ -300,6 +301,8 @@ class FormQuestion(Base):
     needs_manual_input: Mapped[bool] = mapped_column(Boolean, default=False)
     flag_reason: Mapped[str] = mapped_column(Text, nullable=True)
     pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    template_label: Mapped[str] = mapped_column(String(128), nullable=True)
+    template_instructions: Mapped[str] = mapped_column(Text, nullable=True)
 
     application: Mapped["Application"] = relationship(back_populates="form_questions")
     changes: Mapped[list["QuestionChange"]] = relationship(back_populates="question")
@@ -412,6 +415,19 @@ class AutomationSettings(Base):
     max_query_words: Mapped[int] = mapped_column(Integer, default=32)
     saved_queries: Mapped[list] = mapped_column(JSON, nullable=True)
     serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
+
+
+class QuestionTemplate(Base):
+    __tablename__ = "question_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    label: Mapped[str] = mapped_column(String(128))
+    trigger_phrases: Mapped[list] = mapped_column(JSON)
+    instructions: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class ApiUsageLog(Base):

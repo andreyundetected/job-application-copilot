@@ -42,15 +42,19 @@ def get_search_result_by_url(session: Session, url_normalized: str) -> SearchRes
 
 def bulk_create_search_results(
     session: Session, automation_run_id: int, results: list[dict]
-) -> list[SearchResult]:
+) -> tuple[list[SearchResult], dict]:
     created = []
     seen_in_batch: set[str] = set()
+    skipped_intra_batch = 0
+    skipped_already_known = 0
 
     for item in results:
         url_normalized = item["url_normalized"]
         if url_normalized in seen_in_batch:
+            skipped_intra_batch += 1
             continue
         if get_search_result_by_url(session, url_normalized) is not None:
+            skipped_already_known += 1
             continue
 
         seen_in_batch.add(url_normalized)
@@ -69,7 +73,11 @@ def bulk_create_search_results(
     session.commit()
     for row in created:
         session.refresh(row)
-    return created
+
+    return created, {
+        "skipped_intra_batch": skipped_intra_batch,
+        "skipped_already_known": skipped_already_known,
+    }
 
 
 def list_search_results_for_run(

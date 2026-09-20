@@ -418,6 +418,7 @@ textarea.answer-body-editable:focus {
             <div class="question-text">${q.question_text.replace(/</g, "&lt;")}</div>
             <div class="question-meta">
                 <span class="badge badge-tag">${categoryLabel(q.category)}</span>
+                ${q.template_label ? `<span class="badge">${q.template_label}</span>` : ""}
                 ${q.char_limit ? `<span class="badge">${q.char_limit} chars max</span>` : ""}
                 ${isPending ? `<span class="badge">${I18N.generating_badge} <span class="loading-dot"></span></span>` : ""}
             </div>

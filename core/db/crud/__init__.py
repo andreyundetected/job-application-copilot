@@ -19,3 +19,4 @@ from core.db.crud.automation_settings import *
 from core.db.crud.automation_runs import *
 from core.db.crud.search_results import *
 from core.db.crud.api_usage_log import *
+from core.db.crud.question_templates import *

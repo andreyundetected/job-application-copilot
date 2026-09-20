@@ -1,10 +1,11 @@
 import pytest
 
 from core.discovery.query_builder import (
-    build_queries,
+    build_query_string,
     build_site_filter,
-    chunk_terms,
-    suggest_search_terms,
+    count_words,
+    validate_query_length,
+    suggest_search_queries,
 )
 
 
@@ -19,27 +20,8 @@ class _FakeProvider:
 
 
 @pytest.mark.discovery
-def test_chunk_terms_splits_evenly():
-    terms = ["a", "b", "c", "d", "e"]
-
-    chunks = chunk_terms(terms, chunk_size=2)
-
-    assert chunks == [["a", "b"], ["c", "d"], ["e"]]
-
-
-@pytest.mark.discovery
-def test_chunk_terms_single_chunk_when_size_covers_all():
-    terms = ["a", "b", "c"]
-
-    chunks = chunk_terms(terms, chunk_size=10)
-
-    assert chunks == [["a", "b", "c"]]
-
-
-@pytest.mark.discovery
-def test_chunk_terms_rejects_non_positive_size():
-    with pytest.raises(ValueError):
-        chunk_terms(["a"], chunk_size=0)
+def test_count_words_counts_whitespace_separated_tokens():
+    assert count_words("AI Engineer LLM") == 3
 
 
 @pytest.mark.discovery
@@ -60,41 +42,66 @@ def test_build_site_filter_custom_sites():
 
 
 @pytest.mark.discovery
-def test_build_queries_chunks_terms_into_separate_queries():
-    terms = ["AI Engineer", "LLM Engineer", "Applied AI Engineer"]
+def test_build_query_string_combines_site_filter_and_terms():
+    query = build_query_string(["AI Engineer", "LLM Engineer"], ["example.com"])
 
-    queries = build_queries(terms, chunk_size=2)
-
-    assert len(queries) == 2
-    assert '"AI Engineer"' in queries[0]
-    assert '"LLM Engineer"' in queries[0]
-    assert '"Applied AI Engineer"' in queries[1]
-    assert "site:boards.greenhouse.io" in queries[0]
-    assert "site:boards.greenhouse.io" in queries[1]
+    assert query.startswith("(site:example.com)")
+    assert '"AI Engineer"' in query
+    assert '"LLM Engineer"' in query
+    assert " OR " in query
 
 
 @pytest.mark.discovery
-def test_suggest_search_terms_parses_response():
-    provider = _FakeProvider("<term>AI Engineer</term><term>LLM Engineer</term>")
+def test_build_query_string_with_no_terms_returns_only_site_filter():
+    query = build_query_string([], ["example.com"])
 
-    terms = suggest_search_terms(provider, "Sample candidate background")
-
-    assert terms == ["AI Engineer", "LLM Engineer"]
+    assert query == "(site:example.com)"
 
 
 @pytest.mark.discovery
-def test_suggest_search_terms_passes_context_to_prompt():
-    provider = _FakeProvider("<term>AI Engineer</term>")
+def test_validate_query_length_true_when_under_limit():
+    assert validate_query_length("one two three", max_words=5) is True
 
-    suggest_search_terms(provider, "Unique candidate marker")
+
+@pytest.mark.discovery
+def test_validate_query_length_false_when_over_limit():
+    assert validate_query_length("one two three four five six", max_words=5) is False
+
+
+@pytest.mark.discovery
+def test_suggest_search_queries_parses_grouped_terms():
+    provider = _FakeProvider(
+        "<query><term>AI Engineer</term><term>LLM Engineer</term></query>"
+        "<query><term>Applied AI Engineer</term></query>"
+    )
+
+    groups = suggest_search_queries(provider, "Sample candidate background")
+
+    assert groups == [["AI Engineer", "LLM Engineer"], ["Applied AI Engineer"]]
+
+
+@pytest.mark.discovery
+def test_suggest_search_queries_passes_context_to_prompt():
+    provider = _FakeProvider("<query><term>AI Engineer</term></query>")
+
+    suggest_search_queries(provider, "Unique candidate marker")
 
     assert "Unique candidate marker" in provider.last_user_prompt
 
 
 @pytest.mark.discovery
-def test_suggest_search_terms_handles_empty_response():
+def test_suggest_search_queries_handles_empty_response():
     provider = _FakeProvider("")
 
-    terms = suggest_search_terms(provider, "context")
+    groups = suggest_search_queries(provider, "context")
 
-    assert terms == []
+    assert groups == []
+
+
+@pytest.mark.discovery
+def test_suggest_search_queries_skips_groups_with_no_valid_terms():
+    provider = _FakeProvider("<query></query><query><term>AI Engineer</term></query>")
+
+    groups = suggest_search_queries(provider, "context")
+
+    assert groups == [["AI Engineer"]]

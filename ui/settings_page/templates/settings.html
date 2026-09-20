@@ -85,6 +85,39 @@
     </form>
 </div>
 
+<div class="card">
+    <h3>{{ t.auto_answer_title }}</h3>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <input type="checkbox" name="auto_answer_questions_enabled" id="auto_answer_questions_enabled" {% if auto_answer_questions_enabled %}checked{% endif %} style="width:auto;">
+        <span>{{ t.auto_answer_enabled_label }}</span>
+    </label>
+</div>
+
+<div class="card">
+    <h3>{{ t.question_templates_title }}</h3>
+    <p class="salary-line">{{ t.question_templates_hint }}</p>
+    <ul class="blocker-list" id="question-template-list">
+        {% for template in question_templates %}
+        <li data-template-id="{{ template.id }}">
+            <span><strong>{{ template.label }}</strong> — {{ template.trigger_phrases | join(', ') }}</span>
+            <button type="button" class="btn-ghost btn template-remove-btn" data-template-id="{{ template.id }}">{{ t.btn_remove }}</button>
+        </li>
+        {% endfor %}
+    </ul>
+    <form id="question-template-form">
+        <label for="template_label">{{ t.template_label_label }}</label>
+        <input type="text" name="label" id="template_label" placeholder="{{ t.template_label_placeholder }}">
+
+        <label for="template_triggers">{{ t.template_triggers_label }}</label>
+        <input type="text" name="trigger_phrases_text" id="template_triggers" placeholder="{{ t.template_triggers_placeholder }}">
+
+        <label for="template_instructions">{{ t.template_instructions_label }}</label>
+        <textarea name="instructions" id="template_instructions" placeholder="{{ t.template_instructions_placeholder }}"></textarea>
+
+        <button type="submit" class="btn">{{ t.add_template_button }}</button>
+    </form>
+</div>
+
 <h1>{{ t.matching_title }}</h1>
 
 <div class="card">
@@ -149,6 +182,13 @@ document.getElementById("pregenerate-form").addEventListener("submit", async (ev
     formData.append("pregenerate_enabled", document.getElementById("pregenerate_enabled").checked ? "true" : "");
     formData.append("pregenerate_min_score", document.getElementById("pregenerate_min_score").value);
     await fetch("/settings/pregenerate", { method: "POST", body: formData });
+    showToast(I18N.done, "success");
+});
+
+document.getElementById("auto_answer_questions_enabled").addEventListener("change", async (event) => {
+    const formData = new FormData();
+    formData.append("auto_answer_questions_enabled", event.target.checked ? "true" : "");
+    await fetch("/settings/auto-answer", { method: "POST", body: formData });
     showToast(I18N.done, "success");
 });
 
@@ -241,6 +281,32 @@ document.getElementById("scoring-factor-list").addEventListener("click", async (
     }
     const factorId = event.target.dataset.factorId;
     await fetch(`/settings/scoring-factors/${factorId}/delete`, { method: "POST" });
+    event.target.closest("li").remove();
+});
+
+document.getElementById("question-template-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await fetch("/settings/question-templates", { method: "POST", body: new FormData(event.target) });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+        return;
+    }
+    const data = await response.json();
+    const list = document.getElementById("question-template-list");
+    const item = document.createElement("li");
+    item.dataset.templateId = data.id;
+    item.innerHTML = `<span><strong>${data.label}</strong> — ${data.trigger_phrases.join(", ")}</span> <button type="button" class="btn-ghost btn template-remove-btn" data-template-id="${data.id}">${I18N.btn_remove}</button>`;
+    list.appendChild(item);
+    document.getElementById("question-template-form").reset();
+});
+
+document.getElementById("question-template-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("template-remove-btn")) {
+        return;
+    }
+    const templateId = event.target.dataset.templateId;
+    await fetch(`/settings/question-templates/${templateId}/delete`, { method: "POST" });
     event.target.closest("li").remove();
 });
 </script>

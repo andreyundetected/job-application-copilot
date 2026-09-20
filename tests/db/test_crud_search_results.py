@@ -33,7 +33,7 @@ def test_create_search_result(db_session):
 def test_bulk_create_search_results_skips_intra_batch_duplicates(db_session):
     run = _make_run(db_session)
 
-    created = search_results_crud.bulk_create_search_results(
+    created, stats = search_results_crud.bulk_create_search_results(
         db_session,
         run.id,
         [
@@ -51,13 +51,15 @@ def test_bulk_create_search_results_skips_intra_batch_duplicates(db_session):
     )
 
     assert len(created) == 1
+    assert stats["skipped_intra_batch"] == 1
+    assert stats["skipped_already_known"] == 0
 
 
 @pytest.mark.db
 def test_bulk_create_search_results_skips_cross_call_duplicates(db_session):
     run = _make_run(db_session)
 
-    first_batch = search_results_crud.bulk_create_search_results(
+    first_batch, first_stats = search_results_crud.bulk_create_search_results(
         db_session,
         run.id,
         [
@@ -68,7 +70,7 @@ def test_bulk_create_search_results_skips_cross_call_duplicates(db_session):
             }
         ],
     )
-    second_batch = search_results_crud.bulk_create_search_results(
+    second_batch, second_stats = search_results_crud.bulk_create_search_results(
         db_session,
         run.id,
         [
@@ -81,7 +83,9 @@ def test_bulk_create_search_results_skips_cross_call_duplicates(db_session):
     )
 
     assert len(first_batch) == 1
+    assert first_stats["skipped_already_known"] == 0
     assert len(second_batch) == 0
+    assert second_stats["skipped_already_known"] == 1
 
 
 @pytest.mark.db
@@ -120,7 +124,7 @@ def test_set_promoted_job_posting_and_count(db_session):
     run = _make_run(db_session)
     job = jobs_crud.create_job_posting(db_session, raw_text="job text")
 
-    results = search_results_crud.bulk_create_search_results(
+    results, _ = search_results_crud.bulk_create_search_results(
         db_session,
         run.id,
         [

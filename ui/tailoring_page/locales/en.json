@@ -25,5 +25,8 @@
     "category_domain": "Domain",
     "generating_placeholder": "Copilot is working...",
     "input_hint": "Enter to send, Shift+Enter for a new line",
-    "download_button": "Download"
+    "download_button": "Download",
+    "undo_button": "Undo (Ctrl+Z)",
+    "redo_button": "Redo (Ctrl+Shift+Z)",
+    "revert_confirm_text": "Revert this to the original text?"
 }

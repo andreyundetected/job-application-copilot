@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -32,6 +33,8 @@ _DOWNLOAD_MEDIA_TYPES = {
 }
 
 router = APIRouter(prefix="/tailor")
+
+logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="ui/tailoring_page/templates")
 templates.env.loader = ChoiceLoader(
@@ -145,6 +148,21 @@ def _pending_changes_for_render(session: Session, session_id: int) -> list[dict]
     return [_serialize_change(c) for c in changes if c.status == "pending"]
 
 
+def _approved_changes_for_render(session: Session, session_id: int) -> list[dict]:
+    changes = crud.list_tailoring_changes_for_session(session, session_id)
+    return [_serialize_change(c) for c in changes if c.status == "approved"]
+
+
+def _render_working_html(session: Session, tailoring_session) -> str:
+    pending = _pending_changes_for_render(session, tailoring_session.id)
+    approved = _approved_changes_for_render(session, tailoring_session.id)
+    highlighted_html = wrap_highlights(tailoring_session.working_html or "", pending)
+    highlighted_html = wrap_highlights(
+        highlighted_html, approved, search_field="proposed_text", css_class="approved-mark"
+    )
+    return highlighted_html
+
+
 def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None:
     """Runs keyword extraction + soft + medium proposals ahead of time, right after a
     high-scoring evaluation, so the tailoring page opens already populated. Guarded by
@@ -153,6 +171,9 @@ def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None
     try:
         resume = crud.get_active_resume_version(session, "resume")
         if resume is None or not resume.content_html:
+            logger.warning(
+                "[job %s] pregenerate skipped: no active resume with content_html", job_posting_id
+            )
             return
 
         tailoring_session = crud.get_tailoring_session_for_job(session, job_posting_id)
@@ -166,7 +187,10 @@ def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None
             )
 
         if crud.list_tailoring_messages(session, tailoring_session.id):
+            logger.info("[job %s] pregenerate skipped: session already has messages", job_posting_id)
             return
+
+        logger.info("[job %s] pregenerate: starting soft + medium proposals", job_posting_id)
 
         job = crud.get_job_posting(session, job_posting_id)
         if job is None:
@@ -216,8 +240,7 @@ def tailor_page(
         raise HTTPException(status_code=404, detail="Job not found")
 
     tailoring_session = _get_or_create_session(session, job_id)
-    pending = _pending_changes_for_render(session, tailoring_session.id)
-    highlighted_html = wrap_highlights(tailoring_session.working_html or "", pending)
+    highlighted_html = _render_working_html(session, tailoring_session)
 
     messages = crud.list_tailoring_messages(session, tailoring_session.id)
     changes = crud.list_tailoring_changes_for_session(session, tailoring_session.id)
@@ -322,8 +345,7 @@ def render_session(session_id: int, session: Session = Depends(get_session)):
     if tailoring_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    pending = _pending_changes_for_render(session, session_id)
-    highlighted_html = wrap_highlights(tailoring_session.working_html or "", pending)
+    highlighted_html = _render_working_html(session, tailoring_session)
     return JSONResponse({"html": highlighted_html})
 
 
@@ -366,6 +388,7 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
         provider = get_llm_provider()
         keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
 
+        logger.info("[session %s] propose-soft: calling LLM (job=%s)", session_id, job.id)
         changes = propose_soft_fragment_changes(
             provider,
             job_posting_text=job.raw_text,
@@ -373,6 +396,12 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
             matched_factors=matched_factors,
             keywords=_keyword_texts(keywords),
         )
+        logger.info("[session %s] propose-soft: got %s changes", session_id, len(changes))
+        if not changes:
+            logger.warning(
+                "[session %s] propose-soft: LLM returned 0 changes (check working_html and prompt output)",
+                session_id,
+            )
 
         message = crud.create_tailoring_message(
             session, session_id, role="assistant", text=_soft_message_text(lang)
@@ -416,6 +445,7 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
         keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
         keyword_texts = _keyword_texts(keywords)
 
+        logger.info("[session %s] propose-medium: calling LLM (job=%s)", session_id, job.id)
         changes = propose_medium_fragment_changes(
             provider,
             job_posting_text=job.raw_text,
@@ -423,6 +453,12 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
             matched_factors=matched_factors,
             keywords=keyword_texts,
         )
+        logger.info("[session %s] propose-medium: got %s changes", session_id, len(changes))
+        if not changes:
+            logger.warning(
+                "[session %s] propose-medium: LLM returned 0 changes (check working_html and prompt output)",
+                session_id,
+            )
 
         message = crud.create_tailoring_message(
             session, session_id, role="assistant", text=_medium_message_text(lang)
@@ -518,6 +554,7 @@ def resolve_change(
                 tailoring_session.working_html or "", change.original_text, change.proposed_text
             )
         except ValueError as error:
+            logger.warning("[change %s] approve failed: %s", change_id, error)
             crud.resolve_tailoring_change(session, change_id, status="failed")
             return JSONResponse({"status": "error", "detail": str(error)}, status_code=409)
 
@@ -527,5 +564,31 @@ def resolve_change(
         crud.resolve_tailoring_change(session, change_id, status="rejected")
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
+
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/changes/{change_id}/revert")
+def revert_change(
+    change_id: int,
+    session: Session = Depends(get_session),
+):
+    change = crud.get_tailoring_change(session, change_id)
+    if change is None:
+        raise HTTPException(status_code=404, detail="Change not found")
+    if change.status != "approved":
+        raise HTTPException(status_code=400, detail="Only approved changes can be reverted")
+
+    tailoring_session = crud.get_tailoring_session(session, change.session_id)
+    try:
+        new_html = apply_fragment(
+            tailoring_session.working_html or "", change.proposed_text, change.original_text
+        )
+    except ValueError as error:
+        logger.warning("[change %s] revert failed: %s", change_id, error)
+        return JSONResponse({"status": "error", "detail": str(error)}, status_code=409)
+
+    crud.update_working_html(session, tailoring_session.id, new_html)
+    crud.resolve_tailoring_change(session, change_id, status="reverted", final_text=change.original_text)
 
     return JSONResponse({"status": "ok"})

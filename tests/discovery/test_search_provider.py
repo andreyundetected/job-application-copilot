@@ -1,6 +1,12 @@
 import pytest
 
-from core.discovery.search_provider import SerpentSearchError, SerpentSearchProvider
+from core.discovery.search_provider import (
+    MultiSearchProvider,
+    SerpentSearchError,
+    SerpentSearchProvider,
+    SerperSearchProvider,
+    get_search_provider,
+)
 
 
 class _FakeResponse:
@@ -191,3 +197,172 @@ def test_provider_uses_config_defaults(monkeypatch):
 
     assert provider.api_key == "config-key"
     assert provider.base_url == "https://apiserpent.com/api/search/quick"
+
+
+@pytest.mark.discovery
+def test_serper_search_returns_parsed_results(monkeypatch):
+    provider = SerperSearchProvider(api_key="fake-key", base_url="https://google.serper.dev/search")
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        assert url == "https://google.serper.dev/search"
+        assert json["q"] == "sample query"
+        assert json["num"] == 30
+        assert headers["X-API-KEY"] == "fake-key"
+        return _FakeResponse(
+            200,
+            {
+                "organic": [
+                    {"title": "Sample Job A", "link": "https://boards.greenhouse.io/a/jobs/1", "snippet": "Snippet A"},
+                    {"title": "Sample Job B", "link": "https://jobs.lever.co/b/2", "snippet": "Snippet B"},
+                ]
+            },
+        )
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.post", fake_post)
+
+    result = provider.search("sample query", num=30)
+
+    assert result["returned_count"] == 2
+    assert result["results"][0]["url"] == "https://boards.greenhouse.io/a/jobs/1"
+    assert result["results"][1]["url"] == "https://jobs.lever.co/b/2"
+
+
+@pytest.mark.discovery
+def test_serper_search_maps_date_to_tbs_param(monkeypatch):
+    provider = SerperSearchProvider(api_key="fake-key")
+    captured = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured["json"] = json
+        return _FakeResponse(200, {"organic": []})
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.post", fake_post)
+
+    provider.search("sample query", num=10, date="w1")
+
+    assert captured["json"]["tbs"] == "qdr:w"
+
+
+@pytest.mark.discovery
+def test_serper_search_omits_tbs_when_no_date(monkeypatch):
+    provider = SerperSearchProvider(api_key="fake-key")
+    captured = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        captured["json"] = json
+        return _FakeResponse(200, {"organic": []})
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.post", fake_post)
+
+    provider.search("sample query", num=10)
+
+    assert "tbs" not in captured["json"]
+
+
+@pytest.mark.discovery
+def test_serper_search_raises_on_non_200(monkeypatch):
+    provider = SerperSearchProvider(api_key="fake-key")
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        return _FakeResponse(403, text="Forbidden")
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.post", fake_post)
+
+    with pytest.raises(SerpentSearchError):
+        provider.search("sample query", num=10)
+
+
+@pytest.mark.discovery
+def test_serper_search_skips_results_without_url(monkeypatch):
+    provider = SerperSearchProvider(api_key="fake-key")
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        return _FakeResponse(
+            200,
+            {"organic": [{"title": "No link here", "snippet": "x"}, {"title": "Has link", "link": "https://example.com/1"}]},
+        )
+
+    monkeypatch.setattr("core.discovery.search_provider.requests.post", fake_post)
+
+    result = provider.search("sample query", num=10)
+
+    assert result["returned_count"] == 2
+    assert len(result["results"]) == 1
+    assert result["results"][0]["url"] == "https://example.com/1"
+
+
+@pytest.mark.discovery
+def test_multi_search_provider_falls_back_to_next_provider_on_error():
+    class _FailingProvider:
+        name = "failing"
+
+        def search(self, query, num=50, date=None):
+            raise SerpentSearchError("first provider down")
+
+    class _WorkingProvider:
+        name = "working"
+
+        def search(self, query, num=50, date=None):
+            return {"results": [], "requested_num": num, "returned_count": 0, "raw_response": {}}
+
+    multi = MultiSearchProvider([_FailingProvider(), _WorkingProvider()])
+
+    result = multi.search("sample query")
+
+    assert result["returned_count"] == 0
+
+
+@pytest.mark.discovery
+def test_multi_search_provider_raises_when_all_providers_fail():
+    class _FailingProvider:
+        name = "failing"
+
+        def search(self, query, num=50, date=None):
+            raise SerpentSearchError("down")
+
+    multi = MultiSearchProvider([_FailingProvider(), _FailingProvider()])
+
+    with pytest.raises(SerpentSearchError):
+        multi.search("sample query")
+
+
+@pytest.mark.discovery
+def test_multi_search_provider_raises_when_no_providers_configured():
+    multi = MultiSearchProvider([])
+
+    with pytest.raises(SerpentSearchError):
+        multi.search("sample query")
+
+
+@pytest.mark.discovery
+def test_get_search_provider_only_includes_configured_providers(monkeypatch):
+    monkeypatch.setattr("core.discovery.search_provider.config.SEARCH_PROVIDER_ORDER", "serpent,serper")
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPENT_API_KEY", "")
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPER_API_KEY", "serper-key")
+
+    multi = get_search_provider()
+
+    assert isinstance(multi, MultiSearchProvider)
+    assert len(multi.providers) == 1
+    assert isinstance(multi.providers[0], SerperSearchProvider)
+
+
+@pytest.mark.discovery
+def test_get_search_provider_respects_order(monkeypatch):
+    monkeypatch.setattr("core.discovery.search_provider.config.SEARCH_PROVIDER_ORDER", "serper,serpent")
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPENT_API_KEY", "sp-key")
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPER_API_KEY", "se-key")
+
+    multi = get_search_provider()
+
+    assert [p.name for p in multi.providers] == ["serper", "serpent"]
+
+
+@pytest.mark.discovery
+def test_get_search_provider_empty_when_nothing_configured(monkeypatch):
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPENT_API_KEY", "")
+    monkeypatch.setattr("core.discovery.search_provider.config.SERPER_API_KEY", "")
+
+    multi = get_search_provider()
+
+    assert multi.providers == []

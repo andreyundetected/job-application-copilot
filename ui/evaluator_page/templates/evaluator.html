@@ -12,6 +12,9 @@
     <label for="extra_info">{{ t.extra_info_label }}</label>
     <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}"></textarea>
 
+    <label for="source_url">{{ t.source_url_label }}</label>
+    <input type="text" name="source_url" id="source_url" placeholder="{{ t.source_url_placeholder }}">
+
     <p class="salary-line">
         {{ t.using_resume }} {{ active_resume.label if active_resume else t.none_set }}
         · {{ t.linkedin }} {{ active_linkedin.label if active_linkedin else t.none_set }}
