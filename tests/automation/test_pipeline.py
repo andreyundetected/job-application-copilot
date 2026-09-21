@@ -178,8 +178,6 @@ def test_process_search_result_creates_job_and_passes(monkeypatch, db_session):
         db_session,
         min_score_to_proceed=6,
         max_score_to_archive=3,
-        auto_tailor_soft_enabled=False,
-        auto_tailor_medium_enabled=False,
     )
     run, search_result = _make_run_and_search_result(db_session)
 
@@ -212,14 +210,12 @@ def test_process_search_result_creates_job_and_passes(monkeypatch, db_session):
 @pytest.mark.automation
 def test_maybe_auto_answer_base_questions_creates_application_and_answers(monkeypatch, db_session):
     from core.db.crud import automation_base_questions as base_questions_crud
-    from core.db.crud import app_settings as app_settings_crud
     from core.db.crud import applications as applications_crud
     from core.db.crud import candidate_profile as candidate_profile_crud
     from core.db.crud import form_questions as form_questions_crud
 
     resumes_crud.create_resume_version(db_session, source_type="resume", raw_text="resume text", is_active=True)
     candidate_profile_crud.upsert_candidate_profile(db_session, full_name="Sample Candidate")
-    app_settings_crud.upsert_app_settings(db_session, auto_answer_questions_enabled=True)
     base_questions_crud.create_automation_base_question(db_session, "Write a cover letter for this role")
 
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
@@ -247,27 +243,9 @@ def test_maybe_auto_answer_base_questions_creates_application_and_answers(monkey
 
 
 @pytest.mark.automation
-def test_maybe_auto_answer_base_questions_skips_when_disabled(monkeypatch, db_session):
-    from core.db.crud import automation_base_questions as base_questions_crud
-    from core.db.crud import app_settings as app_settings_crud
-    from core.db.crud import applications as applications_crud
-
-    app_settings_crud.upsert_app_settings(db_session, auto_answer_questions_enabled=False)
-    base_questions_crud.create_automation_base_question(db_session, "Write a cover letter")
-    job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
-
-    pipeline._maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
-
-    applications = [a for a in applications_crud.list_applications(db_session) if a.job_posting_id == job.id]
-    assert applications == []
-
-
-@pytest.mark.automation
 def test_maybe_auto_answer_base_questions_skips_when_no_questions_configured(db_session):
-    from core.db.crud import app_settings as app_settings_crud
     from core.db.crud import applications as applications_crud
 
-    app_settings_crud.upsert_app_settings(db_session, auto_answer_questions_enabled=True)
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
 
     pipeline._maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
@@ -279,11 +257,9 @@ def test_maybe_auto_answer_base_questions_skips_when_no_questions_configured(db_
 @pytest.mark.automation
 def test_maybe_auto_answer_base_questions_does_not_duplicate_already_asked(monkeypatch, db_session):
     from core.db.crud import automation_base_questions as base_questions_crud
-    from core.db.crud import app_settings as app_settings_crud
     from core.db.crud import applications as applications_crud
     from core.db.crud import form_questions as form_questions_crud
 
-    app_settings_crud.upsert_app_settings(db_session, auto_answer_questions_enabled=True)
     base_questions_crud.create_automation_base_question(db_session, "Write a cover letter")
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
 
@@ -382,7 +358,7 @@ def test_process_search_result_auto_applies_permitted_soft_changes(monkeypatch, 
         is_active=True,
     )
     automation_settings_crud.upsert_automation_settings(
-        db_session, min_score_to_proceed=6, max_score_to_archive=3, auto_tailor_soft_enabled=True
+        db_session, min_score_to_proceed=6, max_score_to_archive=3
     )
     tailoring_permissions_crud.set_tailoring_permission(
         db_session, level="soft", change_type="skills", auto_apply=True
@@ -432,7 +408,13 @@ def test_process_search_result_leaves_non_permitted_soft_changes_pending(monkeyp
         is_active=True,
     )
     automation_settings_crud.upsert_automation_settings(
-        db_session, min_score_to_proceed=6, max_score_to_archive=3, auto_tailor_soft_enabled=True
+        db_session, min_score_to_proceed=6, max_score_to_archive=3
+    )
+    # "soft" needs to be active (at least one permitted change_type) for the level
+    # to run at all, but the change proposed below is a *different* type ("title"),
+    # which stays pending - this is exactly the "proposed but not auto-applied" case.
+    tailoring_permissions_crud.set_tailoring_permission(
+        db_session, level="soft", change_type="skills", auto_apply=True
     )
     run, search_result = _make_run_and_search_result(db_session)
 

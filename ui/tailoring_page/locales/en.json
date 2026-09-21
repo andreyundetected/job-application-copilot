@@ -28,5 +28,7 @@
     "download_button": "Download",
     "undo_button": "Undo (Ctrl+Z)",
     "redo_button": "Redo (Ctrl+Shift+Z)",
-    "revert_confirm_text": "Revert this to the original text?"
+    "revert_original_label": "Original",
+    "revert_button": "Revert",
+    "back_link": "Back to job"
 }

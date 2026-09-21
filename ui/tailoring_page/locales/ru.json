@@ -28,5 +28,7 @@
     "download_button": "Скачать",
     "undo_button": "Отменить (Ctrl+Z)",
     "redo_button": "Повторить (Ctrl+Shift+Z)",
-    "revert_confirm_text": "Откатить это на изначальную версию?"
+    "revert_original_label": "Оригинал",
+    "revert_button": "Вернуть",
+    "back_link": "Назад к вакансии"
 }

@@ -315,7 +315,7 @@ def _process_search_result(
         elif stage == stages.PASSED:
             crud.update_job_pipeline_stage(session, job.id, stages.PASSED)
             crud.increment_run_counters(session, run_id, passed_count=1)
-            _maybe_auto_tailor(session, run_id, job, job_text, result, settings)
+            _maybe_auto_tailor(session, run_id, job, job_text, result)
             _maybe_auto_answer_base_questions(session, run_id, job, job_text)
         else:
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
@@ -382,9 +382,17 @@ def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_arc
     return stages.NEEDS_REVIEW
 
 
-def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_result: dict, settings) -> None:
-    if not settings.auto_tailor_soft_enabled and not settings.auto_tailor_medium_enabled:
-        logger.info("[run %s] job %s: auto-tailoring disabled in settings, skipping", run_id, job.id)
+def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_result: dict) -> None:
+    # There's no separate "run soft/medium" toggle anymore - whether a level runs
+    # at all is derived straight from the auto-apply matrix: if nothing in a level
+    # is checked, there's no point spending an LLM call proposing changes for it.
+    soft_active = crud.level_has_auto_apply(session, "soft")
+    medium_active = crud.level_has_auto_apply(session, "medium")
+
+    if not soft_active and not medium_active:
+        logger.info(
+            "[run %s] job %s: no auto-apply tailoring permissions enabled, skipping", run_id, job.id
+        )
         return
 
     resume = crud.get_active_resume_version(session, "resume")
@@ -408,7 +416,7 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
     matched_factors = eval_result.get("matched_factors") or []
     provider = get_llm_provider()
 
-    if settings.auto_tailor_soft_enabled:
+    if soft_active:
         soft_changes = propose_soft_fragment_changes(
             provider,
             job_posting_text=job_text,
@@ -419,7 +427,7 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
         _log_llm_usage(session, provider, run_id, "tailoring_soft", job_posting_id=job.id)
         tailoring_session = _apply_auto_tailoring_changes(session, tailoring_session, soft_changes, "soft")
 
-    if settings.auto_tailor_medium_enabled:
+    if medium_active:
         medium_changes = propose_medium_fragment_changes(
             provider,
             job_posting_text=job_text,
@@ -434,11 +442,8 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
 
 
 def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_text: str) -> None:
-    app_settings = crud.get_app_settings(session)
-    if app_settings is None or not app_settings.auto_answer_questions_enabled:
-        logger.info("[run %s] job %s: base-question auto-answer disabled in settings, skipping", run_id, job.id)
-        return
-
+    # No separate enabled toggle - having at least one base question configured
+    # is itself the signal that this step should run.
     base_questions = crud.list_automation_base_questions(session)
     if not base_questions:
         logger.info("[run %s] job %s: no automation base questions configured, skipping", run_id, job.id)

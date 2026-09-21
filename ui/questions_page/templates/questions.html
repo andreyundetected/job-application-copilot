@@ -4,8 +4,19 @@
 
 {% block content %}
 <style>
-main { max-width: 100%; width: 100%; padding: 16px 20px 8px; }
 html, body { height: 100%; overflow: hidden; }
+
+main {
+    max-width: 100%;
+    width: 100%;
+    height: calc(100vh - 52px);
+    padding: 16px 20px 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.back-nav { flex-shrink: 0; margin-bottom: 16px; }
 
 .questions-layout {
     display: grid;
@@ -13,7 +24,8 @@ html, body { height: 100%; overflow: hidden; }
     gap: 20px;
     align-items: stretch;
     width: 100%;
-    height: calc(100vh - 52px - 24px);
+    flex: 1;
+    min-height: 0;
 }
 
 .copilot-panel, .questions-column, .side-column {
@@ -233,6 +245,13 @@ textarea.answer-body-editable:focus {
     opacity: 0.6;
 }
 </style>
+
+<a href="/jobs/{{ job.id }}" class="back-nav">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    {{ t.back_link }}
+</a>
 
 <div class="questions-layout">
     <div class="side-column">

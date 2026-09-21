@@ -4,58 +4,306 @@
 
 {% block content %}
 <style>
-.run-card {
+h1 { display: flex; align-items: center; gap: 10px; }
+
+/* ---- intro banner ---- */
+.intro-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--accent-soft), transparent);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+}
+.intro-banner-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+.intro-banner-body { flex: 1; }
+.intro-banner-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; }
+.intro-banner-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+.intro-banner-close {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.intro-banner-close:hover { color: var(--text-primary); background: var(--bg-input); }
+
+/* ---- custom tooltip (native title only shows a help cursor + delayed OS
+   tooltip that's easy to miss - this shows instantly on hover) ---- */
+.info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: var(--bg-input);
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-style: normal;
+    flex-shrink: 0;
+}
+.tooltip-bubble {
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    font-weight: 400;
+    color: var(--text-primary);
+    width: max-content;
+    max-width: 240px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 60;
+    text-align: left;
+    white-space: normal;
+}
+.tooltip-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--border);
+}
+.info-icon:hover .tooltip-bubble,
+.info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---- pipeline steps ---- */
+.pipeline { position: relative; }
+.pipeline-step { display: grid; grid-template-columns: 32px 1fr; gap: 16px; position: relative; }
+.pipeline-step:not(:last-child) { padding-bottom: 18px; }
+.pipeline-marker { display: flex; flex-direction: column; align-items: center; }
+
+.pipeline-marker-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0.5); }
+    70% { box-shadow: 0 0 0 9px rgba(91, 141, 239, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0); }
+}
+.pipeline-marker-circle.step-active {
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    animation: pulse-ring 1.5s infinite;
+}
+.pipeline-marker-circle.step-complete {
+    background-color: var(--score-high);
+    border-color: var(--score-high);
+    color: #08170e;
+}
+.pipeline-marker-circle.step-skipped {
+    background-color: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-tertiary);
+    opacity: 0.55;
+}
+
+/* indeterminate "teleport" loader on the connecting line - a segment travels
+   from top to bottom then jumps back to the top and repeats, like a classic
+   linear progress indicator, rather than a background stretching/shrinking */
+.pipeline-marker-line {
+    position: relative;
+    flex: 1;
+    width: 3px;
+    background-color: var(--border);
+    margin: 4px 0;
+    min-height: 24px;
+    border-radius: 2px;
+    overflow: hidden;
+    transition: background-color 0.25s ease;
+}
+.pipeline-marker-line.step-done { background-color: var(--score-high); }
+.pipeline-marker-line.step-flowing::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 35%;
+    border-radius: 2px;
+    background-color: var(--accent);
+    animation: line-loader 1s linear infinite;
+}
+@keyframes line-loader {
+    0% { top: -35%; }
+    100% { top: 100%; }
+}
+
+.pipeline-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 12px 16px;
-    margin-bottom: 10px;
+    padding: 16px 20px 20px;
+    margin-bottom: 2px;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.pipeline-card.locked,
+#advanced-details.locked { opacity: 0.45; filter: saturate(0.6); pointer-events: none; }
+
+.pipeline-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pipeline-card-header h3 {
+    margin: 0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.run-card-top {
+.pipeline-hint { font-size: 12px; color: var(--text-tertiary); margin: 2px 0 16px; }
+
+/* level status: a fixed label + a colored dot, so toggling never changes the
+   element's width/text and nothing jumps around - only the dot's color and
+   glow transition smoothly */
+.level-status-group { display: flex; gap: 12px; }
+.level-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+}
+.level-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-tertiary);
+    box-shadow: none;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+.level-status-item.on .level-status-dot {
+    background-color: var(--score-high);
+    box-shadow: 0 0 6px var(--score-high);
+}
+
+.toggle-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 2px;
+    top: 2px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.toggle-switch input:checked + .toggle-slider { background-color: var(--accent); border-color: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background-color: white; }
+.toggle-switch input:disabled + .toggle-slider { cursor: not-allowed; }
+.toggle-label { font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 5px; }
+
+.inline-fields { display: flex; gap: 20px; flex-wrap: wrap; }
+.inline-field { display: flex; flex-direction: column; gap: 4px; }
+.inline-field label { margin: 0; display: flex; align-items: center; gap: 5px; }
+.inline-field input[type="text"] { max-width: 90px; }
+
+.matrix-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.matrix-table td { padding: 6px 8px 6px 0; font-size: 13px; border-top: 1px solid var(--border); }
+.matrix-table td:first-child { width: 40px; }
+.matrix-table td.matrix-label-cell { display: flex; align-items: center; gap: 6px; }
+.matrix-level-group td { padding-top: 12px; }
+.matrix-level-label { display: flex; align-items: center; gap: 8px; }
+
+.preset-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-}
-
-.run-status-badge {
-    font-size: 11px;
-    padding: 3px 9px;
-    border-radius: 999px;
-    font-weight: 500;
-}
-
-.run-status-pending, .run-status-running {
-    background-color: var(--score-mid-soft);
-    color: var(--score-mid);
-}
-
-.run-status-done {
-    background-color: var(--score-high-soft);
-    color: var(--score-high);
-}
-
-.run-status-failed {
-    background-color: var(--score-low-soft);
-    color: var(--score-low);
-}
-
-.run-counters {
-    display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
-    font-size: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.preset-row:last-child { border-bottom: none; }
+
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-row input[type="text"] { flex: 1; }
+.add-row .btn, .add-row .btn-ghost { margin-top: 0; white-space: nowrap; }
+
+/* clickable, highlightable site chips */
+.site-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+.site-chip {
+    font-size: 11.5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
     color: var(--text-secondary);
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
-
-.range-toggle {
-    display: flex;
-    gap: 6px;
-    margin-top: 6px;
+.site-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.site-chip.used {
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
 }
+.site-chip.planned { color: var(--text-tertiary); border-style: dashed; cursor: default; pointer-events: none; }
 
+details.advanced-details {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin: 14px 0 16px;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+details.advanced-details summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-secondary); list-style: none; }
+details.advanced-details summary::-webkit-details-marker { display: none; }
+details.advanced-details summary::before { content: "▸ "; color: var(--text-tertiary); }
+details.advanced-details[open] summary::before { content: "▾ "; }
+details.advanced-details .advanced-body { margin-top: 14px; }
+
+.range-toggle { display: flex; gap: 6px; margin-top: 6px; }
 .range-toggle button {
     padding: 6px 12px;
     font-size: 12px;
@@ -65,199 +313,308 @@
     color: var(--text-secondary);
     cursor: pointer;
 }
+.range-toggle button.active { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.range-toggle button:disabled { cursor: not-allowed; opacity: 0.6; }
 
-.range-toggle button.active {
-    background-color: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-.tailoring-matrix-row {
+/* ---- start step ---- */
+.start-marker { background: linear-gradient(135deg, var(--accent), #8b5cf6); border: none !important; color: white !important; font-size: 15px; animation: none !important; }
+.start-card { background: linear-gradient(160deg, var(--bg-card), rgba(91, 141, 239, 0.07)); border-color: var(--accent); }
+.start-summary { font-size: 12.5px; color: var(--text-secondary); margin: 2px 0 14px; }
+.start-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 18px rgba(91, 141, 239, 0.35);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-}
-
-.tailoring-matrix-row:last-child {
-    border-bottom: none;
-}
-
-.tailoring-matrix-row input[type="checkbox"] {
-    width: auto;
-}
-
-.preset-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 8px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
 }
+.start-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(91, 141, 239, 0.45); }
+.start-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
 
-.preset-row:last-child {
-    border-bottom: none;
+.spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.run-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+}
+.run-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.run-status-badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 500; }
+.run-status-pending, .run-status-running { background-color: var(--score-mid-soft); color: var(--score-mid); }
+.run-status-done { background-color: var(--score-high-soft); color: var(--score-high); }
+.run-status-failed { background-color: var(--score-low-soft); color: var(--score-low); }
+.run-counters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
 </style>
 
 <h1>{{ t.page_title }}</h1>
 
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.settings_title }}</h3>
-    <form id="settings-form">
-        <label for="min_score_to_proceed">{{ t.min_score_label }}</label>
-        <input type="text" inputmode="numeric" name="min_score_to_proceed" id="min_score_to_proceed"
-               value="{{ settings.min_score_to_proceed }}" style="max-width:80px;">
-
-        <label for="max_score_to_archive">{{ t.max_score_label }}</label>
-        <input type="text" inputmode="numeric" name="max_score_to_archive" id="max_score_to_archive"
-               value="{{ settings.max_score_to_archive }}" style="max-width:80px;">
-
-        <label style="display:flex;align-items:center;gap:8px;margin-top:16px;">
-            <input type="checkbox" name="quick_filter_enabled" id="quick_filter_enabled"
-                   {% if settings.quick_filter_enabled %}checked{% endif %} style="width:auto;">
-            <span>{{ t.quick_filter_label }}</span>
-        </label>
-
-        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-            <input type="checkbox" name="auto_archive_enabled" id="auto_archive_enabled"
-                   {% if settings.auto_archive_enabled %}checked{% endif %} style="width:auto;">
-            <span>{{ t.auto_archive_label }}</span>
-        </label>
-
-        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-            <input type="checkbox" name="auto_tailor_soft_enabled" id="auto_tailor_soft_enabled"
-                   {% if settings.auto_tailor_soft_enabled %}checked{% endif %} style="width:auto;">
-            <span>{{ t.auto_tailor_soft_run_label }}</span>
-        </label>
-
-        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-            <input type="checkbox" name="auto_tailor_medium_enabled" id="auto_tailor_medium_enabled"
-                   {% if settings.auto_tailor_medium_enabled %}checked{% endif %} style="width:auto;">
-            <span>{{ t.auto_tailor_medium_run_label }}</span>
-        </label>
-
-        <label for="max_query_words">{{ t.max_query_words_label }}</label>
-        <input type="text" inputmode="numeric" name="max_query_words" id="max_query_words"
-               value="{{ settings.max_query_words }}" style="max-width:80px;">
-
-        <input type="hidden" name="default_time_range" id="default_time_range" value="{{ settings.default_time_range }}">
-        <label>{{ t.time_range_label }}</label>
-        <div class="range-toggle" id="settings-range-toggle">
-            <button type="button" data-range="d1">{{ t.range_day }}</button>
-            <button type="button" data-range="w1">{{ t.range_week }}</button>
-            <button type="button" data-range="m1">{{ t.range_month }}</button>
-        </div>
-
-        <button type="submit" class="btn">{{ t.btn_save }}</button>
-    </form>
+<div class="intro-banner" id="intro-banner">
+    <span class="intro-banner-icon">🚀</span>
+    <div class="intro-banner-body">
+        <p class="intro-banner-title">{{ t.intro_title }}</p>
+        <p class="intro-banner-text">{{ t.intro_body }}</p>
+    </div>
+    <button type="button" class="intro-banner-close" id="btn-close-intro">&times;</button>
 </div>
 
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.tailoring_title }}</h3>
-    <p class="salary-line">{{ t.tailoring_hint }}</p>
-    <div id="tailoring-matrix">
-        {% for row in tailoring_matrix %}
-        <div class="tailoring-matrix-row">
-            <input type="checkbox" class="tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}"
-                   {% if row.auto_apply %}checked{% endif %}>
-            <span class="badge">{{ t["level_" + row.level] }}</span>
-            <span>{{ t["change_type_" + row.change_type] }}</span>
+<div class="pipeline">
+    <!-- Step 1: Search -->
+    <div class="pipeline-step" data-step="1">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle" id="marker-1">1</div>
+            <div class="pipeline-marker-line" id="line-1"></div>
         </div>
-        {% endfor %}
+        <div class="pipeline-card" data-pipeline-card>
+            <div class="pipeline-card-header">
+                <h3>
+                    {{ t.step1_title }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.site_pool_tooltip | safe }}</span></span>
+                </h3>
+            </div>
+            <p class="pipeline-hint">{{ t.step1_hint }}</p>
+
+            <label style="margin-top:0;">{{ t.sites_in_use_label }}</label>
+            <div class="site-chip-row" id="site-chip-row">
+                {% for site in target_sites %}
+                <a href="https://{{ site }}" target="_blank" rel="noopener noreferrer" class="site-chip" data-site="{{ site }}">{{ site }}</a>
+                {% endfor %}
+            </div>
+
+            <textarea id="query-input" placeholder="{{ t.query_input_placeholder }}" style="min-height:60px;"></textarea>
+            <p class="salary-line">
+                <span id="query-word-count"></span>
+                <span id="query-limit-hint" style="display:none;color:var(--score-low);"> — {{ t.query_limit_reached_hint }}</span>
+            </p>
+            <div class="add-row" style="max-width:340px;">
+                <button type="button" class="btn" id="btn-add-query">{{ t.add_query_button }}</button>
+                <button type="button" class="btn-ghost btn" id="btn-suggest-queries">✨ {{ t.suggest_queries_button }}</button>
+            </div>
+
+            <h3 style="margin:18px 0 4px;">{{ t.saved_queries_title }} (<span id="pool-count">{{ settings.saved_queries | length }}</span>)</h3>
+            <div id="saved-queries-list">
+                {% for query in settings.saved_queries or [] %}
+                <div class="preset-row" data-index="{{ loop.index0 }}">
+                    <span style="font-family:monospace;font-size:12px;">{{ query }}</span>
+                    <button type="button" class="btn-ghost btn delete-query-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+                </div>
+                {% endfor %}
+            </div>
+            <p class="salary-line" id="no-saved-queries-hint" style="{% if settings.saved_queries %}display:none;{% endif %}">{{ t.no_saved_queries }}</p>
+
+            <h3 style="margin:18px 0 4px;">{{ t.time_range_label }}</h3>
+            <input type="hidden" id="run_time_range" value="{{ settings.default_time_range }}">
+            <div class="range-toggle" id="run-range-toggle">
+                <button type="button" data-range="d1">{{ t.range_day }}</button>
+                <button type="button" data-range="w1">{{ t.range_week }}</button>
+                <button type="button" data-range="m1">{{ t.range_month }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Quick filter -->
+    <div class="pipeline-step" data-step="2">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle" id="marker-2">2</div>
+            <div class="pipeline-marker-line" id="line-2"></div>
+        </div>
+        <div class="pipeline-card" data-pipeline-card>
+            <h3>{{ t.step2_title }}</h3>
+            <p class="pipeline-hint">{{ t.step2_hint }}</p>
+            <div class="toggle-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="quick_filter_enabled" {% if settings.quick_filter_enabled %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ t.quick_filter_label }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Evaluation -->
+    <div class="pipeline-step" data-step="3">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle" id="marker-3">3</div>
+            <div class="pipeline-marker-line" id="line-3"></div>
+        </div>
+        <div class="pipeline-card" data-pipeline-card>
+            <h3>{{ t.step3_title }}</h3>
+            <div class="inline-fields">
+                <div class="inline-field">
+                    <label for="min_score_to_proceed">
+                        {{ t.min_score_label }}
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span>
+                    </label>
+                    <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}">
+                </div>
+                <div class="inline-field">
+                    <label for="max_score_to_archive">
+                        {{ t.max_score_label }}
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span>
+                    </label>
+                    <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}">
+                </div>
+            </div>
+            <div class="toggle-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto_archive_enabled" {% if settings.auto_archive_enabled %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">
+                    {{ t.auto_archive_label }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.auto_archive_tooltip }}</span></span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Tailoring -->
+    <div class="pipeline-step" data-step="4">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle" id="marker-4">4</div>
+            <div class="pipeline-marker-line" id="line-4"></div>
+        </div>
+        <div class="pipeline-card" data-pipeline-card>
+            <div class="pipeline-card-header">
+                <h3>{{ t.step4_title }}</h3>
+                <div class="level-status-group">
+                    <span class="level-status-item {{ 'on' if soft_active else '' }}" id="soft-status-pill">
+                        <span class="level-status-dot"></span>{{ t.level_soft }}
+                    </span>
+                    <span class="level-status-item {{ 'on' if medium_active else '' }}" id="medium-status-pill">
+                        <span class="level-status-dot"></span>{{ t.level_medium }}
+                    </span>
+                </div>
+            </div>
+            <p class="pipeline-hint">{{ t.step4_hint }}</p>
+
+            <table class="matrix-table" id="tailoring-matrix">
+                {% for row in tailoring_matrix %}
+                {% if loop.first or row.level != tailoring_matrix[loop.index0 - 1].level %}
+                <tr class="matrix-level-group">
+                    <td colspan="2" class="matrix-level-label"><span class="badge">{{ t["level_" + row.level] }}</span></td>
+                </tr>
+                {% endif %}
+                <tr data-level="{{ row.level }}" data-change-type="{{ row.change_type }}">
+                    <td>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </td>
+                    <td class="matrix-label-cell">
+                        {{ t["change_type_" + row.change_type] }}
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Step 5: Base questions -->
+    <div class="pipeline-step" data-step="5">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle" id="marker-5">5</div>
+            <div class="pipeline-marker-line" id="line-5"></div>
+        </div>
+        <div class="pipeline-card" data-pipeline-card>
+            <div class="pipeline-card-header">
+                <h3>
+                    {{ t.step5_title }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.step5_tooltip }}</span></span>
+                </h3>
+            </div>
+            <p class="pipeline-hint">{{ t.step5_hint }}</p>
+
+            <div class="toggle-row" style="margin-top:0;">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="cover_letter_toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ t.cover_letter_toggle_label }}</span>
+            </div>
+
+            <div id="base-question-list">
+                {% for question in base_questions %}
+                <div class="preset-row" data-question-id="{{ question.id }}">
+                    <span>{{ question.question_text }}</span>
+                    <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="add-row">
+                <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder }}">
+                <button type="button" class="btn" id="btn-add-base-question">{{ t.add_base_question_button }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 6: Start -->
+    <div class="pipeline-step" data-step="start">
+        <div class="pipeline-marker">
+            <div class="pipeline-marker-circle start-marker" id="marker-start">🚀</div>
+        </div>
+        <div class="pipeline-card start-card" id="start-card">
+            <h3>{{ t.start_title }}</h3>
+            <p class="start-summary" id="start-summary"></p>
+            <button type="button" class="start-btn" id="btn-start-run">
+                <span id="start-btn-spinner" class="spinner" style="display:none;"></span>
+                <span id="start-btn-label">{{ t.start_run_button }}</span>
+            </button>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.target_sites_title }}</h3>
-    <div id="target-sites-list">
-        {% for site in settings.target_sites or [] %}
-        <div class="preset-row" data-index="{{ loop.index0 }}">
-            <span>{{ site }}</span>
-            <button type="button" class="btn-ghost btn delete-site-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
-        </div>
-        {% endfor %}
-    </div>
-    <div style="display:flex;gap:8px;margin-top:10px;">
-        <input type="text" id="new-site-input" placeholder="{{ t.target_sites_placeholder }}" style="flex:1;">
-        <button type="button" class="btn" id="btn-add-site" style="margin-top:0;">{{ t.add_site_button }}</button>
-    </div>
-</div>
-
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.query_pool_title }}</h3>
-
-    <textarea id="query-input" placeholder="{{ t.query_input_placeholder }}" style="min-height:70px;"></textarea>
-    <p class="salary-line">
-        <span id="query-word-count"></span>
-        <span id="query-limit-hint" style="display:none;color:var(--score-low);"> — {{ t.query_limit_reached_hint }}</span>
-    </p>
-    <button type="button" class="btn" id="btn-add-query">{{ t.add_query_button }}</button>
-    <button type="button" class="btn-ghost btn" id="btn-suggest-queries">{{ t.suggest_queries_button }}</button>
-
-    <h3 style="margin:20px 0 4px;">{{ t.saved_queries_title }} (<span id="pool-count">{{ settings.saved_queries | length }}</span>)</h3>
-    <div id="saved-queries-list">
-        {% for query in settings.saved_queries or [] %}
-        <div class="preset-row" data-index="{{ loop.index0 }}">
-            <span style="font-family:monospace;font-size:12px;">{{ query }}</span>
-            <button type="button" class="btn-ghost btn delete-query-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
-        </div>
-        {% endfor %}
-    </div>
-    <p class="salary-line" id="no-saved-queries-hint" style="{% if settings.saved_queries %}display:none;{% endif %}">{{ t.no_saved_queries }}</p>
-</div>
-
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.run_title }}</h3>
-    <p class="salary-line">{{ t.pool_count_prefix }} <span id="run-pool-count">{{ settings.saved_queries | length }}</span> {{ t.pool_count_suffix }}</p>
-    <form id="run-form">
-        <input type="hidden" name="time_range" id="run_time_range" value="{{ settings.default_time_range }}">
-        <label>{{ t.time_range_label }}</label>
-        <div class="range-toggle" id="run-range-toggle">
-            <button type="button" data-range="d1">{{ t.range_day }}</button>
-            <button type="button" data-range="w1">{{ t.range_week }}</button>
-            <button type="button" data-range="m1">{{ t.range_month }}</button>
+<details class="advanced-details" id="advanced-details">
+    <summary>{{ t.advanced_settings_title }}</summary>
+    <div class="advanced-body">
+        <div class="inline-fields">
+            <div class="inline-field">
+                <label for="serpent_num_per_query">
+                    {{ t.num_per_query_label }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.num_per_query_tooltip }}</span></span>
+                </label>
+                <input type="text" inputmode="numeric" id="serpent_num_per_query" value="{{ settings.serpent_num_per_query }}">
+            </div>
+            <div class="inline-field">
+                <label for="max_results_override">{{ t.results_cap_label }}</label>
+                <input type="text" inputmode="numeric" id="max_results_override" placeholder="{{ t.results_cap_placeholder }}">
+            </div>
+            <div class="inline-field">
+                <label for="max_queries_override">{{ t.queries_cap_label }}</label>
+                <input type="text" inputmode="numeric" id="max_queries_override" placeholder="{{ t.queries_cap_placeholder }}">
+            </div>
         </div>
 
-        <label for="num_per_query">{{ t.num_per_query_label }}</label>
-        <input type="text" inputmode="numeric" name="num_per_query" id="num_per_query" value="{{ settings.serpent_num_per_query }}" style="max-width:80px;">
-
-        <label for="max_results_override">{{ t.results_cap_label }}</label>
-        <input type="text" inputmode="numeric" name="max_results_override" id="max_results_override" placeholder="{{ t.results_cap_placeholder }}" style="max-width:120px;">
-
-        <label for="max_queries_override">{{ t.queries_cap_label }}</label>
-        <input type="text" inputmode="numeric" name="max_queries_override" id="max_queries_override" placeholder="{{ t.queries_cap_placeholder }}" style="max-width:120px;">
-
-        <button type="submit" class="btn" id="btn-start-run">{{ t.start_run_button }}</button>
-    </form>
-</div>
-
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.auto_answer_title }}</h3>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-        <input type="checkbox" id="auto_answer_questions_enabled" {% if auto_answer_questions_enabled %}checked{% endif %} style="width:auto;">
-        <span>{{ t.auto_answer_enabled_label }}</span>
-    </label>
-
-    <h3 style="margin:20px 0 4px;">{{ t.base_questions_title }}</h3>
-    <p class="salary-line">{{ t.base_questions_hint }}</p>
-    <div id="base-question-list">
-        {% for question in base_questions %}
-        <div class="preset-row" data-question-id="{{ question.id }}">
-            <span>{{ question.question_text }}</span>
-            <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+        <h3 style="margin:16px 0 4px;">{{ t.planned_sites_title }}</h3>
+        <div class="site-chip-row">
+            {% for site in planned_sites %}
+            <span class="site-chip planned">{{ site }}</span>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
-    <div style="display:flex;gap:8px;margin-top:10px;">
-        <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder }}" style="flex:1;">
-        <button type="button" class="btn" id="btn-add-base-question" style="margin-top:0;">{{ t.add_base_question_button }}</button>
-    </div>
-</div>
+</details>
 
 <div class="card">
     <h3 style="margin:0 0 4px;">{{ t.history_title }}</h3>
@@ -296,36 +653,61 @@
 <script>
 const I18N = {{ t | tojson }};
 const SETTINGS = {
-    target_sites: {{ settings.target_sites | tojson }} || [],
-    max_query_words: {{ settings.max_query_words }},
+    max_query_words: {{ max_query_words }},
     saved_queries: {{ settings.saved_queries | tojson }} || [],
 };
+const COVER_LETTER_QUESTION_TEXT = {{ t.cover_letter_question_text | tojson }};
 
-function initRangeToggle(containerId, hiddenInputId) {
-    const container = document.getElementById(containerId);
-    const hiddenInput = document.getElementById(hiddenInputId);
-    container.querySelectorAll("button").forEach((btn) => {
-        if (btn.dataset.range === hiddenInput.value) btn.classList.add("active");
-        btn.addEventListener("click", () => {
-            container.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-            hiddenInput.value = btn.dataset.range;
-        });
+/* ---------- intro banner ---------- */
+(function () {
+    const banner = document.getElementById("intro-banner");
+    const KEY = "automation_intro_dismissed";
+    if (localStorage.getItem(KEY) === "1") banner.style.display = "none";
+    document.getElementById("btn-close-intro").addEventListener("click", () => {
+        banner.style.display = "none";
+        localStorage.setItem(KEY, "1");
+    });
+})();
+
+/* ---------- settings autosave ---------- */
+function autoSaveSetting(name, value) {
+    const formData = new FormData();
+    formData.append(name, value);
+    return fetch("/automation/settings", { method: "POST", body: formData }).then((response) => {
+        if (!response.ok) {
+            response.json().then((data) => showToast(data.detail || "Error", "danger")).catch(() => {});
+        }
+        return response;
     });
 }
-initRangeToggle("settings-range-toggle", "default_time_range");
-initRangeToggle("run-range-toggle", "run_time_range");
 
-document.getElementById("settings-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const response = await fetch("/automation/settings", { method: "POST", body: new FormData(event.target) });
-    if (response.ok) {
-        showToast(I18N.settings_saved_toast, "success");
-    } else {
-        const data = await response.json().catch(() => ({}));
-        showToast(data.detail || "Error", "danger");
-    }
-});
+function bindAutoSaveNumber(id, name) {
+    const el = document.getElementById(id);
+    let timeout = null;
+    el.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => autoSaveSetting(name, el.value), 500);
+    });
+    el.addEventListener("blur", () => {
+        clearTimeout(timeout);
+        autoSaveSetting(name, el.value);
+    });
+}
+
+function bindAutoSaveToggle(id, name) {
+    const el = document.getElementById(id);
+    el.addEventListener("change", () => autoSaveSetting(name, el.checked ? "true" : ""));
+}
+
+bindAutoSaveNumber("min_score_to_proceed", "min_score_to_proceed");
+bindAutoSaveNumber("max_score_to_archive", "max_score_to_archive");
+bindAutoSaveNumber("serpent_num_per_query", "serpent_num_per_query");
+bindAutoSaveToggle("quick_filter_enabled", "quick_filter_enabled");
+bindAutoSaveToggle("auto_archive_enabled", "auto_archive_enabled");
+
+function setLevelStatus(el, active) {
+    el.classList.toggle("on", active);
+}
 
 document.getElementById("tailoring-matrix").addEventListener("change", async (event) => {
     if (!event.target.classList.contains("tailoring-checkbox")) return;
@@ -333,64 +715,95 @@ document.getElementById("tailoring-matrix").addEventListener("change", async (ev
     formData.append("level", event.target.dataset.level);
     formData.append("change_type", event.target.dataset.changeType);
     formData.append("auto_apply", event.target.checked ? "true" : "");
-    await fetch("/automation/tailoring-permissions", { method: "POST", body: formData });
+    const response = await fetch("/automation/tailoring-permissions", { method: "POST", body: formData });
+    if (!response.ok) return;
+    const data = await response.json();
+
+    setLevelStatus(document.getElementById("soft-status-pill"), data.soft_active);
+    setLevelStatus(document.getElementById("medium-status-pill"), data.medium_active);
+    updateStartSummary();
 });
 
-document.getElementById("btn-add-site").addEventListener("click", async () => {
-    const input = document.getElementById("new-site-input");
-    const site = input.value.trim();
-    if (!site) return;
+/* ---------- base questions ---------- */
+function syncCoverLetterToggle() {
+    const rows = [...document.querySelectorAll("#base-question-list .preset-row")];
+    const found = rows.some((row) => row.querySelector("span").textContent === COVER_LETTER_QUESTION_TEXT);
+    document.getElementById("cover_letter_toggle").checked = found;
+}
+
+function addBaseQuestionRow(id, text) {
+    const list = document.getElementById("base-question-list");
+    const row = document.createElement("div");
+    row.className = "preset-row";
+    row.dataset.questionId = id;
+    row.innerHTML = `<span>${text.replace(/</g, "&lt;")}</span> <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">${I18N.btn_remove}</button>`;
+    list.appendChild(row);
+}
+
+async function submitBaseQuestion(text) {
     const formData = new FormData();
-    formData.append("site", site);
-    const response = await fetch("/automation/target-sites", { method: "POST", body: formData });
-    if (response.ok) window.location.reload();
-});
-
-document.getElementById("target-sites-list").addEventListener("click", async (event) => {
-    if (!event.target.classList.contains("delete-site-btn")) return;
-    const index = event.target.closest(".preset-row").dataset.index;
-    const response = await fetch(`/automation/target-sites/${index}/delete`, { method: "POST" });
-    if (response.ok) window.location.reload();
-});
-
-document.getElementById("auto_answer_questions_enabled").addEventListener("change", async (event) => {
-    const formData = new FormData();
-    formData.append("auto_answer_questions_enabled", event.target.checked ? "true" : "");
-    await fetch("/settings/auto-answer", { method: "POST", body: formData });
-    showToast(I18N.settings_saved_toast, "success");
-});
+    formData.append("question_text", text);
+    const response = await fetch("/automation/base-questions", { method: "POST", body: formData });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+        return null;
+    }
+    return response.json();
+}
 
 document.getElementById("btn-add-base-question").addEventListener("click", async () => {
     const input = document.getElementById("base_question_input");
     const text = input.value.trim();
     if (!text) return;
-
-    const formData = new FormData();
-    formData.append("question_text", text);
-
-    const response = await fetch("/automation/base-questions", { method: "POST", body: formData });
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        showToast(data.detail || "Error", "danger");
-        return;
-    }
-    const data = await response.json();
-    const list = document.getElementById("base-question-list");
-    const row = document.createElement("div");
-    row.className = "preset-row";
-    row.dataset.questionId = data.id;
-    row.innerHTML = `<span>${data.question_text.replace(/</g, "&lt;")}</span> <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">${I18N.btn_remove}</button>`;
-    list.appendChild(row);
+    const data = await submitBaseQuestion(text);
+    if (!data) return;
+    addBaseQuestionRow(data.id, data.question_text);
     input.value = "";
+    syncCoverLetterToggle();
+    updateStartSummary();
+});
+
+document.getElementById("base_question_input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("btn-add-base-question").click();
+    }
 });
 
 document.getElementById("base-question-list").addEventListener("click", async (event) => {
     if (!event.target.classList.contains("delete-base-question-btn")) return;
     const questionId = event.target.closest(".preset-row").dataset.questionId;
     const response = await fetch(`/automation/base-questions/${questionId}/delete`, { method: "POST" });
-    if (response.ok) event.target.closest(".preset-row").remove();
+    if (response.ok) {
+        event.target.closest(".preset-row").remove();
+        syncCoverLetterToggle();
+        updateStartSummary();
+    }
 });
 
+document.getElementById("cover_letter_toggle").addEventListener("change", async (event) => {
+    if (event.target.checked) {
+        const data = await submitBaseQuestion(COVER_LETTER_QUESTION_TEXT);
+        if (!data) {
+            event.target.checked = false;
+            return;
+        }
+        addBaseQuestionRow(data.id, data.question_text);
+    } else {
+        const rows = [...document.querySelectorAll("#base-question-list .preset-row")];
+        const match = rows.find((row) => row.querySelector("span").textContent === COVER_LETTER_QUESTION_TEXT);
+        if (match) {
+            await fetch(`/automation/base-questions/${match.dataset.questionId}/delete`, { method: "POST" });
+            match.remove();
+        }
+    }
+    updateStartSummary();
+});
+
+syncCoverLetterToggle();
+
+/* ---------- search queries ---------- */
 function countWords(text) {
     return text.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -404,6 +817,14 @@ function updateQueryWordCount() {
     document.getElementById("query-limit-hint").style.display = words >= SETTINGS.max_query_words ? "inline" : "none";
 }
 
+function updateSiteChipHighlights() {
+    const haystack = (SETTINGS.saved_queries.join(" ") + " " + queryInput.value).toLowerCase();
+    document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => {
+        const site = chip.dataset.site.toLowerCase();
+        chip.classList.toggle("used", haystack.includes(`site:${site}`));
+    });
+}
+
 queryInput.addEventListener("input", () => {
     if (countWords(queryInput.value) > SETTINGS.max_query_words) {
         queryInput.value = lastValidQueryValue;
@@ -411,6 +832,14 @@ queryInput.addEventListener("input", () => {
         lastValidQueryValue = queryInput.value;
     }
     updateQueryWordCount();
+    updateSiteChipHighlights();
+});
+
+queryInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById("btn-add-query").click();
+    }
 });
 
 updateQueryWordCount();
@@ -432,7 +861,8 @@ function renderSavedQueries() {
 
     hint.style.display = SETTINGS.saved_queries.length === 0 ? "block" : "none";
     document.getElementById("pool-count").textContent = SETTINGS.saved_queries.length;
-    document.getElementById("run-pool-count").textContent = SETTINGS.saved_queries.length;
+    updateSiteChipHighlights();
+    updateStartSummary();
 }
 
 document.getElementById("btn-add-query").addEventListener("click", async () => {
@@ -476,7 +906,7 @@ document.getElementById("btn-suggest-queries").addEventListener("click", async (
         const data = await response.json().catch(() => ({}));
         showToast(data.detail || "Error", "danger");
         btn.disabled = false;
-        btn.textContent = I18N.suggest_queries_button;
+        btn.textContent = `✨ ${I18N.suggest_queries_button}`;
         return;
     }
     const data = await response.json();
@@ -484,7 +914,7 @@ document.getElementById("btn-suggest-queries").addEventListener("click", async (
     pollTaskStatus([data.task_id], (tasks) => {
         const task = tasks[0];
         btn.disabled = false;
-        btn.textContent = I18N.suggest_queries_button;
+        btn.textContent = `✨ ${I18N.suggest_queries_button}`;
         if (task.status === "done") {
             SETTINGS.saved_queries = task.result.saved_queries;
             renderSavedQueries();
@@ -497,6 +927,143 @@ document.getElementById("btn-suggest-queries").addEventListener("click", async (
         }
     });
 });
+
+function initRangeToggle(containerId, hiddenInputId) {
+    const container = document.getElementById(containerId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+    container.querySelectorAll("button").forEach((btn) => {
+        if (btn.dataset.range === hiddenInput.value) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+            container.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            hiddenInput.value = btn.dataset.range;
+        });
+    });
+}
+initRangeToggle("run-range-toggle", "run_time_range");
+
+/* ---------- start step summary ---------- */
+function updateStartSummary() {
+    const queriesCount = SETTINGS.saved_queries.length;
+    const sitesCount = {{ target_sites | length }};
+    const questionsCount = document.querySelectorAll("#base-question-list .preset-row").length;
+    const softOn = document.getElementById("soft-status-pill").classList.contains("on");
+    const mediumOn = document.getElementById("medium-status-pill").classList.contains("on");
+
+    document.getElementById("start-summary").textContent =
+        `${queriesCount} ${I18N.summary_queries_word} · ${sitesCount} ${I18N.summary_sites_word} · ` +
+        `${I18N.level_soft}: ${softOn ? I18N.status_on : I18N.status_off} · ` +
+        `${I18N.level_medium}: ${mediumOn ? I18N.status_on : I18N.status_off} · ` +
+        `${questionsCount} ${I18N.summary_questions_word}`;
+}
+updateStartSummary();
+
+/* ---------- run progress + locking ---------- */
+const STEP_ORDER = ["1", "2", "3", "4", "5"];
+let runConfig = null;
+
+function captureRunConfig() {
+    return {
+        quickFilterOn: document.getElementById("quick_filter_enabled").checked,
+        softOn: document.getElementById("soft-status-pill").classList.contains("on"),
+        mediumOn: document.getElementById("medium-status-pill").classList.contains("on"),
+        baseQuestionsCount: document.querySelectorAll("#base-question-list .preset-row").length,
+    };
+}
+
+function setStepState(step, state) {
+    const marker = document.getElementById(`marker-${step}`);
+    const line = document.getElementById(`line-${step}`);
+    marker.classList.remove("step-active", "step-complete", "step-skipped");
+    if (line) line.classList.remove("step-done", "step-flowing");
+
+    if (state === "active") {
+        marker.classList.add("step-active");
+        marker.textContent = step;
+        if (line) line.classList.add("step-flowing");
+    } else if (state === "complete") {
+        marker.classList.add("step-complete");
+        marker.textContent = "✓";
+        if (line) line.classList.add("step-done");
+    } else if (state === "skipped") {
+        marker.classList.add("step-skipped");
+        marker.textContent = "–";
+        if (line) line.classList.add("step-done");
+    } else {
+        marker.textContent = step;
+    }
+}
+
+function resetStepStates() {
+    STEP_ORDER.forEach((step) => setStepState(step, "idle"));
+}
+
+function applyRunProgress(run) {
+    if (!runConfig) runConfig = captureRunConfig();
+
+    const finished = run.status === "done" || run.status === "failed";
+
+    if (run.found_count > 0 || finished) {
+        setStepState("1", "complete");
+    } else {
+        setStepState("1", "active");
+    }
+
+    if (!runConfig.quickFilterOn) {
+        setStepState("2", "skipped");
+    } else if (run.quick_filtered_count > 0 || finished) {
+        setStepState("2", run.found_count > 0 || finished ? "complete" : "idle");
+    } else if (run.found_count > 0) {
+        setStepState("2", "active");
+    }
+
+    if (run.evaluated_count > 0 || finished) {
+        setStepState("3", "complete");
+    } else if (run.scraped_count > 0 || run.quick_filtered_count > 0) {
+        setStepState("3", "active");
+    }
+
+    if (!runConfig.softOn && !runConfig.mediumOn) {
+        setStepState("4", "skipped");
+    } else if (run.passed_count > 0 || finished) {
+        setStepState("4", "complete");
+    } else if (run.evaluated_count > 0) {
+        setStepState("4", "active");
+    }
+
+    if (runConfig.baseQuestionsCount === 0) {
+        setStepState("5", "skipped");
+    } else if (finished) {
+        setStepState("5", "complete");
+    } else if (run.passed_count > 0) {
+        setStepState("5", "active");
+    }
+
+    if (finished) {
+        setPipelineLocked(false);
+        runConfig = null;
+    }
+}
+
+function setPipelineLocked(locked) {
+    document.querySelectorAll("[data-pipeline-card], #advanced-details").forEach((el) => {
+        el.classList.toggle("locked", locked);
+    });
+    document
+        .querySelectorAll(
+            "[data-pipeline-card] input, [data-pipeline-card] textarea, [data-pipeline-card] button, #advanced-details input"
+        )
+        .forEach((el) => { el.disabled = locked; });
+
+    const startBtn = document.getElementById("btn-start-run");
+    const spinner = document.getElementById("start-btn-spinner");
+    const label = document.getElementById("start-btn-label");
+    startBtn.disabled = locked;
+    spinner.style.display = locked ? "inline-block" : "none";
+    label.textContent = locked ? I18N.run_in_progress_label : I18N.start_run_button;
+
+    if (!locked) resetStepStates();
+}
 
 function renderRunCard(run) {
     const usageParts = [];
@@ -542,8 +1109,10 @@ function pollRun(runId) {
             document.getElementById("runs-list").insertAdjacentHTML("afterbegin", html);
         }
 
+        applyRunProgress(run);
+
         if (run.status === "pending" || run.status === "running") {
-            setTimeout(poll, 2000);
+            setTimeout(poll, 1500);
         } else if (run.status === "failed") {
             showToast(I18N.run_failed_toast, "danger");
         }
@@ -552,28 +1121,35 @@ function pollRun(runId) {
 }
 
 document.querySelectorAll('.run-card[data-status="running"], .run-card[data-status="pending"]').forEach((card) => {
+    setPipelineLocked(true);
     pollRun(parseInt(card.dataset.runId, 10));
 });
 
-document.getElementById("run-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
+document.getElementById("btn-start-run").addEventListener("click", async () => {
+    const formData = new FormData();
+    formData.append("time_range", document.getElementById("run_time_range").value);
+    formData.append("max_results_override", document.getElementById("max_results_override").value);
+    formData.append("max_queries_override", document.getElementById("max_queries_override").value);
+
+    const label = document.getElementById("start-btn-label");
     const startBtn = document.getElementById("btn-start-run");
     startBtn.disabled = true;
-    startBtn.textContent = I18N.starting_run;
+    label.textContent = I18N.starting_run;
 
-    const response = await fetch("/automation/runs", { method: "POST", body: new FormData(event.target) });
-
-    startBtn.disabled = false;
-    startBtn.textContent = I18N.start_run_button;
+    const response = await fetch("/automation/runs", { method: "POST", body: formData });
 
     if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         showToast(data.detail || "Error", "danger");
+        startBtn.disabled = false;
+        label.textContent = I18N.start_run_button;
         return;
     }
 
     const data = await response.json();
     showToast(I18N.run_started_toast, "success");
+    runConfig = captureRunConfig();
+    setPipelineLocked(true);
     pollRun(data.run_id);
 });
 

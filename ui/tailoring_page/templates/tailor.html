@@ -4,37 +4,58 @@
 
 {% block content %}
 <style>
+html, body { height: 100%; overflow: hidden; }
+
 main {
     max-width: 100%;
     width: 100%;
-    padding-bottom: 0;
+    height: calc(100vh - 52px);
+    padding: 16px 20px 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
+
+
 .tailor-layout {
-    display: grid;
-    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(320px, 380px);
+    display: flex;
     gap: 20px;
-    align-items: stretch;
     width: 100%;
-    height: calc(100vh - 132px);
+    flex: 1;
+    min-height: 0;
 }
 
 .job-info-column {
+    flex: 0 1 320px;
+    min-width: 260px;
+    max-width: 340px;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 14px;
-    height: 100%;
     overflow-y: auto;
     padding-right: 6px;
 }
 
 .resume-scroll-column {
-    height: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
     overflow-y: auto;
     padding-right: 4px;
     display: flex;
     justify-content: center;
     align-items: flex-start;
+}
+
+.copilot-panel {
+    flex: 0 0 360px;
+    min-width: 320px;
+    max-width: 380px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .job-info-header {
@@ -184,59 +205,68 @@ main {
     cursor: not-allowed;
 }
 
-.resume-doc p {
-    margin: 2px 0;
-    line-height: 1.4;
-}
+.resume-doc p { margin: 2px 0; line-height: 1.4; }
+.resume-doc ul { margin: 2px 0 8px; padding-left: 20px; }
+.resume-doc li { margin: 1px 0; line-height: 1.4; }
+.resume-doc p[style*="font-size:16pt"] { margin-bottom: 2px; }
+.resume-doc p[style*="font-size:12pt"] { margin-top: 16px; margin-bottom: 6px; }
+.resume-doc p[style*="font-size:11pt"] { margin-top: 10px; margin-bottom: 1px; }
 
-.resume-doc ul {
-    margin: 2px 0 8px;
-    padding-left: 20px;
-}
-
-.resume-doc li {
-    margin: 1px 0;
-    line-height: 1.4;
-}
-
-.resume-doc p[style*="font-size:16pt"] {
-    margin-bottom: 2px;
-}
-
-.resume-doc p[style*="font-size:12pt"] {
-    margin-top: 16px;
-    margin-bottom: 6px;
-}
-
-.resume-doc p[style*="font-size:11pt"] {
-    margin-top: 10px;
-    margin-bottom: 1px;
-}
-
-.copilot-panel {
+.copilot-panel-title {
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 10px;
+    flex-shrink: 0;
 }
 
 .copilot-actions {
     display: flex;
-    gap: 8px;
-    margin-bottom: 4px;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
-.level-btn {
+.level-action-btn {
     flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     text-align: left;
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 10px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background-color 0.12s ease, transform 0.12s ease;
 }
+
+.level-action-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+    transform: translateY(-1px);
+}
+
+.level-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.level-action-icon { font-size: 15px; line-height: 1.3; flex-shrink: 0; }
+
+.level-action-text { display: flex; flex-direction: column; gap: 2px; }
+.level-action-text strong { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+.level-action-text small { font-size: 11px; color: var(--text-secondary); line-height: 1.35; font-weight: 400; }
 
 .chat-stream {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 8px 0;
+    padding: 4px 0 8px;
 }
 
 .chat-message {
@@ -247,6 +277,7 @@ main {
     padding: 12px 14px;
     margin-bottom: 8px;
     font-size: 13px;
+    font-weight: 400;
 }
 
 .chat-message.role-user {
@@ -255,17 +286,9 @@ main {
     border-left: 3px solid var(--accent);
 }
 
-.chat-message.level-soft {
-    border-left-color: var(--accent);
-}
-
-.chat-message.level-medium {
-    border-left-color: #c084fc;
-}
-
-.chat-message.level-custom.role-assistant {
-    border-left-color: var(--text-tertiary);
-}
+.chat-message.level-soft { border-left-color: var(--accent); }
+.chat-message.level-medium { border-left-color: #c084fc; }
+.chat-message.level-custom.role-assistant { border-left-color: var(--text-tertiary); }
 
 .chat-message-header {
     font-size: 11px;
@@ -273,15 +296,11 @@ main {
     letter-spacing: 0.03em;
     color: var(--text-tertiary);
     margin-bottom: 6px;
+    font-weight: 600;
 }
 
-.chat-message.pending {
-    opacity: 0.75;
-}
-
-.chat-message.pending .loading-dot {
-    margin-left: 6px;
-}
+.chat-message.pending { opacity: 0.75; }
+.chat-message.pending .loading-dot { margin-left: 6px; }
 
 .change-card {
     border: 1px solid var(--border);
@@ -289,27 +308,14 @@ main {
     padding: 10px 12px;
     margin-top: 8px;
     font-size: 12.5px;
+    font-weight: 400;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.change-card:hover {
-    background-color: var(--accent-soft);
-    border-color: var(--accent);
-}
-
-.change-card.resolved {
-    opacity: 0.4;
-}
-
-.change-card.resolved:hover {
-    background-color: transparent;
-    border-color: var(--border);
-}
-
-.change-card.card-linked-hover {
-    border-color: var(--score-high);
-    box-shadow: 0 0 0 1px var(--score-high);
-}
+.change-card:hover { background-color: var(--accent-soft); border-color: var(--accent); }
+.change-card.resolved { opacity: 0.4; }
+.change-card.resolved:hover { background-color: transparent; border-color: var(--border); }
+.change-card.card-linked-hover { border-color: var(--score-high); box-shadow: 0 0 0 1px var(--score-high); }
 
 .change-card-level {
     display: inline-block;
@@ -318,63 +324,21 @@ main {
     letter-spacing: 0.04em;
     color: var(--accent);
     margin-bottom: 4px;
+    font-weight: 600;
 }
 
-.change-card-diff {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 6px 0;
-}
+.change-card-diff { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.change-card-original { color: var(--text-tertiary); text-decoration: line-through; white-space: pre-wrap; font-weight: 400; }
+.change-card-proposed { color: var(--score-high); white-space: pre-wrap; font-weight: 400; }
 
-.change-card-original {
-    color: var(--text-tertiary);
-    text-decoration: line-through;
-    white-space: pre-wrap;
-}
+.change-card-buttons { display: flex; gap: 6px; margin-top: 8px; }
+.change-card-buttons .btn, .change-card-buttons .btn-ghost { margin-top: 0; padding: 5px 10px; font-size: 12px; }
 
-.change-card-proposed {
-    color: var(--score-high);
-    white-space: pre-wrap;
-}
+.chat-input-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; flex-shrink: 0; }
+.chat-input-row textarea { min-height: 44px; max-height: 100px; transition: opacity 0.15s ease, background-color 0.15s ease; }
+.chat-input-row textarea:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-elevated); }
 
-.change-card-buttons {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-}
-
-.change-card-buttons .btn,
-.change-card-buttons .btn-ghost {
-    margin-top: 0;
-    padding: 5px 10px;
-    font-size: 12px;
-}
-
-.chat-input-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.chat-input-row textarea {
-    min-height: 44px;
-    max-height: 100px;
-    transition: opacity 0.15s ease, background-color 0.15s ease;
-}
-
-.chat-input-row textarea:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: var(--bg-elevated);
-}
-
-.chat-input-hint {
-    font-size: 10.5px;
-    color: var(--text-tertiary);
-    margin-top: 4px;
-}
+.chat-input-hint { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; flex-shrink: 0; }
 
 .send-btn {
     margin-top: 0 !important;
@@ -391,21 +355,9 @@ main {
     transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
 }
 
-.send-btn:hover:not(:disabled) {
-    transform: translateY(-1px) scale(1.04);
-    box-shadow: 0 4px 14px rgba(91, 141, 239, 0.45);
-}
-
-.send-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.send-btn svg {
-    width: 18px;
-    height: 18px;
-}
+.send-btn:hover:not(:disabled) { transform: translateY(-1px) scale(1.04); box-shadow: 0 4px 14px rgba(91, 141, 239, 0.45); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.send-btn svg { width: 18px; height: 18px; }
 
 .style-toolbar {
     position: absolute;
@@ -432,12 +384,7 @@ main {
     cursor: pointer;
 }
 
-.color-swatch {
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
+.color-swatch { width: 18px; height: 18px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.3); }
 
 .style-toolbar input[type="color"] {
     width: 26px;
@@ -449,29 +396,55 @@ main {
     cursor: pointer;
 }
 
-.style-toolbar .toolbar-sep {
-    width: 1px;
-    height: 18px;
-    background: var(--border);
-    margin: 0 2px;
+.style-toolbar .toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+
+/* hover popover for reverting an already-applied (blue) change - replaces the
+   old window.confirm() box. Shows on hover near the mark, stays open if the
+   pointer moves onto the popover itself, closes after a short grace period
+   otherwise. */
+.revert-popover {
+    position: absolute;
+    display: none;
+    z-index: 200;
+    background: var(--bg-elevated);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    max-width: 280px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    font-size: 12.5px;
 }
+
+.revert-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600; }
+.revert-popover-text { color: var(--text-secondary); text-decoration: line-through; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; font-weight: 400; }
+.revert-popover-btn { margin-top: 0; padding: 5px 10px; font-size: 12px; width: 100%; }
 </style>
 
 <div class="result-header" style="align-items:center;">
-    <h1 style="margin:0;">{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
-    <div style="display:flex;gap:8px;align-items:center;">
-        <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
-        <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
-        <select id="download-format" style="width:auto;padding:9px 11px;">
-            <option value="docx">DOCX</option>
-            <option value="pdf">PDF</option>
-            <option value="txt">TXT</option>
-        </select>
-        <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+        <a href="/jobs/{{ job.id }}" class="back-nav" style="padding-left:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            {{ t.back_link }}
+        </a>
+        <span class="back-nav-divider"></span>
+        <h1 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+            <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
+            <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
+            <select id="download-format" style="width:auto;padding:9px 11px;">
+                <option value="docx">DOCX</option>
+                <option value="pdf">PDF</option>
+                <option value="txt">TXT</option>
+            </select>
+            <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
+        </div>
     </div>
 </div>
 
-<div class="tailor-layout">
+<div class="tailor-layout" style="margin-top:16px;">
     <div class="job-info-column">
         <div class="card">
             <div class="job-info-header">
@@ -518,9 +491,23 @@ main {
     </div>
 
     <div class="copilot-panel">
+        <p class="copilot-panel-title">🤖 Copilot</p>
+
         <div class="copilot-actions">
-            <button type="button" class="btn-ghost btn level-btn" id="btn-propose-soft">↻ {{ t.propose_soft_button }}</button>
-            <button type="button" class="btn-ghost btn level-btn" id="btn-propose-medium">↻ {{ t.propose_medium_button }}</button>
+            <button type="button" class="level-action-btn" id="btn-propose-soft">
+                <span class="level-action-icon">🪶</span>
+                <span class="level-action-text"><strong>{{ t.propose_soft_button }}</strong><small>{{ t.soft_hint }}</small></span>
+            </button>
+            <button type="button" class="level-action-btn" id="btn-propose-medium">
+                <span class="level-action-icon">🔧</span>
+                <span class="level-action-text"><strong>{{ t.propose_medium_button }}</strong><small>{{ t.medium_hint }}</small></span>
+            </button>
+        </div>
+
+        <div class="revert-popover" id="revert-popover">
+            <div class="revert-popover-label">{{ t.revert_original_label }}</div>
+            <div class="revert-popover-text" id="revert-popover-text"></div>
+            <button type="button" class="btn revert-popover-btn" id="revert-popover-btn">{{ t.revert_button }}</button>
         </div>
 
         <div class="chat-stream" id="chat-stream">
@@ -567,6 +554,16 @@ main {
 
 <script>
 (function () {
+    // Fix: pressing the browser's Back/Forward buttons can restore a frozen
+    // bfcache snapshot of this page from the moment it first loaded, wiping out
+    // any highlights/edits made since (Ctrl+Z isn't affected - that's a purely
+    // client-side stack, unrelated to navigation). Force a fresh load instead.
+    window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+
     const SESSION_ID = {{ session_id }};
     const I18N = {{ t | tojson }};
     const INITIAL_MESSAGE_COUNT = {{ messages | length }};
@@ -598,9 +595,14 @@ main {
         redoBtn.disabled = redoStack.length === 0;
     }
 
+    // The history stack stores the fully rendered snapshot (marks included) at
+    // each meaningful point, taken straight from the live DOM. Undo/redo are
+    // then a pure, synchronous-feeling client-side swap - no network round trip,
+    // so two quick Ctrl+Z presses can't race each other, and there's exactly one
+    // stack that both the buttons and the keyboard shortcuts read and write.
     function pushHistorySnapshot() {
         if (isApplyingHistory) return;
-        const snapshot = stripMarksFromClone();
+        const snapshot = resumeDoc.innerHTML;
         if (undoStack.length && undoStack[undoStack.length - 1] === snapshot) {
             updateHistoryButtons();
             return;
@@ -615,12 +617,16 @@ main {
         isApplyingHistory = true;
         resumeDoc.innerHTML = html;
         bindMarkHoverHandlers();
-        await persistDoc();
+        // Keep the server's working_html in sync in the background, so future
+        // proposals/downloads work off the right base text - but the visual
+        // undo/redo itself never waits on this or depends on its result.
+        persistRawHtml(stripMarksFromClone());
         isApplyingHistory = false;
         updateHistoryButtons();
     }
 
     async function undoHistory() {
+        if (isApplyingHistory) return;
         if (undoStack.length < 2) return;
         const current = undoStack.pop();
         redoStack.push(current);
@@ -629,6 +635,7 @@ main {
     }
 
     async function redoHistory() {
+        if (isApplyingHistory) return;
         if (!redoStack.length) return;
         const snapshot = redoStack.pop();
         undoStack.push(snapshot);
@@ -640,20 +647,33 @@ main {
         await persistDoc();
     }
 
-    undoBtn.addEventListener("click", undoHistory);
-    redoBtn.addEventListener("click", redoHistory);
+    // Single dispatch point for both the button and the keyboard shortcut, so
+    // there is exactly one code path for "undo" and one for "redo" - clicking
+    // the button and pressing the shortcut are now literally the same call.
+    function triggerUndo() { undoHistory(); }
+    function triggerRedo() { redoHistory(); }
+
+    undoBtn.addEventListener("click", triggerUndo);
+    redoBtn.addEventListener("click", triggerRedo);
 
     document.addEventListener("keydown", (e) => {
         const isMac = navigator.platform.toUpperCase().includes("MAC");
         const modifier = isMac ? e.metaKey : e.ctrlKey;
-        if (!modifier || e.key.toLowerCase() !== "z") return;
-        if (document.activeElement && document.activeElement.tagName === "TEXTAREA") return;
+        if (!modifier) return;
+
+        // e.key depends on the active keyboard layout (Ctrl+Z on a Cyrillic
+        // layout reports key "я", not "z"), so it can't be trusted alone.
+        // e.code reports the physical key regardless of layout - check that
+        // first, and fall back to key only for browsers old enough to lack code.
+        const isZKey = e.code ? e.code === "KeyZ" : e.key.toLowerCase() === "z";
+        if (!isZKey) return;
+        if (document.activeElement === chatInput) return;
 
         e.preventDefault();
         if (e.shiftKey) {
-            redoHistory();
+            triggerRedo();
         } else {
-            undoHistory();
+            triggerUndo();
         }
     });
 
@@ -691,10 +711,14 @@ main {
         return clone.innerHTML;
     }
 
-    async function persistDoc() {
+    async function persistRawHtml(html) {
         const formData = new FormData();
-        formData.append("html_content", stripMarksFromClone());
+        formData.append("html_content", html);
         await fetch(`/tailor/session/${SESSION_ID}/manual-edit`, { method: "POST", body: formData });
+    }
+
+    async function persistDoc() {
+        await persistRawHtml(stripMarksFromClone());
         if (!isApplyingHistory) pushHistorySnapshot();
     }
 
@@ -709,17 +733,57 @@ main {
         persistDoc();
     });
 
-    resumeDoc.addEventListener("click", async (e) => {
-        const mark = e.target.closest("mark.approved-mark");
-        if (!mark) return;
-        e.preventDefault();
+    const revertPopover = document.getElementById("revert-popover");
+    const revertPopoverText = document.getElementById("revert-popover-text");
+    const revertPopoverBtn = document.getElementById("revert-popover-btn");
+    let revertHideTimeout = null;
+    let currentRevertMark = null;
 
-        const confirmed = window.confirm(I18N.revert_confirm_text);
-        if (!confirmed) return;
+    function stripNativeTitles() {
+        // wrap_highlights() puts the original text in a `title` attribute for
+        // approved marks - useful server-side data, but we read it into
+        // data-original-text and strip the attribute so the browser's own
+        // delayed tooltip doesn't show up alongside our custom popover below.
+        resumeDoc.querySelectorAll("mark[title]").forEach((mark) => {
+            mark.dataset.originalText = mark.getAttribute("title");
+            mark.removeAttribute("title");
+        });
+    }
+
+    function showRevertPopover(mark) {
+        clearTimeout(revertHideTimeout);
+        currentRevertMark = mark;
+        revertPopoverText.textContent = mark.dataset.originalText || "";
+        revertPopover.style.display = "block";
+
+        const rect = mark.getBoundingClientRect();
+        const popRect = revertPopover.getBoundingClientRect();
+        let top = window.scrollY + rect.top - popRect.height - 10;
+        if (top < window.scrollY + 4) {
+            top = window.scrollY + rect.bottom + 10;
+        }
+        revertPopover.style.top = `${top}px`;
+        revertPopover.style.left = `${window.scrollX + rect.left}px`;
+    }
+
+    function scheduleHideRevertPopover() {
+        clearTimeout(revertHideTimeout);
+        revertHideTimeout = setTimeout(() => {
+            revertPopover.style.display = "none";
+            currentRevertMark = null;
+        }, 220);
+    }
+
+    revertPopover.addEventListener("mouseenter", () => clearTimeout(revertHideTimeout));
+    revertPopover.addEventListener("mouseleave", scheduleHideRevertPopover);
+
+    revertPopoverBtn.addEventListener("click", async () => {
+        if (!currentRevertMark) return;
+        const changeId = currentRevertMark.dataset.changeId;
+        revertPopover.style.display = "none";
 
         await flushPendingSave();
 
-        const changeId = mark.dataset.changeId;
         const response = await fetch(`/tailor/changes/${changeId}/revert`, { method: "POST" });
         const data = await response.json();
         if (data.status === "error") {
@@ -729,7 +793,13 @@ main {
     });
 
     function bindMarkHoverHandlers() {
+        stripNativeTitles();
         resumeDoc.querySelectorAll("mark[data-change-id]").forEach((mark) => {
+            if (mark.classList.contains("approved-mark")) {
+                mark.addEventListener("mouseenter", () => showRevertPopover(mark));
+                mark.addEventListener("mouseleave", scheduleHideRevertPopover);
+                return;
+            }
             mark.addEventListener("mouseenter", () => {
                 const card = document.querySelector(`.change-card[data-change-id="${mark.dataset.changeId}"]`);
                 if (card) card.classList.add("card-linked-hover");
@@ -742,6 +812,9 @@ main {
     }
 
     async function refreshDoc() {
+        // Used after Apply/Skip/Revert/agent turns - these genuinely need the
+        // server's recomputed marks (change statuses changed), unlike undo/redo
+        // above which replay a snapshot that already has the right marks baked in.
         const response = await fetch(`/tailor/session/${SESSION_ID}/render`);
         const data = await response.json();
         resumeDoc.innerHTML = data.html;
@@ -1125,37 +1198,30 @@ main {
         downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.value}`;
     });
 
-    function launchSoftAndMedium() {
-        const softWrapper = appendPendingMessage("soft");
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData(), softWrapper);
-
-        const mediumWrapper = appendPendingMessage("medium");
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData(), mediumWrapper);
-    }
-
-    async function ensureKeywordsThenLaunch() {
-        const response = await fetch(`/tailor/session/${SESSION_ID}/extract-keywords`, { method: "POST" });
-        const data = await response.json();
-
-        if (data.task_id === null) {
-            renderKeywordBubbles(data.keywords);
-            launchSoftAndMedium();
-            return;
-        }
-
-        pollTaskStatus([data.task_id], (tasks) => {
-            const task = tasks[0];
-            if (task.status === "done") {
-                renderKeywordBubbles(task.result.keywords);
-                launchSoftAndMedium();
-            } else if (task.status === "failed") {
-                launchSoftAndMedium();
-            }
-        });
+    // No auto-running soft/medium on page load - the person clicks one of the
+    // two cards above when they actually want a pass. We still warm the
+    // keyword bubbles silently in the background since that's cheap and just
+    // informational, not a resume-editing action.
+    function ensureKeywordsSilently() {
+        fetch(`/tailor/session/${SESSION_ID}/extract-keywords`, { method: "POST" })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.task_id === null) {
+                    renderKeywordBubbles(data.keywords);
+                    return;
+                }
+                pollTaskStatus([data.task_id], (tasks) => {
+                    const task = tasks[0];
+                    if (task.status === "done") {
+                        renderKeywordBubbles(task.result.keywords);
+                    }
+                });
+            })
+            .catch(() => {});
     }
 
     if (INITIAL_MESSAGE_COUNT === 0) {
-        ensureKeywordsThenLaunch();
+        ensureKeywordsSilently();
     }
 })();
 </script>

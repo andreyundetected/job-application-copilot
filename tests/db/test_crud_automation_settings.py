@@ -15,16 +15,8 @@ def test_upsert_automation_settings_creates_with_defaults(db_session):
     assert settings.min_score_to_proceed == 6
     assert settings.max_score_to_archive == 3
     assert settings.quick_filter_enabled is True
-    assert settings.auto_tailor_soft_enabled is True
-    assert settings.auto_tailor_medium_enabled is True
-    assert settings.serpent_num_per_query == 30
+    assert settings.serpent_num_per_query == 100
     assert settings.default_time_range == "w1"
-    assert settings.max_query_words == 32
-    assert settings.target_sites == [
-        "boards.greenhouse.io",
-        "jobs.lever.co",
-        "jobs.ashbyhq.com",
-    ]
     assert settings.saved_queries == []
 
 
@@ -33,35 +25,24 @@ def test_upsert_automation_settings_updates_existing(db_session):
     automation_settings_crud.upsert_automation_settings(db_session, min_score_to_proceed=6)
 
     updated = automation_settings_crud.upsert_automation_settings(
-        db_session, min_score_to_proceed=7, auto_tailor_soft_enabled=True
+        db_session, min_score_to_proceed=7, quick_filter_enabled=False
     )
 
     all_rows = db_session.query(type(updated)).all()
     assert len(all_rows) == 1
     assert updated.min_score_to_proceed == 7
-    assert updated.auto_tailor_soft_enabled is True
+    assert updated.quick_filter_enabled is False
 
 
 @pytest.mark.db
 def test_upsert_automation_settings_preserves_unspecified_fields(db_session):
-    automation_settings_crud.upsert_automation_settings(db_session, max_query_words=20, default_time_range="d1")
+    automation_settings_crud.upsert_automation_settings(db_session, serpent_num_per_query=20, default_time_range="d1")
 
     updated = automation_settings_crud.upsert_automation_settings(db_session, min_score_to_proceed=8)
 
-    assert updated.max_query_words == 20
+    assert updated.serpent_num_per_query == 20
     assert updated.default_time_range == "d1"
     assert updated.min_score_to_proceed == 8
-
-
-@pytest.mark.db
-def test_upsert_automation_settings_updates_target_sites(db_session):
-    automation_settings_crud.upsert_automation_settings(db_session)
-
-    updated = automation_settings_crud.upsert_automation_settings(
-        db_session, target_sites=["boards.greenhouse.io", "example.com"]
-    )
-
-    assert updated.target_sites == ["boards.greenhouse.io", "example.com"]
 
 
 @pytest.mark.db

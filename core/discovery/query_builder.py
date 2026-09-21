@@ -12,10 +12,23 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
+# Only sites core/discovery/ats_extractor.py can actually parse a posting from -
+# no point surfacing a search result we can't scrape and evaluate.
 DEFAULT_TARGET_SITES = [
     "boards.greenhouse.io",
     "jobs.lever.co",
     "jobs.ashbyhq.com",
+    "apply.workable.com",
+    "careers.smartrecruiters.com",
+]
+
+# Roadmap: ATS platforms worth adding once ats_extractor.py has a parser for them.
+PLANNED_TARGET_SITES = [
+    "careers.recruitee.com",
+    "jobs.breezy.hr",
+    "jobs.gem.com",
+    "rippling-ats.com",
+    "jobs.personio.com",
 ]
 
 DEFAULT_MAX_QUERY_WORDS = 32
@@ -40,6 +53,20 @@ def build_query_string(terms: list[str], sites: list[str] | None = None) -> str:
 
 def validate_query_length(query: str, max_words: int = DEFAULT_MAX_QUERY_WORDS) -> bool:
     return count_words(query) <= max_words
+
+
+def fit_query_to_word_limit(
+    terms: list[str], sites: list[str] | None = None, max_words: int = DEFAULT_MAX_QUERY_WORDS
+) -> str | None:
+    """Drops trailing terms (least-important-first, since the LLM lists them in
+    priority order) until the combined query fits max_words - a last-resort
+    fallback for LLM-suggested queries that come back too long, so one oversized
+    group gets trimmed instead of silently dropped."""
+    for count in range(len(terms), 0, -1):
+        candidate = build_query_string(terms[:count], sites)
+        if validate_query_length(candidate, max_words):
+            return candidate
+    return None
 
 
 def suggest_search_queries(

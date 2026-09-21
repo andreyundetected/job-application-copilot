@@ -27,6 +27,18 @@ def seed_default_tailoring_permissions(session: Session) -> None:
     session.commit()
 
 
+def level_has_auto_apply(session: Session, level: str) -> bool:
+    """True if at least one change_type under this level is set to auto-apply -
+    used to decide whether to run soft/medium tailoring at all during automation,
+    since there's no point calling the LLM for a level nothing will ever auto-apply."""
+    return (
+        session.query(TailoringPermission)
+        .filter(TailoringPermission.level == level, TailoringPermission.auto_apply.is_(True))
+        .first()
+        is not None
+    )
+
+
 def is_auto_apply(session: Session, level: str, change_type: str) -> bool:
     permission = (
         session.query(TailoringPermission)

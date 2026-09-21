@@ -508,6 +508,52 @@ input::placeholder {
     }
 }
 
+/* Minimal, GitHub/Linear-style back link - plain text with a chevron, no box,
+   no border. align-self: flex-start is load-bearing: without it, any flex
+   parent with the default align-items:stretch (e.g. a column-flex `main`)
+   stretches this link to the full container width. The a:link/a:visited
+   overrides are load-bearing too: those pseudo-classes carry more specificity
+   than a single class, so the browser's default blue/underline otherwise wins. */
+/* Plain grey text-and-chevron back link. No negative-margin hit-area trick -
+   that kept causing overlap bugs on pages with tight spacing below it. A light
+   background chip on hover gives it just enough "this is clickable" affordance
+   without looking like a boxed button at rest. */
+a.back-nav,
+a.back-nav:link,
+a.back-nav:visited {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 6px 10px 6px 8px;
+    border-radius: var(--radius-sm);
+}
+
+a.back-nav:hover,
+a.back-nav:active {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    text-decoration: none;
+}
+
+.back-nav svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+    display: block;
+}
+
+.back-nav-divider {
+    width: 1px;
+    height: 18px;
+    background-color: var(--border);
+    flex-shrink: 0;
+}
+
 .toast-container {
     position: fixed;
     bottom: 20px;

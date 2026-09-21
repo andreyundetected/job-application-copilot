@@ -1,5 +1,6 @@
 {
     "page_title": "Application Questions",
+    "back_link": "Back to job",
     "paste_label": "Paste the questions from the application form",
     "paste_placeholder": "Paste only the open-ended, written-answer questions (cover letter, summary, project descriptions...). Skip yes/no and short factual fields - answer those yourself.",
     "process_button": "Process questions",

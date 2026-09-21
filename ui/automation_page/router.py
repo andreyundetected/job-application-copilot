@@ -8,11 +8,21 @@ from core.automation import pipeline
 from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.discovery.query_builder import (
+    DEFAULT_MAX_QUERY_WORDS,
+    DEFAULT_TARGET_SITES,
+    PLANNED_TARGET_SITES,
     build_query_string,
     count_words,
+    fit_query_to_word_limit,
     suggest_search_queries,
     validate_query_length,
 )
+
+# Budget given to the LLM when it drafts query term groups - kept below the real
+# 32-word Google limit so the model has slack and doesn't hug the ceiling; any
+# group that still comes back over the real limit gets trimmed, not dropped.
+_SUGGEST_MAX_QUERY_WORDS = 32
+_SUGGEST_MAX_ATTEMPTS = 3
 from core.providers.factory import get_llm_provider
 from core.tasks.executor import submit_task
 from core.tasks.runner import run_tracked_task
@@ -86,7 +96,6 @@ def automation_page(
     settings = _get_or_create_settings(session)
     runs = crud.list_automation_runs(session, limit=20)
     usage_by_run = {run.id: crud.sum_usage_for_run(session, run.id) for run in runs}
-    app_settings = crud.get_app_settings(session)
     base_questions = crud.list_automation_base_questions(session)
 
     return templates.TemplateResponse(
@@ -97,8 +106,12 @@ def automation_page(
             "runs": [_serialize_run(run) for run in runs],
             "usage_by_run": usage_by_run,
             "tailoring_matrix": _tailoring_matrix_state(session),
+            "soft_active": crud.level_has_auto_apply(session, "soft"),
+            "medium_active": crud.level_has_auto_apply(session, "medium"),
             "base_questions": base_questions,
-            "auto_answer_questions_enabled": app_settings.auto_answer_questions_enabled if app_settings else True,
+            "target_sites": DEFAULT_TARGET_SITES,
+            "planned_sites": PLANNED_TARGET_SITES,
+            "max_query_words": DEFAULT_MAX_QUERY_WORDS,
             "lang": lang,
             "t": load_page_strings("ui/automation_page", lang),
         },
@@ -123,34 +136,43 @@ def delete_base_question(question_id: int, session: Session = Depends(get_sessio
 
 @router.post("/settings")
 def update_settings(
-    min_score_to_proceed: int = Form(...),
-    max_score_to_archive: int = Form(...),
-    quick_filter_enabled: bool = Form(False),
-    auto_archive_enabled: bool = Form(False),
-    auto_tailor_soft_enabled: bool = Form(False),
-    auto_tailor_medium_enabled: bool = Form(False),
-    max_query_words: int = Form(32),
-    default_time_range: str = Form("w1"),
+    min_score_to_proceed: int | None = Form(None),
+    max_score_to_archive: int | None = Form(None),
+    quick_filter_enabled: str | None = Form(None),
+    auto_archive_enabled: str | None = Form(None),
+    default_time_range: str | None = Form(None),
+    serpent_num_per_query: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
-    if default_time_range not in _TIME_RANGE_OPTIONS:
+    """Autosave endpoint - the client posts only the field(s) that just changed,
+    so every field here is optional and only touched keys are written."""
+    settings = _get_or_create_settings(session)
+
+    if default_time_range is not None and default_time_range not in _TIME_RANGE_OPTIONS:
         raise HTTPException(status_code=400, detail="Invalid time range")
-    if min_score_to_proceed <= max_score_to_archive:
+
+    new_min = min_score_to_proceed if min_score_to_proceed is not None else settings.min_score_to_proceed
+    new_max = max_score_to_archive if max_score_to_archive is not None else settings.max_score_to_archive
+    if new_min <= new_max:
         raise HTTPException(
             status_code=400, detail="min_score_to_proceed must be greater than max_score_to_archive"
         )
 
-    crud.upsert_automation_settings(
-        session,
-        min_score_to_proceed=min_score_to_proceed,
-        max_score_to_archive=max_score_to_archive,
-        quick_filter_enabled=quick_filter_enabled,
-        auto_archive_enabled=auto_archive_enabled,
-        auto_tailor_soft_enabled=auto_tailor_soft_enabled,
-        auto_tailor_medium_enabled=auto_tailor_medium_enabled,
-        max_query_words=max(1, max_query_words),
-        default_time_range=default_time_range,
-    )
+    kwargs = {}
+    if min_score_to_proceed is not None:
+        kwargs["min_score_to_proceed"] = min_score_to_proceed
+    if max_score_to_archive is not None:
+        kwargs["max_score_to_archive"] = max_score_to_archive
+    if quick_filter_enabled is not None:
+        kwargs["quick_filter_enabled"] = quick_filter_enabled == "true"
+    if auto_archive_enabled is not None:
+        kwargs["auto_archive_enabled"] = auto_archive_enabled == "true"
+    if default_time_range is not None:
+        kwargs["default_time_range"] = default_time_range
+    if serpent_num_per_query is not None:
+        kwargs["serpent_num_per_query"] = max(1, min(serpent_num_per_query, 100))
+
+    crud.upsert_automation_settings(session, **kwargs)
     return JSONResponse({"status": "ok"})
 
 
@@ -165,37 +187,13 @@ def update_tailoring_permission(
         raise HTTPException(status_code=400, detail="Unknown level/change_type combination")
 
     crud.set_tailoring_permission(session, level=level, change_type=change_type, auto_apply=auto_apply)
-    return JSONResponse({"status": "ok"})
-
-
-@router.post("/target-sites")
-def add_target_site(site: str = Form(...), session: Session = Depends(get_session)):
-    site = site.strip()
-    if not site:
-        raise HTTPException(status_code=400, detail="Site cannot be empty")
-
-    settings = _get_or_create_settings(session)
-    target_sites = list(settings.target_sites or [])
-    if site not in target_sites:
-        target_sites.append(site)
-
-    updated = crud.upsert_automation_settings(session, target_sites=target_sites)
-    return JSONResponse({"target_sites": updated.target_sites})
-
-
-@router.post("/target-sites/{index}/delete")
-def delete_target_site(index: int, session: Session = Depends(get_session)):
-    settings = crud.get_automation_settings(session)
-    if settings is None:
-        raise HTTPException(status_code=404, detail="Settings not found")
-
-    target_sites = list(settings.target_sites or [])
-    if index < 0 or index >= len(target_sites):
-        raise HTTPException(status_code=404, detail="Site not found")
-
-    target_sites.pop(index)
-    updated = crud.upsert_automation_settings(session, target_sites=target_sites)
-    return JSONResponse({"target_sites": updated.target_sites})
+    return JSONResponse(
+        {
+            "status": "ok",
+            "soft_active": crud.level_has_auto_apply(session, "soft"),
+            "medium_active": crud.level_has_auto_apply(session, "medium"),
+        }
+    )
 
 
 @router.post("/saved-queries")
@@ -204,14 +202,13 @@ def add_saved_query(query_text: str = Form(...), session: Session = Depends(get_
     if not query:
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-    settings = _get_or_create_settings(session)
-
-    if not validate_query_length(query, settings.max_query_words):
+    if not validate_query_length(query, DEFAULT_MAX_QUERY_WORDS):
         raise HTTPException(
             status_code=400,
-            detail=f"Query exceeds the {settings.max_query_words}-word limit ({count_words(query)} words)",
+            detail=f"Query exceeds the {DEFAULT_MAX_QUERY_WORDS}-word limit ({count_words(query)} words)",
         )
 
+    settings = _get_or_create_settings(session)
     saved_queries = list(settings.saved_queries or [])
     saved_queries.append(query)
 
@@ -242,34 +239,38 @@ def suggest_queries(session: Session = Depends(get_session)):
     if resume is None:
         raise HTTPException(status_code=400, detail="No active resume set")
 
-    settings = _get_or_create_settings(session)
-
     candidate_context = resume.raw_text
     if linkedin is not None:
         candidate_context += "\n\n" + linkedin.raw_text
 
-    task_id = run_tracked_task(
-        "automation_suggest_queries",
-        _run_suggest_queries,
-        candidate_context,
-        settings.target_sites,
-        settings.max_query_words,
-    )
+    task_id = run_tracked_task("automation_suggest_queries", _run_suggest_queries, candidate_context)
     return JSONResponse({"task_id": task_id})
 
 
-def _run_suggest_queries(candidate_context: str, target_sites: list, max_query_words: int) -> dict:
+def _run_suggest_queries(candidate_context: str) -> dict:
     session = SessionLocal()
     try:
         provider = get_llm_provider()
-        groups = suggest_search_queries(provider, candidate_context, target_sites, max_query_words)
+
+        groups: list[list[str]] = []
+        for _ in range(_SUGGEST_MAX_ATTEMPTS):
+            groups = suggest_search_queries(provider, candidate_context, max_query_words=_SUGGEST_MAX_QUERY_WORDS)
+            if groups:
+                break
 
         added = []
         dropped = 0
         for terms in groups:
-            query = build_query_string(terms, target_sites)
-            if validate_query_length(query, max_query_words):
+            query = build_query_string(terms)
+            if validate_query_length(query):
                 added.append(query)
+                continue
+
+            # Over the real 32-word limit even with the tighter 32-word budget we
+            # gave the model - trim trailing terms rather than lose the group entirely.
+            fitted = fit_query_to_word_limit(terms)
+            if fitted:
+                added.append(fitted)
             else:
                 dropped += 1
 
@@ -286,7 +287,6 @@ def _run_suggest_queries(candidate_context: str, target_sites: list, max_query_w
 @router.post("/runs")
 def start_run(
     time_range: str = Form("w1"),
-    num_per_query: int = Form(30),
     max_results_override: str = Form(""),
     max_queries_override: str = Form(""),
     session: Session = Depends(get_session),
@@ -302,10 +302,8 @@ def start_run(
     results_cap = int(max_results_override) if max_results_override.strip().isdigit() else None
     queries_cap = int(max_queries_override) if max_queries_override.strip().isdigit() else None
 
-    if settings.serpent_num_per_query != num_per_query or settings.default_time_range != time_range:
-        crud.upsert_automation_settings(
-            session, serpent_num_per_query=num_per_query, default_time_range=time_range
-        )
+    if settings.default_time_range != time_range:
+        crud.upsert_automation_settings(session, default_time_range=time_range)
 
     run = crud.create_automation_run(
         session,

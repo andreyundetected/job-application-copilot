@@ -3,7 +3,12 @@
 {% block title %}{{ job.title or job.company or "Job" }}{% endblock %}
 
 {% block content %}
-<a href="/" class="salary-line">&larr; {{ t.back_link }}</a>
+<a href="/" class="back-nav" style="margin-bottom:12px;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    {{ t.back_link }}
+</a>
 
 <div class="result-card" style="margin-top: 16px;">
     <div class="result-header">
