@@ -129,6 +129,18 @@
             <span>{{ t.auto_archive_label }}</span>
         </label>
 
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <input type="checkbox" name="auto_tailor_soft_enabled" id="auto_tailor_soft_enabled"
+                   {% if settings.auto_tailor_soft_enabled %}checked{% endif %} style="width:auto;">
+            <span>{{ t.auto_tailor_soft_run_label }}</span>
+        </label>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+            <input type="checkbox" name="auto_tailor_medium_enabled" id="auto_tailor_medium_enabled"
+                   {% if settings.auto_tailor_medium_enabled %}checked{% endif %} style="width:auto;">
+            <span>{{ t.auto_tailor_medium_run_label }}</span>
+        </label>
+
         <label for="max_query_words">{{ t.max_query_words_label }}</label>
         <input type="text" inputmode="numeric" name="max_query_words" id="max_query_words"
                value="{{ settings.max_query_words }}" style="max-width:80px;">
@@ -225,6 +237,29 @@
 </div>
 
 <div class="card">
+    <h3 style="margin:0 0 4px;">{{ t.auto_answer_title }}</h3>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <input type="checkbox" id="auto_answer_questions_enabled" {% if auto_answer_questions_enabled %}checked{% endif %} style="width:auto;">
+        <span>{{ t.auto_answer_enabled_label }}</span>
+    </label>
+
+    <h3 style="margin:20px 0 4px;">{{ t.base_questions_title }}</h3>
+    <p class="salary-line">{{ t.base_questions_hint }}</p>
+    <div id="base-question-list">
+        {% for question in base_questions %}
+        <div class="preset-row" data-question-id="{{ question.id }}">
+            <span>{{ question.question_text }}</span>
+            <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+        <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder }}" style="flex:1;">
+        <button type="button" class="btn" id="btn-add-base-question" style="margin-top:0;">{{ t.add_base_question_button }}</button>
+    </div>
+</div>
+
+<div class="card">
     <h3 style="margin:0 0 4px;">{{ t.history_title }}</h3>
     <div id="runs-list">
         {% if not runs %}
@@ -316,6 +351,44 @@ document.getElementById("target-sites-list").addEventListener("click", async (ev
     const index = event.target.closest(".preset-row").dataset.index;
     const response = await fetch(`/automation/target-sites/${index}/delete`, { method: "POST" });
     if (response.ok) window.location.reload();
+});
+
+document.getElementById("auto_answer_questions_enabled").addEventListener("change", async (event) => {
+    const formData = new FormData();
+    formData.append("auto_answer_questions_enabled", event.target.checked ? "true" : "");
+    await fetch("/settings/auto-answer", { method: "POST", body: formData });
+    showToast(I18N.settings_saved_toast, "success");
+});
+
+document.getElementById("btn-add-base-question").addEventListener("click", async () => {
+    const input = document.getElementById("base_question_input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const formData = new FormData();
+    formData.append("question_text", text);
+
+    const response = await fetch("/automation/base-questions", { method: "POST", body: formData });
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || "Error", "danger");
+        return;
+    }
+    const data = await response.json();
+    const list = document.getElementById("base-question-list");
+    const row = document.createElement("div");
+    row.className = "preset-row";
+    row.dataset.questionId = data.id;
+    row.innerHTML = `<span>${data.question_text.replace(/</g, "&lt;")}</span> <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">${I18N.btn_remove}</button>`;
+    list.appendChild(row);
+    input.value = "";
+});
+
+document.getElementById("base-question-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("delete-base-question-btn")) return;
+    const questionId = event.target.closest(".preset-row").dataset.questionId;
+    const response = await fetch(`/automation/base-questions/${questionId}/delete`, { method: "POST" });
+    if (response.ok) event.target.closest(".preset-row").remove();
 });
 
 function countWords(text) {

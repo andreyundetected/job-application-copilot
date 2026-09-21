@@ -16,6 +16,12 @@ from core.discovery.search_provider import SerpentSearchError, get_search_provid
 from core.discovery.url_utils import normalize_url
 from core.evaluator.pipeline import evaluate_job_posting
 from core.providers.factory import get_llm_provider
+from core.questions.pipeline import (
+    classify_template_category,
+    generate_cover_letter_answers,
+    generate_general_answers_initial,
+    generate_summary_answers,
+)
 from core.tailoring.fragment_pipeline import (
     propose_medium_fragment_changes,
     propose_soft_fragment_changes,
@@ -310,6 +316,7 @@ def _process_search_result(
             crud.update_job_pipeline_stage(session, job.id, stages.PASSED)
             crud.increment_run_counters(session, run_id, passed_count=1)
             _maybe_auto_tailor(session, run_id, job, job_text, result, settings)
+            _maybe_auto_answer_base_questions(session, run_id, job, job_text)
         else:
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
@@ -424,6 +431,102 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
         tailoring_session = _apply_auto_tailoring_changes(session, tailoring_session, medium_changes, "medium")
 
     crud.update_job_pipeline_stage(session, job.id, stages.TAILORED)
+
+
+def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_text: str) -> None:
+    app_settings = crud.get_app_settings(session)
+    if app_settings is None or not app_settings.auto_answer_questions_enabled:
+        logger.info("[run %s] job %s: base-question auto-answer disabled in settings, skipping", run_id, job.id)
+        return
+
+    base_questions = crud.list_automation_base_questions(session)
+    if not base_questions:
+        logger.info("[run %s] job %s: no automation base questions configured, skipping", run_id, job.id)
+        return
+
+    existing_applications = [a for a in crud.list_applications(session) if a.job_posting_id == job.id]
+    application = existing_applications[0] if existing_applications else crud.create_application(
+        session, job_posting_id=job.id, source_platform="automation"
+    )
+
+    already_asked = {q.question_text for q in crud.list_form_questions_for_application(session, application.id)}
+    to_create = [
+        {"question_text": bq.question_text, "answer_type": "document", "category": None, "char_limit": None}
+        for bq in base_questions
+        if bq.question_text not in already_asked
+    ]
+    if not to_create:
+        logger.info("[run %s] job %s: all base questions already asked on application %s", run_id, job.id, application.id)
+        return
+
+    provider = get_llm_provider()
+    for item in to_create:
+        item["category"] = classify_template_category(provider, item["question_text"])
+
+    existing_count = len(crud.list_form_questions_for_application(session, application.id))
+    created = crud.bulk_create_form_questions(session, application.id, to_create, order_offset=existing_count)
+
+    resume = crud.get_active_resume_version(session, "resume")
+    linkedin = crud.get_active_resume_version(session, "linkedin")
+    profile = crud.get_candidate_profile(session)
+
+    links = []
+    if profile:
+        if profile.github_url:
+            links.append(profile.github_url)
+        if profile.linkedin_url:
+            links.append(profile.linkedin_url)
+        links.extend(profile.extra_links or [])
+
+    resume_text = resume.raw_text if resume else ""
+    linkedin_text = linkedin.raw_text if linkedin else ""
+    extra_info = profile.extra_info if profile else None
+
+    by_category: dict[str, list] = {"cover_letter": [], "summary": [], "general": []}
+    for question in created:
+        by_category.setdefault(question.category or "general", []).append(question)
+
+    for category, questions_in_category in by_category.items():
+        if not questions_in_category:
+            continue
+
+        payload = [
+            {"id": q.id, "question_text": q.question_text, "char_limit": q.char_limit}
+            for q in questions_in_category
+        ]
+
+        if category == "cover_letter":
+            answers = generate_cover_letter_answers(
+                provider, payload, job_posting_text=job_text, resume_text=resume_text,
+                linkedin_text=linkedin_text, extra_info=extra_info, links=links,
+            )
+        elif category == "summary":
+            answers = generate_summary_answers(
+                provider, payload, job_posting_text=job_text, resume_text=resume_text,
+                linkedin_text=linkedin_text, extra_info=extra_info, links=links,
+            )
+        else:
+            answers = generate_general_answers_initial(
+                provider, payload, job_posting_text=job_text, resume_text=resume_text,
+                linkedin_text=linkedin_text, extra_info=extra_info, links=links,
+            )
+
+        for question in questions_in_category:
+            result = answers.get(question.id)
+            if result is None:
+                continue
+            crud.set_question_generation_result(
+                session, question.id,
+                answer_text=result["answer_text"],
+                selected_option=None,
+                needs_manual_input=result["needs_manual_input"],
+                flag_reason=result["flag_reason"],
+            )
+
+    logger.info(
+        "[run %s] job %s: auto-answered %s base questions on application %s",
+        run_id, job.id, len(created), application.id,
+    )
 
 
 def _apply_auto_tailoring_changes(session: Session, tailoring_session, changes: list[dict], level: str):

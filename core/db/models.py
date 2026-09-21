@@ -407,8 +407,8 @@ class AutomationSettings(Base):
     max_score_to_archive: Mapped[int] = mapped_column(Integer, default=3)
     quick_filter_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     auto_archive_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    auto_tailor_soft_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    auto_tailor_medium_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_tailor_soft_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_tailor_medium_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     serpent_num_per_query: Mapped[int] = mapped_column(Integer, default=30)
     default_time_range: Mapped[str] = mapped_column(String(8), default="w1")
     target_sites: Mapped[list] = mapped_column(JSON, nullable=True)
@@ -427,6 +427,22 @@ class QuestionTemplate(Base):
     label: Mapped[str] = mapped_column(String(128))
     trigger_phrases: Mapped[list] = mapped_column(JSON)
     instructions: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class AutomationBaseQuestion(Base):
+    """A flat, always-asked question for automated applications - no trigger
+    matching, since automation never has real pasted application-form text to
+    match against (only the job posting text). Every configured row here gets
+    an answer generated for every application automation creates."""
+
+    __tablename__ = "automation_base_questions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    question_text: Mapped[str] = mapped_column(Text)
     order: Mapped[int] = mapped_column(Integer, default=0)
 
 

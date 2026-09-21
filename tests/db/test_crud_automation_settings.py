@@ -15,8 +15,8 @@ def test_upsert_automation_settings_creates_with_defaults(db_session):
     assert settings.min_score_to_proceed == 6
     assert settings.max_score_to_archive == 3
     assert settings.quick_filter_enabled is True
-    assert settings.auto_tailor_soft_enabled is False
-    assert settings.auto_tailor_medium_enabled is False
+    assert settings.auto_tailor_soft_enabled is True
+    assert settings.auto_tailor_medium_enabled is True
     assert settings.serpent_num_per_query == 30
     assert settings.default_time_range == "w1"
     assert settings.max_query_words == 32

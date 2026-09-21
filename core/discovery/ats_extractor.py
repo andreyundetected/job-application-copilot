@@ -37,6 +37,7 @@ def _extract_greenhouse(url: str) -> str | None:
     api_url = f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{job_id}"
     response = requests.get(api_url, params={"content": "true"}, timeout=20)
     if response.status_code != 200:
+        logger.info("greenhouse: job %s/%s not found (status=%s) - likely closed/removed", board_token, job_id, response.status_code)
         return None
 
     data = response.json()
@@ -56,6 +57,7 @@ def _extract_lever(url: str) -> str | None:
     api_url = f"https://api.lever.co/v0/postings/{site_slug}/{posting_id}"
     response = requests.get(api_url, params={"mode": "json"}, timeout=20)
     if response.status_code != 200:
+        logger.info("lever: posting %s/%s not found (status=%s) - likely closed/removed", site_slug, posting_id, response.status_code)
         return None
 
     data = response.json()
@@ -96,27 +98,40 @@ def _extract_ashby(url: str) -> str | None:
     api_url = f"https://api.ashbyhq.com/posting-api/job-board/{org_slug}"
     response = requests.get(api_url, params={"includeCompensation": "false"}, timeout=20)
     if response.status_code != 200:
+        logger.info("ashby: board %s not reachable (status=%s)", org_slug, response.status_code)
         return None
 
     data = response.json()
-    postings = data.get("jobPostings") or []
+    # Ashby's public API returns {"apiVersion": ..., "jobs": [...]} - NOT "jobPostings".
+    postings = data.get("jobs") or []
 
     matching = next(
         (
             posting
             for posting in postings
-            if posting.get("id") == job_slug or str(posting.get("jobUrl", "")).endswith(job_slug)
+            if posting.get("id") == job_slug
+            or str(posting.get("jobUrl", "")).rstrip("/").endswith(job_slug)
         ),
         None,
     )
     if matching is None:
+        logger.info("ashby: posting %s not found on board %s (%s postings currently listed) - likely closed/removed", job_slug, org_slug, len(postings))
         return None
 
     title = matching.get("title", "")
-    location = matching.get("locationName") or matching.get("location", "")
+
+    header_parts = [
+        matching.get("location"),
+        matching.get("department"),
+        matching.get("team"),
+        matching.get("employmentType"),
+        matching.get("workplaceType"),
+    ]
+    header_line = " / ".join(part for part in header_parts if part)
+
     description = matching.get("descriptionPlain") or html_to_text(matching.get("descriptionHtml", ""))
 
-    return "\n\n".join(part for part in [title, location, description] if part)
+    return "\n\n".join(part for part in [title, header_line, description] if part)
 
 
 def _extract_workable(url: str) -> str | None:
@@ -128,6 +143,7 @@ def _extract_workable(url: str) -> str | None:
     api_url = f"https://apply.workable.com/api/v1/widget/accounts/{account_slug}"
     response = requests.get(api_url, params={"details": "true"}, timeout=20)
     if response.status_code != 200:
+        logger.info("workable: board %s not reachable (status=%s)", account_slug, response.status_code)
         return None
 
     data = response.json()
@@ -142,6 +158,7 @@ def _extract_workable(url: str) -> str | None:
         None,
     )
     if matching is None:
+        logger.info("workable: job %s not found on board %s (%s jobs currently listed) - likely closed/removed", shortcode, account_slug, len(jobs))
         return None
 
     title = matching.get("title", "")
@@ -173,6 +190,7 @@ def _extract_smartrecruiters(url: str) -> str | None:
     api_url = f"https://api.smartrecruiters.com/v1/companies/{company_id}/postings/{posting_id}"
     response = requests.get(api_url, timeout=20)
     if response.status_code != 200:
+        logger.info("smartrecruiters: posting %s/%s not found (status=%s) - likely closed/removed", company_id, posting_id, response.status_code)
         return None
 
     data = response.json()
@@ -204,17 +222,34 @@ _EXTRACTORS = {
 }
 
 
+_KNOWN_ATS_DOMAINS = ("greenhouse.io", "lever.co", "ashbyhq.com", "workable.com", "smartrecruiters.com")
+
+
+def _is_known_ats_domain(url: str) -> bool:
+    return any(domain in url for domain in _KNOWN_ATS_DOMAINS)
+
+
 def extract_job_text(url: str) -> str | None:
     platform = detect_platform(url)
     if platform is None:
-        logger.warning("extract_job_text: no ATS extractor for url=%s (unsupported platform)", url)
+        if _is_known_ats_domain(url):
+            logger.info(
+                "extract_job_text: url=%s is on a known ATS domain but isn't a single job-posting link "
+                "(likely a company board root/listing page, not an indexable job) - skipping",
+                url,
+            )
+        else:
+            logger.warning("extract_job_text: no ATS extractor for url=%s (domain not supported)", url)
         return None
 
     extractor = _EXTRACTORS[platform]
     try:
         result = extractor(url)
         if result is None:
-            logger.warning("extract_job_text: %s extractor returned None for url=%s (non-200 or no matching posting)", platform, url)
+            logger.warning(
+                "extract_job_text: %s extractor could not get job text for url=%s (see specific reason logged above)",
+                platform, url,
+            )
         else:
             logger.info("extract_job_text: %s extractor got %s chars for url=%s", platform, len(result), url)
         return result

@@ -183,21 +183,22 @@ def test_extract_job_text_lever_handles_missing_categories_gracefully(monkeypatc
 
 @pytest.mark.discovery
 def test_extract_job_text_ashby(monkeypatch):
-    url = "https://jobs.ashbyhq.com/examplecorp/job-slug-123"
+    url = "https://jobs.ashbyhq.com/examplecorp/abc123"
 
     def fake_get(api_url, params=None, timeout=None):
         assert api_url == "https://api.ashbyhq.com/posting-api/job-board/examplecorp"
         return _FakeResponse(
             200,
             {
-                "jobPostings": [
+                "apiVersion": "1",
+                "jobs": [
                     {
-                        "id": "job-slug-123",
+                        "id": "abc123",
                         "title": "Sample Applied AI Engineer",
-                        "locationName": "Remote",
+                        "location": "Remote",
                         "descriptionPlain": "Sample ashby description.",
                     }
-                ]
+                ],
             },
         )
 
@@ -206,7 +207,70 @@ def test_extract_job_text_ashby(monkeypatch):
     result = ats_extractor.extract_job_text(url)
 
     assert "Sample Applied AI Engineer" in result
+    assert "Remote" in result
     assert "Sample ashby description." in result
+
+
+@pytest.mark.discovery
+def test_extract_job_text_ashby_includes_workplace_and_employment_type(monkeypatch):
+    url = "https://jobs.ashbyhq.com/cognition/811c3f5a-b26d-4162-b49b-93890a91794d"
+
+    def fake_get(api_url, params=None, timeout=None):
+        return _FakeResponse(
+            200,
+            {
+                "apiVersion": "1",
+                "jobs": [
+                    {
+                        "id": "811c3f5a-b26d-4162-b49b-93890a91794d",
+                        "title": "AI Engineer",
+                        "location": "Mountain View, CA",
+                        "department": "Engineering",
+                        "team": "Applied AI",
+                        "employmentType": "FullTime",
+                        "workplaceType": "OnSite",
+                        "descriptionPlain": "Who We Are...",
+                    }
+                ],
+            },
+        )
+
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
+
+    result = ats_extractor.extract_job_text(url)
+
+    assert "Mountain View, CA" in result
+    assert "Engineering" in result
+    assert "Applied AI" in result
+    assert "FullTime" in result
+    assert "OnSite" in result
+
+
+@pytest.mark.discovery
+def test_extract_job_text_ashby_matches_by_job_url_when_id_differs(monkeypatch):
+    url = "https://jobs.ashbyhq.com/examplecorp/811c3f5a-b26d-4162-b49b-93890a91794d"
+
+    def fake_get(api_url, params=None, timeout=None):
+        return _FakeResponse(
+            200,
+            {
+                "apiVersion": "1",
+                "jobs": [
+                    {
+                        "id": "some-internal-id",
+                        "title": "Sample Role",
+                        "jobUrl": "https://jobs.ashbyhq.com/examplecorp/811c3f5a-b26d-4162-b49b-93890a91794d",
+                        "descriptionPlain": "Body text.",
+                    }
+                ],
+            },
+        )
+
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
+
+    result = ats_extractor.extract_job_text(url)
+
+    assert "Sample Role" in result
 
 
 @pytest.mark.discovery
@@ -214,7 +278,7 @@ def test_extract_job_text_ashby_no_matching_posting_returns_none(monkeypatch):
     url = "https://jobs.ashbyhq.com/examplecorp/missing-slug"
 
     def fake_get(api_url, params=None, timeout=None):
-        return _FakeResponse(200, {"jobPostings": []})
+        return _FakeResponse(200, {"apiVersion": "1", "jobs": []})
 
     monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 

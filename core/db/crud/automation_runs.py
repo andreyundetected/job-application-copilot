@@ -91,15 +91,27 @@ def append_run_warning(session: Session, run_id: int, message: str) -> Automatio
 
 
 def increment_run_counters(session: Session, run_id: int, **deltas: int) -> AutomationRun | None:
-    run = session.get(AutomationRun, run_id)
-    if run is None:
-        return None
-
-    for field, delta in deltas.items():
+    for field in deltas:
         if field not in _COUNTER_FIELDS:
             raise ValueError(f"Unknown automation run counter: {field}")
-        setattr(run, field, getattr(run, field) + delta)
 
+    if not deltas:
+        return get_automation_run(session, run_id)
+
+    # Atomic column-level increment (col = col + delta) done entirely in SQL,
+    # rather than a Python-side read-then-write. This is what makes it safe
+    # under concurrent calls from different threads/sessions (as happens here,
+    # since the automation pipeline processes results in a thread pool): each
+    # UPDATE reads the current on-disk value at write time, so two concurrent
+    # increments can no longer clobber each other (the read-modify-write race
+    # that silently dropped counts before).
+    update_values = {
+        getattr(AutomationRun, field): getattr(AutomationRun, field) + delta
+        for field, delta in deltas.items()
+    }
+    session.query(AutomationRun).filter(AutomationRun.id == run_id).update(
+        update_values, synchronize_session=False
+    )
     session.commit()
-    session.refresh(run)
-    return run
+
+    return get_automation_run(session, run_id)

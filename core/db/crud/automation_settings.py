@@ -32,10 +32,10 @@ def upsert_automation_settings(
             quick_filter_enabled=quick_filter_enabled if quick_filter_enabled is not None else True,
             auto_archive_enabled=auto_archive_enabled if auto_archive_enabled is not None else False,
             auto_tailor_soft_enabled=(
-                auto_tailor_soft_enabled if auto_tailor_soft_enabled is not None else False
+                auto_tailor_soft_enabled if auto_tailor_soft_enabled is not None else True
             ),
             auto_tailor_medium_enabled=(
-                auto_tailor_medium_enabled if auto_tailor_medium_enabled is not None else False
+                auto_tailor_medium_enabled if auto_tailor_medium_enabled is not None else True
             ),
             serpent_num_per_query=serpent_num_per_query if serpent_num_per_query is not None else 30,
             default_time_range=default_time_range if default_time_range is not None else "w1",

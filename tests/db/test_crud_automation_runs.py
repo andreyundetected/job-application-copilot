@@ -100,3 +100,56 @@ def test_list_automation_runs_order(db_session):
 
     assert len(runs) == 2
     assert runs[0].queries_planned == ["second"]
+
+
+@pytest.mark.db
+def test_increment_run_counters_no_lost_update_under_concurrency(tmp_path):
+    """Regression test for a real bug: with the old Python-side read-modify-write,
+    concurrent increments from separate sessions/threads could silently lose
+    updates. This spins up real OS threads against a file-based sqlite database
+    (each thread gets its own pooled connection - never a single raw connection
+    object shared across threads, which is what causes CPython's sqlite3 module
+    to crash rather than just misbehave) and verifies every increment survives."""
+    import threading
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from core.db.models import Base
+
+    db_path = tmp_path / "concurrency_test.db"
+    engine = create_engine(
+        f"sqlite:///{db_path}", connect_args={"check_same_thread": False, "timeout": 30}
+    )
+    Base.metadata.create_all(bind=engine)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    setup_session = session_factory()
+    run = automation_runs_crud.create_automation_run(setup_session)
+    run_id = run.id
+    setup_session.close()
+
+    increments_per_thread = 20
+    thread_count = 8
+
+    def worker():
+        session = session_factory()
+        try:
+            for _ in range(increments_per_thread):
+                automation_runs_crud.increment_run_counters(session, run_id, scraped_count=1)
+        finally:
+            session.close()
+
+    threads = [threading.Thread(target=worker) for _ in range(thread_count)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    verify_session = session_factory()
+    final = automation_runs_crud.get_automation_run(verify_session, run_id)
+    verify_session.close()
+
+    engine.dispose()
+
+    assert final.scraped_count == increments_per_thread * thread_count

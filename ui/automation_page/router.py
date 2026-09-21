@@ -86,6 +86,8 @@ def automation_page(
     settings = _get_or_create_settings(session)
     runs = crud.list_automation_runs(session, limit=20)
     usage_by_run = {run.id: crud.sum_usage_for_run(session, run.id) for run in runs}
+    app_settings = crud.get_app_settings(session)
+    base_questions = crud.list_automation_base_questions(session)
 
     return templates.TemplateResponse(
         "automation.html",
@@ -95,10 +97,28 @@ def automation_page(
             "runs": [_serialize_run(run) for run in runs],
             "usage_by_run": usage_by_run,
             "tailoring_matrix": _tailoring_matrix_state(session),
+            "base_questions": base_questions,
+            "auto_answer_questions_enabled": app_settings.auto_answer_questions_enabled if app_settings else True,
             "lang": lang,
             "t": load_page_strings("ui/automation_page", lang),
         },
     )
+
+
+@router.post("/base-questions")
+def add_base_question(question_text: str = Form(...), session: Session = Depends(get_session)):
+    text = question_text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Question text cannot be empty")
+
+    question = crud.create_automation_base_question(session, question_text=text)
+    return JSONResponse({"id": question.id, "question_text": question.question_text})
+
+
+@router.post("/base-questions/{question_id}/delete")
+def delete_base_question(question_id: int, session: Session = Depends(get_session)):
+    crud.delete_automation_base_question(session, question_id)
+    return JSONResponse({"status": "ok", "id": question_id})
 
 
 @router.post("/settings")
@@ -107,6 +127,8 @@ def update_settings(
     max_score_to_archive: int = Form(...),
     quick_filter_enabled: bool = Form(False),
     auto_archive_enabled: bool = Form(False),
+    auto_tailor_soft_enabled: bool = Form(False),
+    auto_tailor_medium_enabled: bool = Form(False),
     max_query_words: int = Form(32),
     default_time_range: str = Form("w1"),
     session: Session = Depends(get_session),
@@ -124,6 +146,8 @@ def update_settings(
         max_score_to_archive=max_score_to_archive,
         quick_filter_enabled=quick_filter_enabled,
         auto_archive_enabled=auto_archive_enabled,
+        auto_tailor_soft_enabled=auto_tailor_soft_enabled,
+        auto_tailor_medium_enabled=auto_tailor_medium_enabled,
         max_query_words=max(1, max_query_words),
         default_time_range=default_time_range,
     )
