@@ -60,19 +60,79 @@ body {
     z-index: 10;
 }
 
-.topnav a {
+.topnav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    margin-right: 18px;
+    flex-shrink: 0;
+}
+
+.topnav-brand-icon {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.topnav-brand-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.topnav-links {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.topnav-links a {
+    position: relative;
     color: var(--text-secondary);
     text-decoration: none;
     padding: 7px 12px;
     border-radius: var(--radius-sm);
     font-weight: 500;
     font-size: 13px;
-    transition: all 0.12s ease;
+    transition: color 0.12s ease, background-color 0.12s ease;
 }
 
-.topnav a:hover {
+.topnav-links a:hover {
     color: var(--text-primary);
     background-color: var(--bg-card);
+}
+
+.topnav-links a.active {
+    color: var(--accent);
+    background-color: var(--accent-soft);
+}
+
+.topnav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.sponsor-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.sponsor-link:hover {
+    color: #f87171;
+    border-color: #f87171;
+    background-color: rgba(248, 113, 113, 0.08);
 }
 
 main {
@@ -455,6 +515,405 @@ input::placeholder {
     border-top: 1px solid var(--border);
 }
 
+.job-card-activity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 10px;
+}
+
+.job-card-activity .loading-dot {
+    margin-left: 0;
+}
+
+.gradient-btn {
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(91, 141, 239, 0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.gradient-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(91, 141, 239, 0.4);
+}
+
+.filters-toggle-wrap {
+    margin-bottom: 14px;
+}
+
+.filters-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+}
+
+.filters-toggle-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.filters-toggle-btn.expanded {
+    border-color: var(--accent);
+    color: var(--accent);
+    background-color: var(--accent-soft);
+}
+
+.filters-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.filters-toggle-chevron {
+    transition: transform 0.2s ease;
+}
+
+.filters-toggle-btn.expanded .filters-toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.filters-toggle-count {
+    background-color: var(--accent);
+    color: white;
+    font-size: 10.5px;
+    font-weight: 700;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+.filters-panel-wrap {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.28s ease, opacity 0.2s ease;
+}
+
+.filters-panel-wrap.expanded {
+    opacity: 1;
+}
+
+.filters-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px 14px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.filter-section:not(:last-child) {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.filter-section-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+}
+
+.filter-section-label svg {
+    width: 12px;
+    height: 12px;
+}
+
+.filter-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.filter-pill:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.filter-pill-check {
+    display: none;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+}
+
+.filter-pill.active {
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.filter-pill.active .filter-pill-check {
+    display: inline-flex;
+}
+
+.filters-panel-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.filters-clear-link {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+}
+
+.filters-clear-link:hover {
+    color: var(--score-low);
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.icon-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    background-color: var(--bg-card);
+}
+
+.icon-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.toolbar-row .search-input-wrap {
+    flex: 1;
+}
+
+.search-input-wrap {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+}
+
+.search-input-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    color: var(--text-tertiary);
+    pointer-events: none;
+}
+
+.search-input-wrap input {
+    padding: 12px 14px 12px 40px;
+    font-size: 13.5px;
+    border-radius: var(--radius);
+    background-color: var(--bg-card);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.search-input-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+</parameter>
+
+.modal-overlay-centered {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+}
+
+.modal-overlay-centered.open {
+    display: flex;
+}
+
+.confirm-modal {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 26px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.confirm-modal-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius);
+    background-color: var(--score-low-soft);
+    color: var(--score-low);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 14px;
+}
+
+.confirm-modal h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.confirm-modal p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 16px;
+}
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    user-select: none;
+}
+
+.custom-checkbox input {
+    display: none;
+}
+
+.custom-checkbox-box {
+    width: 17px;
+    height: 17px;
+    border-radius: 5px;
+    border: 1px solid var(--border-hover);
+    background-color: var(--bg-input);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.custom-checkbox-box svg {
+    width: 11px;
+    height: 11px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    color: white;
+}
+
+.custom-checkbox input:checked + .custom-checkbox-box {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.custom-checkbox input:checked + .custom-checkbox-box svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.confirm-modal-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.confirm-modal-buttons .btn,
+.confirm-modal-buttons .btn-ghost {
+    margin-top: 0;
+    flex: 1;
+}
+
+.confirm-modal-buttons .btn-danger {
+    background-color: var(--score-low);
+}
+
+.confirm-modal-buttons .btn-danger:hover {
+    background-color: #e35d5d;
+}
+
 .job-card-company {
     font-size: 14px;
     font-weight: 600;
@@ -632,4 +1091,20 @@ a.back-nav:active {
         opacity: 0;
         transform: translateX(40px);
     }
+.modal-overlay-centered {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 300 !important;
+}
+
+.modal-overlay-centered.open {
+    display: flex !important;
+}
 }

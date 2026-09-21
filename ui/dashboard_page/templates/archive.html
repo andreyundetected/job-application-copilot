@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Archive{% endblock %}
+
+{% block content %}
+<a href="/" class="back-nav">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+    {{ t.back_link }}
+</a>
+
+<h1 style="margin-top:16px;">{{ t.archive_page_title }}</h1>
+
+<div class="job-grid" id="archive-grid">
+    {% for card in cards %}
+    <div class="job-card" data-job-id="{{ card.job_id }}">
+        <div class="job-card-top">
+            <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">
+                {{ card.score if card.score is not none else "?" }}
+            </div>
+        </div>
+
+        <div class="job-card-badges">
+            {% if card.location %}<span class="badge">{{ card.location }}</span>{% endif %}
+            {% if card.work_mode %}<span class="badge badge-work-mode">{{ card.work_mode }}</span>{% endif %}
+        </div>
+
+        <div class="job-card-bottom">
+            <div class="job-card-company">{{ card.company }}</div>
+            <div class="job-card-role">{{ card.role }}</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+            <button type="button" class="btn-ghost btn restore-btn" data-job-id="{{ card.job_id }}" style="margin-top:0;flex:1;padding:7px;font-size:12px;">{{ t.restore_button }}</button>
+            <button type="button" class="btn-ghost btn delete-forever-btn" data-job-id="{{ card.job_id }}" style="margin-top:0;flex:1;padding:7px;font-size:12px;color:var(--score-low);border-color:var(--score-low);">{{ t.delete_forever_button }}</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not cards %}
+<p class="salary-line">{{ t.empty_archive }}</p>
+{% endif %}
+
+<div class="modal-overlay-centered" id="confirm-modal-overlay" style="display:none;">
+    <div class="confirm-modal">
+        <div class="confirm-modal-icon">🗑</div>
+        <h3>{{ t.confirm_delete_title }}</h3>
+        <p>{{ t.confirm_delete_body }}</p>
+        <label class="custom-checkbox">
+            <input type="checkbox" id="dont-ask-again-checkbox">
+            <span class="custom-checkbox-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>
+            {{ t.dont_ask_again_label }}
+        </label>
+        <div class="confirm-modal-buttons">
+            <button type="button" class="btn-ghost btn" id="confirm-cancel-btn">{{ t.confirm_delete_cancel_button }}</button>
+            <button type="button" class="btn btn-danger" id="confirm-delete-btn">{{ t.confirm_delete_confirm_button }}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const I18N = {{ t | tojson }};
+const SKIP_CONFIRM_KEY = "archive_skip_delete_confirm";
+let pendingDeleteJobId = null;
+
+document.getElementById("confirm-modal-overlay").classList.remove("open");
+
+document.getElementById("archive-grid").addEventListener("click", async (event) => {
+    if (event.target.classList.contains("restore-btn")) {
+        const jobId = event.target.dataset.jobId;
+        await fetch(`/jobs/${jobId}/unarchive`, { method: "POST" });
+        event.target.closest(".job-card").remove();
+        showToast(I18N.job_restored_toast, "success");
+        return;
+    }
+
+    if (event.target.classList.contains("delete-forever-btn")) {
+        pendingDeleteJobId = event.target.dataset.jobId;
+        if (localStorage.getItem(SKIP_CONFIRM_KEY) === "1") {
+            await performDelete(pendingDeleteJobId);
+        } else {
+            document.getElementById("confirm-modal-overlay").classList.add("open");
+        }
+    }
+});
+
+async function performDelete(jobId) {
+    await fetch(`/jobs/${jobId}/delete-forever`, { method: "POST" });
+    const card = document.querySelector(`.job-card[data-job-id="${jobId}"]`);
+    if (card) card.remove();
+    showToast(I18N.job_deleted_forever_toast, "danger");
+}
+
+document.getElementById("confirm-delete-btn").addEventListener("click", async () => {
+    if (document.getElementById("dont-ask-again-checkbox").checked) {
+        localStorage.setItem(SKIP_CONFIRM_KEY, "1");
+    }
+    document.getElementById("confirm-modal-overlay").classList.remove("open");
+    if (pendingDeleteJobId) {
+        await performDelete(pendingDeleteJobId);
+        pendingDeleteJobId = null;
+    }
+});
+
+document.getElementById("confirm-cancel-btn").addEventListener("click", () => {
+    document.getElementById("confirm-modal-overlay").classList.remove("open");
+    pendingDeleteJobId = null;
+});
+
+document.getElementById("confirm-modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "confirm-modal-overlay") {
+        document.getElementById("confirm-modal-overlay").classList.remove("open");
+        pendingDeleteJobId = null;
+    }
+});
+</script>
+{% endblock %}

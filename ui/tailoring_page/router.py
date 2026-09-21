@@ -383,39 +383,43 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
     try:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
-        matched_factors = _get_matched_factors(session, job.id)
+        crud.set_job_activity(session, job.id, "Tailoring resume (soft)...")
+        try:
+            matched_factors = _get_matched_factors(session, job.id)
 
-        provider = get_llm_provider()
-        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+            provider = get_llm_provider()
+            keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
 
-        logger.info("[session %s] propose-soft: calling LLM (job=%s)", session_id, job.id)
-        changes = propose_soft_fragment_changes(
-            provider,
-            job_posting_text=job.raw_text,
-            resume_html=tailoring_session.working_html or "",
-            matched_factors=matched_factors,
-            keywords=_keyword_texts(keywords),
-        )
-        logger.info("[session %s] propose-soft: got %s changes", session_id, len(changes))
-        if not changes:
-            logger.warning(
-                "[session %s] propose-soft: LLM returned 0 changes (check working_html and prompt output)",
-                session_id,
+            logger.info("[session %s] propose-soft: calling LLM (job=%s)", session_id, job.id)
+            changes = propose_soft_fragment_changes(
+                provider,
+                job_posting_text=job.raw_text,
+                resume_html=tailoring_session.working_html or "",
+                matched_factors=matched_factors,
+                keywords=_keyword_texts(keywords),
             )
+            logger.info("[session %s] propose-soft: got %s changes", session_id, len(changes))
+            if not changes:
+                logger.warning(
+                    "[session %s] propose-soft: LLM returned 0 changes (check working_html and prompt output)",
+                    session_id,
+                )
 
-        message = crud.create_tailoring_message(
-            session, session_id, role="assistant", text=_soft_message_text(lang)
-        )
-        created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
+            message = crud.create_tailoring_message(
+                session, session_id, role="assistant", text=_soft_message_text(lang)
+            )
+            created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
 
-        return {
-            "message_id": message.id,
-            "message_text": message.text,
-            "level": "soft",
-            "changes": [_serialize_change(c) for c in created],
-            "superseded_change_ids": [c.id for c in superseded],
-            "keywords": keywords,
-        }
+            return {
+                "message_id": message.id,
+                "message_text": message.text,
+                "level": "soft",
+                "changes": [_serialize_change(c) for c in created],
+                "superseded_change_ids": [c.id for c in superseded],
+                "keywords": keywords,
+            }
+        finally:
+            crud.set_job_activity(session, job.id, None)
     finally:
         session.close()
 
@@ -439,40 +443,44 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
     try:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
-        matched_factors = _get_matched_factors(session, job.id)
+        crud.set_job_activity(session, job.id, "Tailoring resume (medium)...")
+        try:
+            matched_factors = _get_matched_factors(session, job.id)
 
-        provider = get_llm_provider()
-        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
-        keyword_texts = _keyword_texts(keywords)
+            provider = get_llm_provider()
+            keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+            keyword_texts = _keyword_texts(keywords)
 
-        logger.info("[session %s] propose-medium: calling LLM (job=%s)", session_id, job.id)
-        changes = propose_medium_fragment_changes(
-            provider,
-            job_posting_text=job.raw_text,
-            resume_html=tailoring_session.working_html or "",
-            matched_factors=matched_factors,
-            keywords=keyword_texts,
-        )
-        logger.info("[session %s] propose-medium: got %s changes", session_id, len(changes))
-        if not changes:
-            logger.warning(
-                "[session %s] propose-medium: LLM returned 0 changes (check working_html and prompt output)",
-                session_id,
+            logger.info("[session %s] propose-medium: calling LLM (job=%s)", session_id, job.id)
+            changes = propose_medium_fragment_changes(
+                provider,
+                job_posting_text=job.raw_text,
+                resume_html=tailoring_session.working_html or "",
+                matched_factors=matched_factors,
+                keywords=keyword_texts,
             )
+            logger.info("[session %s] propose-medium: got %s changes", session_id, len(changes))
+            if not changes:
+                logger.warning(
+                    "[session %s] propose-medium: LLM returned 0 changes (check working_html and prompt output)",
+                    session_id,
+                )
 
-        message = crud.create_tailoring_message(
-            session, session_id, role="assistant", text=_medium_message_text(lang)
-        )
-        created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
+            message = crud.create_tailoring_message(
+                session, session_id, role="assistant", text=_medium_message_text(lang)
+            )
+            created, superseded = _store_changes_with_dedup(session, session_id, message.id, changes)
 
-        return {
-            "message_id": message.id,
-            "message_text": message.text,
-            "level": "medium",
-            "changes": [_serialize_change(c) for c in created],
-            "superseded_change_ids": [c.id for c in superseded],
-            "keywords": keywords,
-        }
+            return {
+                "message_id": message.id,
+                "message_text": message.text,
+                "level": "medium",
+                "changes": [_serialize_change(c) for c in created],
+                "superseded_change_ids": [c.id for c in superseded],
+                "keywords": keywords,
+            }
+        finally:
+            crud.set_job_activity(session, job.id, None)
     finally:
         session.close()
 
@@ -503,36 +511,40 @@ def _run_agent_turn(session_id: int, history_dicts: list[dict], user_message: st
     try:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
-        matched_factors = _get_matched_factors(session, job.id)
+        crud.set_job_activity(session, job.id, "Tailoring resume...")
+        try:
+            matched_factors = _get_matched_factors(session, job.id)
 
-        provider = get_llm_provider()
-        keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
+            provider = get_llm_provider()
+            keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
 
-        result = run_agent_fragment_turn(
-            provider,
-            job_posting_text=job.raw_text,
-            resume_html=tailoring_session.working_html or "",
-            matched_factors=matched_factors,
-            conversation_history=history_dicts,
-            user_message=user_message,
-            keywords=_keyword_texts(keywords),
-        )
+            result = run_agent_fragment_turn(
+                provider,
+                job_posting_text=job.raw_text,
+                resume_html=tailoring_session.working_html or "",
+                matched_factors=matched_factors,
+                conversation_history=history_dicts,
+                user_message=user_message,
+                keywords=_keyword_texts(keywords),
+            )
 
-        message = crud.create_tailoring_message(
-            session, session_id, role="assistant", text=result["message"]
-        )
-        created, superseded = _store_changes_with_dedup(
-            session, session_id, message.id, result["changes"]
-        )
+            message = crud.create_tailoring_message(
+                session, session_id, role="assistant", text=result["message"]
+            )
+            created, superseded = _store_changes_with_dedup(
+                session, session_id, message.id, result["changes"]
+            )
 
-        return {
-            "message_id": message.id,
-            "message_text": message.text,
-            "level": "custom",
-            "changes": [_serialize_change(c) for c in created],
-            "superseded_change_ids": [c.id for c in superseded],
-            "keywords": keywords,
-        }
+            return {
+                "message_id": message.id,
+                "message_text": message.text,
+                "level": "custom",
+                "changes": [_serialize_change(c) for c in created],
+                "superseded_change_ids": [c.id for c in superseded],
+                "keywords": keywords,
+            }
+        finally:
+            crud.set_job_activity(session, job.id, None)
     finally:
         session.close()
 

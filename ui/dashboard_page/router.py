@@ -19,9 +19,16 @@ templates.env.loader = ChoiceLoader(
 )
 
 
+def _derive_country(location: str | None) -> str | None:
+    if not location:
+        return None
+    segment = location.split(";")[0].split(",")[-1].strip()
+    return segment or None
+
+
 def _card_data(job) -> dict:
     latest_evaluation = job.evaluations[-1] if job.evaluations else None
-    pending = job.pending_task_id is not None
+    pending = job.pending_task_id is not None or job.activity_label is not None
 
     if latest_evaluation is None:
         return {
@@ -30,29 +37,34 @@ def _card_data(job) -> dict:
             "role": job.title or "Unknown role",
             "score": None,
             "location": job.location,
+            "country": _derive_country(job.location),
             "work_mode": job.work_mode,
             "employment_type": job.employment_type,
             "tags": job.tags or [],
             "salary_text": None,
             "is_estimate": False,
             "pending": pending,
+            "activity_label": job.activity_label,
         }
 
     checked = latest_evaluation.checked_keywords or {}
     salary = checked.get("salary") or {}
+    location = checked.get("location") or job.location
 
     return {
         "job_id": job.id,
         "company": job.company or "Unknown company",
         "role": job.title or "Unknown role",
         "score": latest_evaluation.fit_score,
-        "location": checked.get("location") or job.location,
+        "location": location,
+        "country": _derive_country(location),
         "work_mode": checked.get("work_mode") or job.work_mode,
         "employment_type": job.employment_type,
         "tags": job.tags or [],
         "salary_text": salary.get("original_text"),
         "is_estimate": salary.get("is_estimate", False),
         "pending": pending,
+        "activity_label": job.activity_label,
     }
 
 
@@ -121,9 +133,76 @@ def job_detail_page(
     )
 
 
+@router.get("/jobs/{job_id}/evaluation")
+def job_evaluation_data(job_id: int, session: Session = Depends(get_session)):
+    job = crud.get_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    evaluations = crud.list_evaluations_for_job(session, job_id)
+    latest_evaluation = evaluations[0] if evaluations else None
+    if latest_evaluation is None:
+        return JSONResponse({"ready": False})
+
+    checked = latest_evaluation.checked_keywords or {}
+    salary = checked.get("salary") or {}
+
+    return JSONResponse(
+        {
+            "ready": True,
+            "company": job.company,
+            "role": job.title,
+            "score": latest_evaluation.fit_score,
+            "location": checked.get("location"),
+            "work_mode": checked.get("work_mode"),
+            "salary": salary,
+            "matched_factors": checked.get("matched_factors") or [],
+            "pros": (latest_evaluation.fit_bullets or {}).get("pros", []),
+            "cons": (latest_evaluation.blocker_bullets or {}).get("cons", []),
+            "summary": checked.get("summary"),
+        }
+    )
+
+
 @router.post("/jobs/{job_id}/archive")
 def archive_job(job_id: int, session: Session = Depends(get_session)):
     crud.archive_job_posting(session, job_id)
+    return JSONResponse({"status": "ok", "id": job_id})
+
+
+@router.get("/archive", response_class=HTMLResponse)
+def archive_page(
+    request: Request,
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    jobs = [job for job in crud.list_job_postings(session, include_archived=True) if job.archived]
+    cards = [_card_data(job) for job in jobs]
+
+    return templates.TemplateResponse(
+        "archive.html",
+        {
+            "request": request,
+            "cards": cards,
+            "lang": lang,
+            "t": load_page_strings("ui/dashboard_page", lang),
+        },
+    )
+
+
+@router.post("/jobs/{job_id}/unarchive")
+def unarchive_job(job_id: int, session: Session = Depends(get_session)):
+    job = crud.unarchive_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JSONResponse({"status": "ok", "id": job_id})
+
+
+@router.post("/jobs/{job_id}/delete-forever")
+def delete_job_forever(job_id: int, session: Session = Depends(get_session)):
+    deleted = crud.delete_job_posting(session, job_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Job not found")
     return JSONResponse({"status": "ok", "id": job_id})
 
 

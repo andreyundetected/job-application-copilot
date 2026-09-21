@@ -197,6 +197,7 @@ def test_process_search_result_creates_job_and_passes(monkeypatch, db_session):
     job = jobs_crud.get_job_posting(db_session, refreshed.promoted_job_posting_id)
     assert job.pipeline_stage == stages.PASSED
     assert job.source == "automation"
+    assert job.activity_label is None
 
     refreshed_run = automation_runs_crud.get_automation_run(db_session, run.id)
     assert refreshed_run.scraped_count == 1

@@ -3,14 +3,56 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="result-header">
-    <h1>{{ t.page_title }}</h1>
-    <button type="button" class="btn" onclick="window.location.href='/evaluator'">{{ t.add_vacancy_button }}</button>
+<div class="dashboard-header">
+    <h1 style="margin:0;">{{ t.page_title }}</h1>
+    <div class="dashboard-header-actions">
+        <a href="/archive" class="icon-btn" title="{{ t.archive_link_label }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <rect x="1" y="3" width="22" height="5"></rect>
+                <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+        </a>
+        <button type="button" class="btn gradient-btn" style="margin-top:0;" onclick="window.location.href='/evaluator'">+ {{ t.add_vacancy_button }}</button>
+    </div>
+</div>
+
+<div class="toolbar-row">
+    <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="search-input" placeholder="{{ t.search_placeholder }}">
+    </div>
+    <div class="filters-toggle-wrap" id="filters-toggle-wrap" style="display:none;">
+        <button type="button" class="filters-toggle-btn" id="filters-toggle-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"></circle>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"></circle>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+                <circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"></circle>
+            </svg>
+            {{ t.filters_button_label }}
+            <span class="filters-toggle-count" id="filters-toggle-count" style="display:none;">0</span>
+            <svg class="filters-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<div class="filters-panel-wrap" id="filters-panel-wrap">
+    <div class="filters-panel">
+        <div id="filter-groups"></div>
+    </div>
 </div>
 
 <div class="job-grid" id="job-grid">
     {% for card in cards %}
-    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}">
+    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-tags="{{ (card.tags or []) | join(',') }}">
         <div class="job-card-top">
             {% if card.pending and card.score is none %}
             <div class="job-card-score-loading"><span class="loading-dot"></span></div>
@@ -48,6 +90,10 @@
             <div class="job-card-company">{{ card.company }}</div>
             <div class="job-card-role">{{ card.role }}</div>
         </div>
+
+        {% if card.activity_label %}
+        <div class="job-card-activity"><span class="loading-dot"></span>{{ card.activity_label }}</div>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
@@ -55,9 +101,179 @@
 {% if not cards %}
 <p class="salary-line">{{ t.empty_state }}</p>
 {% endif %}
+<p class="salary-line" id="no-results-hint" style="display:none;">{{ t.no_results_hint }}</p>
 
 <script>
 const I18N = {{ t | tojson }};
+
+const CHECK_SVG = `<svg class="filter-pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+const filterState = {
+    search: "",
+    employmentTypes: new Set(),
+    workModes: new Set(),
+    countries: new Set(),
+    tags: new Set(),
+};
+
+function countActiveFilters() {
+    return (
+        filterState.employmentTypes.size +
+        filterState.workModes.size +
+        filterState.countries.size +
+        filterState.tags.size
+    );
+}
+
+function updateFiltersToggleBadge() {
+    const count = countActiveFilters();
+    const badge = document.getElementById("filters-toggle-count");
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "flex" : "none";
+}
+
+function buildFilterGroups() {
+    const cards = [...document.querySelectorAll(".job-card")];
+    const employmentTypes = new Set();
+    const workModes = new Set();
+    const countries = new Set();
+    const tags = new Set();
+
+    cards.forEach((card) => {
+        if (card.dataset.employmentType) employmentTypes.add(card.dataset.employmentType);
+        if (card.dataset.workMode) workModes.add(card.dataset.workMode);
+        if (card.dataset.country) countries.add(card.dataset.country);
+        (card.dataset.tags || "").split(",").filter(Boolean).forEach((tag) => tags.add(tag));
+    });
+
+    const container = document.getElementById("filter-groups");
+    const toggleWrap = document.getElementById("filters-toggle-wrap");
+    container.innerHTML = "";
+
+    if (employmentTypes.size === 0 && workModes.size === 0 && countries.size === 0 && tags.size === 0) {
+        toggleWrap.style.display = "none";
+        return;
+    }
+    toggleWrap.style.display = "block";
+
+    const sectionIcons = {
+        employment: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
+        workMode: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>`,
+        location: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`,
+        tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.41 20.59a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><circle cx="6.5" cy="6.5" r="1" fill="currentColor" stroke="none"></circle></svg>`,
+    };
+
+    function renderSection(icon, label, values, stateSet, translate) {
+        if (values.size === 0) return;
+        const section = document.createElement("div");
+        section.className = "filter-section";
+        section.innerHTML = `<span class="filter-section-label">${sectionIcons[icon]}${label}</span>`;
+
+        const row = document.createElement("div");
+        row.className = "filter-chip-row";
+
+        [...values].sort().forEach((value) => {
+            const pill = document.createElement("button");
+            pill.type = "button";
+            pill.className = "filter-pill";
+            pill.innerHTML = `${CHECK_SVG}<span>${translate ? (I18N[translate + value] || value) : value}</span>`;
+            pill.addEventListener("click", () => {
+                if (stateSet.has(value)) {
+                    stateSet.delete(value);
+                    pill.classList.remove("active");
+                } else {
+                    stateSet.add(value);
+                    pill.classList.add("active");
+                }
+                updateFiltersToggleBadge();
+                applyFilters();
+                syncPanelHeight();
+            });
+            row.appendChild(pill);
+        });
+
+        section.appendChild(row);
+        container.appendChild(section);
+    }
+
+    renderSection("employment", I18N.filter_employment_label, employmentTypes, filterState.employmentTypes, "employment_");
+    renderSection("workMode", I18N.filter_work_mode_label, workModes, filterState.workModes, null);
+    renderSection("location", I18N.filter_location_label, countries, filterState.countries, null);
+    renderSection("tag", I18N.filter_tags_label, tags, filterState.tags, null);
+
+    const footer = document.createElement("div");
+    footer.className = "filters-panel-footer";
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "filters-clear-link";
+    clearBtn.textContent = I18N.clear_filters_button;
+    clearBtn.addEventListener("click", () => {
+        filterState.employmentTypes.clear();
+        filterState.workModes.clear();
+        filterState.countries.clear();
+        filterState.tags.clear();
+        container.querySelectorAll(".filter-pill.active").forEach((el) => el.classList.remove("active"));
+        updateFiltersToggleBadge();
+        applyFilters();
+    });
+    footer.appendChild(clearBtn);
+    container.appendChild(footer);
+}
+
+function applyFilters() {
+    let visibleCount = 0;
+    document.querySelectorAll(".job-card").forEach((card) => {
+        const matchesSearch =
+            !filterState.search ||
+            card.dataset.company.includes(filterState.search) ||
+            card.dataset.role.includes(filterState.search);
+
+        const matchesEmployment =
+            filterState.employmentTypes.size === 0 || filterState.employmentTypes.has(card.dataset.employmentType);
+
+        const matchesWorkMode =
+            filterState.workModes.size === 0 || filterState.workModes.has(card.dataset.workMode);
+
+        const matchesCountry =
+            filterState.countries.size === 0 || filterState.countries.has(card.dataset.country);
+
+        const cardTags = (card.dataset.tags || "").split(",").filter(Boolean);
+        const matchesTags =
+            filterState.tags.size === 0 || cardTags.some((tag) => filterState.tags.has(tag));
+
+        const visible = matchesSearch && matchesEmployment && matchesWorkMode && matchesCountry && matchesTags;
+        card.style.display = visible ? "" : "none";
+        if (visible) visibleCount += 1;
+    });
+
+    document.getElementById("no-results-hint").style.display =
+        visibleCount === 0 && document.querySelectorAll(".job-card").length > 0 ? "block" : "none";
+}
+
+document.getElementById("search-input").addEventListener("input", (e) => {
+    filterState.search = e.target.value.trim().toLowerCase();
+    applyFilters();
+});
+
+const filtersToggleBtn = document.getElementById("filters-toggle-btn");
+const filtersPanelWrap = document.getElementById("filters-panel-wrap");
+let filtersExpanded = false;
+
+function syncPanelHeight() {
+    if (filtersExpanded) {
+        filtersPanelWrap.style.maxHeight = filtersPanelWrap.scrollHeight + "px";
+    }
+}
+
+filtersToggleBtn.addEventListener("click", () => {
+    filtersExpanded = !filtersExpanded;
+    filtersToggleBtn.classList.toggle("expanded", filtersExpanded);
+    filtersPanelWrap.classList.toggle("expanded", filtersExpanded);
+    filtersPanelWrap.style.maxHeight = filtersExpanded ? filtersPanelWrap.scrollHeight + "px" : "0px";
+});
+
+buildFilterGroups();
+updateFiltersToggleBadge();
 
 document.getElementById("job-grid").addEventListener("click", async (event) => {
     if (event.target.classList.contains("job-card-archive")) {
@@ -105,6 +321,9 @@ function renderCardInPlace(cardEl, card) {
     });
     if (card.is_estimate) badgesHtml += `<span class="badge badge-estimate">Est.</span>`;
     cardEl.querySelector(".job-card-badges").innerHTML = badgesHtml;
+    cardEl.dataset.employmentType = card.employment_type || "";
+    cardEl.dataset.workMode = card.work_mode || "";
+    cardEl.dataset.tags = (card.tags || []).join(",");
 
     let salaryEl = cardEl.querySelector(".job-card-salary");
     if (card.salary_text) {
@@ -120,6 +339,18 @@ function renderCardInPlace(cardEl, card) {
 
     cardEl.querySelector(".job-card-company").textContent = card.company;
     cardEl.querySelector(".job-card-role").textContent = card.role;
+
+    let activityEl = cardEl.querySelector(".job-card-activity");
+    if (card.activity_label) {
+        if (!activityEl) {
+            activityEl = document.createElement("div");
+            activityEl.className = "job-card-activity";
+            cardEl.appendChild(activityEl);
+        }
+        activityEl.innerHTML = `<span class="loading-dot"></span>${card.activity_label}`;
+    } else if (activityEl) {
+        activityEl.remove();
+    }
 }
 
 function pollPendingCards() {

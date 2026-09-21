@@ -5,10 +5,12 @@
     "status_interviewing": "Интервью",
     "status_offer": "Оффер",
     "status_rejected": "Отказ",
-    "status_withdrawn": "Отозвано",
     "unknown_company": "Неизвестная компания",
     "unknown_role": "Неизвестная роль",
     "set_interview": "Указать интервью",
+    "added_label": "Добавлено",
+    "sort_by_date_button": "Сортировать по дате",
     "move_failed_toast": "Не удалось переместить карточку, попробуй ещё раз.",
-    "delete_failed_toast": "Не удалось удалить карточку, попробуй ещё раз."
+    "delete_failed_toast": "Не удалось удалить карточку, попробуй ещё раз.",
+    "job_removed_toast": "Вакансия отправлена в архив и убрана с борда."
 }

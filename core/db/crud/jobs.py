@@ -76,6 +76,16 @@ def set_job_pending_task(session: Session, job_posting_id: int, task_id: int | N
     return job
 
 
+def set_job_activity(session: Session, job_posting_id: int, activity_label: str | None) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.activity_label = activity_label
+    session.commit()
+    session.refresh(job)
+    return job
+
+
 def get_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
     return session.get(JobPosting, job_posting_id)
 

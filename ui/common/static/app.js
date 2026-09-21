@@ -41,6 +41,14 @@ async function pollTaskStatus(taskIds, onUpdate, intervalMs = 2000) {
     poll();
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".modal-overlay, .modal-overlay-centered").forEach((el) => {
+        if (!el.classList.contains("open")) {
+            el.style.display = "none";
+        }
+    });
+});
+
 const TOAST_CONTAINER_ID = "toast-container";
 const TOAST_MAX_VISIBLE = 3;
 const TOAST_DURATION_MS = 10000;

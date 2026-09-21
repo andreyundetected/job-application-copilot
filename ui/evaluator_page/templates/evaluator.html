@@ -3,69 +3,761 @@
 {% block title %}Evaluator{% endblock %}
 
 {% block content %}
-<h1 id="page-title">{{ t.page_title }}</h1>
+<style>
+.evaluator-header { margin-bottom: 22px; }
+.evaluator-header h1 { margin: 0 0 4px; }
+.evaluator-subtitle { font-size: 13px; color: var(--text-secondary); }
 
-<form method="post" class="card" id="evaluator-form">
-    <label for="job_posting_text">{{ t.job_posting_label }}</label>
-    <textarea name="job_posting_text" id="job_posting_text" placeholder="{{ t.job_posting_placeholder }}"></textarea>
+.evaluator-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .evaluator-layout { grid-template-columns: 1fr; }
+}
 
-    <label for="extra_info">{{ t.extra_info_label }}</label>
-    <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}"></textarea>
+.evaluator-form-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+}
 
-    <label for="source_url">{{ t.source_url_label }}</label>
-    <input type="text" name="source_url" id="source_url" placeholder="{{ t.source_url_placeholder }}">
+.job-posting-textarea { min-height: 260px; font-size: 13.5px; line-height: 1.55; }
 
-    <p class="salary-line">
-        {{ t.using_resume }} {{ active_resume.label if active_resume else t.none_set }}
-        · {{ t.linkedin }} {{ active_linkedin.label if active_linkedin else t.none_set }}
-    </p>
+.field-label-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; margin-bottom: 6px; }
+.field-label-row label { margin: 0; }
+.char-count { font-size: 11px; color: var(--text-tertiary); }
 
-    <h3>{{ t.active_blockers }}</h3>
-    <ul class="blocker-list">
-        {% for blocker in blockers %}
-        <li>{{ blocker.text }}</li>
-        {% endfor %}
-    </ul>
+.source-url-row { position: relative; }
+.source-url-row svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-tertiary); pointer-events: none; }
+.source-url-row input { padding-left: 34px; }
 
-    <h3>{{ t.scoring_factors }}</h3>
-    <ul class="blocker-list">
-        {% for factor in scoring_factors %}
-        <li>
-            <span class="factor-sign {% if factor.direction == 'plus' %}factor-sign-plus{% else %}factor-sign-minus{% endif %}">
-                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
-            </span>
-            {{ factor.text }}
-        </li>
-        {% endfor %}
-    </ul>
+.optional-tag { font-size: 10.5px; color: var(--text-tertiary); font-weight: 400; text-transform: none; letter-spacing: normal; }
 
-    <button type="submit" class="btn">{{ t.evaluate_button }}</button>
-</form>
+.extra-info-toggle {
+    display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+    color: var(--accent); font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 4px 0; margin-top: 14px;
+}
+.extra-info-toggle svg { width: 13px; height: 13px; transition: transform 0.15s ease; }
+.extra-info-toggle.expanded svg { transform: rotate(45deg); }
+.extra-info-block { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+.extra-info-block.expanded { max-height: 200px; }
 
-<div id="evaluator-result"></div>
+.evaluate-submit-row { display: flex; align-items: center; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
+.evaluate-submit-btn { display: flex; align-items: center; gap: 8px; padding: 12px 22px; font-size: 13.5px; margin-top: 0; }
+.evaluate-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.progress-steps { display: none; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); }
+.progress-steps.active { display: flex; }
+.progress-step { display: flex; align-items: center; gap: 6px; }
+.progress-step-dot { width: 7px; height: 7px; border-radius: 50%; background-color: var(--border-hover); transition: background-color 0.2s ease; }
+.progress-step.done .progress-step-dot { background-color: var(--score-high); }
+.progress-step.active .progress-step-dot { background-color: var(--accent); animation: pulse 1s infinite ease-in-out; }
+.progress-step-sep { width: 16px; height: 1px; background-color: var(--border); }
+
+.submit-error {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--score-low);
+    background-color: var(--score-low-soft);
+    border-radius: var(--radius-sm);
+    padding: 8px 11px;
+    width: 100%;
+}
+.submit-error.visible { display: flex; }
+.submit-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.context-warning-banner {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    background-color: var(--score-mid-soft);
+    border: 1px solid rgba(250, 204, 21, 0.3);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    margin-bottom: 16px;
+    font-size: 12.5px;
+    color: var(--text-primary);
+}
+.context-warning-banner.visible { display: flex; }
+.context-warning-banner svg { width: 15px; height: 15px; color: var(--score-mid); flex-shrink: 0; margin-top: 1px; }
+.context-warning-banner strong { font-weight: 600; }
+.context-warning-close {
+    margin-left: auto; background: none; border: none; color: var(--text-tertiary);
+    cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+}
+
+.evaluator-loading-overlay {
+    display: none; align-items: center; gap: 10px; background-color: var(--accent-soft);
+    border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 18px;
+    font-size: 13px; color: var(--accent);
+}
+.evaluator-loading-overlay.active { display: flex; }
+
+.evaluator-result-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.evaluator-result-actions .btn, .evaluator-result-actions .btn-ghost { margin-top: 0; }
+
+/* ---- sidebar sections ---- */
+.sidebar-section {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.sidebar-section-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 13px 16px; cursor: pointer; user-select: none;
+}
+
+.sidebar-section-title { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+.sidebar-section-title svg { width: 14px; height: 14px; color: var(--text-tertiary); flex-shrink: 0; }
+.sidebar-section-meta { font-size: 11px; color: var(--text-tertiary); font-weight: 400; }
+
+.sidebar-section-chevron { width: 13px; height: 13px; color: var(--text-tertiary); transition: transform 0.2s ease; flex-shrink: 0; }
+.sidebar-section.expanded .sidebar-section-chevron { transform: rotate(180deg); }
+
+.sidebar-section-body { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+.sidebar-section.expanded .sidebar-section-body { max-height: 2000px; }
+.sidebar-section-inner { padding: 2px 16px 16px; }
+
+.sidebar-section-hint {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    background-color: var(--bg-input);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    margin-bottom: 12px;
+}
+
+.open-editor-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; padding: 9px; font-size: 12px; font-weight: 500;
+    background-color: var(--bg-input); border: 1px dashed var(--border-hover);
+    color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+}
+.open-editor-btn:hover { border-color: var(--accent); color: var(--accent); background-color: var(--accent-soft); }
+.open-editor-btn svg { width: 13px; height: 13px; }
+
+.editor-preview {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    max-height: 60px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.autosave-input, .autosave-textarea {
+    width: 100%; background-color: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text-primary); font-family: inherit;
+    font-size: 12.5px; padding: 8px 10px; margin-top: 4px;
+}
+.autosave-textarea { min-height: 64px; resize: vertical; }
+.autosave-field-label { font-size: 11px; color: var(--text-tertiary); margin-top: 10px; display: block; }
+.autosave-field-label:first-child { margin-top: 0; }
+
+.autosave-status {
+    font-size: 10px; color: var(--score-high); display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 4px; opacity: 0; transition: opacity 0.2s ease;
+}
+.autosave-status.visible { opacity: 1; }
+
+/* ---- large editor modal (resume / linkedin) ---- */
+.editor-modal-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: min(920px, 94vw);
+    height: min(88vh, 900px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.editor-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+
+.editor-modal-title { font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.editor-modal-close { background: none; border: none; color: var(--text-tertiary); font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+.editor-modal-close:hover { color: var(--text-primary); background: var(--bg-input); }
+
+.editor-modal-body { flex: 1; min-height: 0; padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; }
+
+.mini-resume-toolbar { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; flex-shrink: 0; }
+.mini-resume-toolbar button {
+    background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary);
+    border-radius: 4px; width: 28px; height: 28px; cursor: pointer; font-size: 12px;
+}
+.mini-resume-toolbar button:hover { border-color: var(--border-hover); }
+.mini-resume-toolbar input[type="color"] { width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); cursor: pointer; }
+.mini-resume-toolbar .toolbar-sep { width: 1px; background: var(--border); margin: 0 2px; }
+
+.mini-resume-doc {
+    background: #ffffff; color: #111; border-radius: var(--radius); padding: 32px 40px;
+    flex: 1; overflow-y: auto; font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10.5pt;
+    outline: none; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+}
+.mini-resume-doc p { margin: 3px 0; line-height: 1.45; }
+.mini-resume-doc ul { margin: 3px 0 10px; padding-left: 22px; }
+.mini-resume-doc li { margin: 2px 0; line-height: 1.45; }
+
+.linkedin-modal-textarea {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 0;
+}
+
+.editor-modal-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+
+.resume-upload-row { display: flex; align-items: center; gap: 8px; }
+.resume-upload-row label {
+    margin: 0; font-size: 11.5px; color: var(--text-secondary); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px;
+    border: 1px dashed var(--border-hover); border-radius: var(--radius-sm);
+}
+.resume-upload-row label:hover { border-color: var(--accent); color: var(--accent); }
+.resume-upload-row input[type="file"] { display: none; }
+.resume-upload-status { font-size: 11px; color: var(--text-tertiary); }
+
+.reparse-link-btn {
+    background: none; border: 1px solid var(--border); color: var(--accent); font-size: 11.5px; font-weight: 500;
+    cursor: pointer; padding: 7px 12px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 5px;
+}
+.reparse-link-btn:hover { border-color: var(--accent); background-color: var(--accent-soft); }
+
+/* ---- blocker cards ---- */
+.blocker-card-list { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+.blocker-card {
+    display: flex; align-items: flex-start; gap: 9px;
+    background-color: var(--score-low-soft);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 9px 10px;
+}
+.blocker-card-icon { color: var(--score-low); flex-shrink: 0; margin-top: 1px; }
+.blocker-card-icon svg { width: 14px; height: 14px; }
+.blocker-card-text { flex: 1; font-size: 12px; color: var(--text-primary); line-height: 1.4; }
+.blocker-card-remove {
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+}
+.blocker-card-remove:hover { color: var(--score-low); }
+
+.quick-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.quick-chip {
+    font-size: 11.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px;
+    background-color: var(--bg-input); border: 1px solid var(--border-hover); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.12s ease;
+}
+.quick-chip:hover { border-color: var(--accent); color: var(--accent); }
+.quick-chip.used { opacity: 0.4; cursor: default; pointer-events: none; }
+
+.mini-add-row { display: flex; gap: 6px; margin-top: 10px; }
+.mini-add-row input[type="text"] { flex: 1; margin-top: 0; }
+.mini-add-row .btn { margin-top: 0; padding: 8px 13px; font-size: 12px; white-space: nowrap; }
+
+/* ---- factor cards + segmented pickers ---- */
+.factor-card-list { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+.factor-card {
+    display: flex; align-items: center; gap: 9px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+}
+.factor-card-sign {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+}
+.factor-card-sign.plus { background-color: var(--score-high-soft); color: var(--score-high); }
+.factor-card-sign.minus { background-color: var(--score-low-soft); color: var(--score-low); }
+.factor-card-text { flex: 1; font-size: 12px; color: var(--text-primary); }
+.factor-card-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; flex-shrink: 0; }
+.factor-card-remove:hover { color: var(--score-low); }
+
+.factor-add-panel { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.segmented-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.segmented-group { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.segmented-btn {
+    background-color: var(--bg-input); border: none; color: var(--text-secondary);
+    font-size: 12px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+    border-right: 1px solid var(--border); transition: background-color 0.12s ease, color 0.12s ease;
+}
+.segmented-btn:last-child { border-right: none; }
+.segmented-btn.active.plus { background-color: var(--score-high); color: white; }
+.segmented-btn.active.minus { background-color: var(--score-low); color: white; }
+.segmented-btn.active.weight { background-color: var(--accent); color: white; }
+.segmented-group-label { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+
+<div class="evaluator-header">
+    <h1>{{ t.page_title }}</h1>
+    <p class="evaluator-subtitle">{{ t.page_subtitle }}</p>
+</div>
+
+<div class="evaluator-loading-overlay" id="evaluator-loading-overlay">
+    <span class="loading-dot"></span>
+    <span id="evaluator-loading-text"></span>
+</div>
+
+<div class="context-warning-banner" id="context-warning-banner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    <span id="context-warning-text"></span>
+    <button type="button" class="context-warning-close" id="context-warning-close">&times;</button>
+</div>
+
+<div class="evaluator-layout" id="evaluator-layout">
+    <div>
+        <div class="evaluator-form-card">
+            <form id="evaluator-form">
+                <label for="job_posting_text" style="margin-top:0;">{{ t.job_posting_label }}</label>
+                <textarea name="job_posting_text" id="job_posting_text" class="job-posting-textarea" placeholder="{{ t.job_posting_placeholder }}"></textarea>
+                <p class="char-count" id="char-count">0 {{ t.char_count_suffix }}</p>
+
+                <div class="field-label-row" style="margin-top:6px;">
+                    <label for="source_url" style="margin:0;">{{ t.source_url_label }} <span class="optional-tag">({{ t.source_url_optional }})</span></label>
+                </div>
+                <div class="source-url-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    <input type="text" name="source_url" id="source_url" placeholder="{{ t.source_url_placeholder }}">
+                </div>
+
+                <button type="button" class="extra-info-toggle" id="extra-info-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    {{ t.extra_info_toggle }}
+                </button>
+                <div class="extra-info-block" id="extra-info-block">
+                    <label for="extra_info">{{ t.extra_info_label }}</label>
+                    <textarea name="extra_info" id="extra_info" placeholder="{{ t.extra_info_placeholder }}" style="min-height:90px;"></textarea>
+                </div>
+
+                <div class="evaluate-submit-row">
+                    <button type="submit" class="btn gradient-btn evaluate-submit-btn" id="evaluate-submit-btn">
+                        <span id="evaluate-btn-label">{{ t.evaluate_button }}</span>
+                    </button>
+                    <div class="progress-steps" id="progress-steps">
+                        <div class="progress-step" id="step-extract"><span class="progress-step-dot"></span><span>{{ t.step_extracting }}</span></div>
+                        <div class="progress-step-sep"></div>
+                        <div class="progress-step" id="step-evaluate"><span class="progress-step-dot"></span><span>{{ t.step_evaluating }}</span></div>
+                    </div>
+                    <div class="submit-error" id="submit-error">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>{{ t.error_no_resume }}</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="evaluator-result"></div>
+    </div>
+
+    <div>
+        <!-- RESUME -->
+        <div class="sidebar-section" data-section="resume">
+            <div class="sidebar-section-header" data-toggle="inline">
+                <span class="sidebar-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    {{ t.using_resume }}
+                    <span class="sidebar-section-meta">{% if active_resume %}— {{ active_resume.label }}{% else %}— {{ t.none_set }}{% endif %}</span>
+                </span>
+                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="sidebar-section-body">
+                <div class="sidebar-section-inner">
+                    {% if active_resume %}
+                    <div class="editor-preview">{{ active_resume.raw_text[:220] }}</div>
+                    {% else %}
+                    <p class="salary-line" style="margin-top:0;">{{ t.none_set }}</p>
+                    {% endif %}
+                    <button type="button" class="open-editor-btn" id="open-resume-modal-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+                        {{ t.open_resume_editor }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LINKEDIN -->
+        <div class="sidebar-section" data-section="linkedin">
+            <div class="sidebar-section-header" data-toggle="inline">
+                <span class="sidebar-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                    {{ t.linkedin }}
+                    <span class="sidebar-section-meta">{% if active_linkedin %}— {{ active_linkedin.label }}{% else %}— {{ t.none_set }}{% endif %}</span>
+                </span>
+                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="sidebar-section-body">
+                <div class="sidebar-section-inner">
+                    {% if active_linkedin %}
+                    <div class="editor-preview">{{ active_linkedin.raw_text[:220] }}</div>
+                    {% else %}
+                    <p class="salary-line" style="margin-top:0;">{{ t.none_set }}</p>
+                    {% endif %}
+                    <button type="button" class="open-editor-btn" id="open-linkedin-modal-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+                        {{ t.open_linkedin_editor }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE / LINKS -->
+        <div class="sidebar-section" data-section="profile">
+            <div class="sidebar-section-header">
+                <span class="sidebar-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                    Profile &amp; links
+                </span>
+                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="sidebar-section-body">
+                <div class="sidebar-section-inner" id="profile-fields">
+                    <label class="autosave-field-label">Full name</label>
+                    <input type="text" class="autosave-input" data-profile-field="full_name" value="{{ profile.full_name if profile else '' }}">
+                    <label class="autosave-field-label">Email</label>
+                    <input type="text" class="autosave-input" data-profile-field="email" value="{{ profile.email if profile else '' }}">
+                    <label class="autosave-field-label">GitHub</label>
+                    <input type="text" class="autosave-input" data-profile-field="github_url" value="{{ profile.github_url if profile else '' }}">
+                    <label class="autosave-field-label">LinkedIn URL</label>
+                    <input type="text" class="autosave-input" data-profile-field="linkedin_url" value="{{ profile.linkedin_url if profile else '' }}">
+                    <label class="autosave-field-label">Additional links (one per line)</label>
+                    <textarea class="autosave-textarea" data-profile-field="extra_links_text">{% if profile and profile.extra_links %}{{ profile.extra_links | join('\n') }}{% endif %}</textarea>
+                    <label class="autosave-field-label">Additional info</label>
+                    <textarea class="autosave-textarea" data-profile-field="extra_info">{{ profile.extra_info if profile else '' }}</textarea>
+                    <div class="autosave-status" id="profile-save-status">✓ Saved</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLOCKERS -->
+        <div class="sidebar-section" data-section="blockers">
+            <div class="sidebar-section-header">
+                <span class="sidebar-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                    {{ t.active_blockers }}
+                    <span class="sidebar-section-meta">({{ blockers | length }})</span>
+                </span>
+                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="sidebar-section-body">
+                <div class="sidebar-section-inner">
+                    <p class="sidebar-section-hint">{{ t.blockers_hint }}</p>
+                    <div class="quick-chip-row">
+                        <button type="button" class="quick-chip" id="remote-only-chip">{{ t.remote_only_chip }}</button>
+                    </div>
+                    <div class="blocker-card-list" id="blocker-list">
+                        {% for blocker in blockers %}
+                        <div class="blocker-card" data-blocker-id="{{ blocker.id }}">
+                            <span class="blocker-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></span>
+                            <span class="blocker-card-text">{{ blocker.text }}</span>
+                            <button type="button" class="blocker-card-remove blocker-remove-btn" data-blocker-id="{{ blocker.id }}">&times;</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mini-add-row">
+                        <input type="text" id="new-blocker-input" placeholder="e.g. requires a university degree">
+                        <button type="button" class="btn" id="add-blocker-btn">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCORING FACTORS -->
+        <div class="sidebar-section" data-section="factors">
+            <div class="sidebar-section-header">
+                <span class="sidebar-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line></svg>
+                    {{ t.scoring_factors }}
+                    <span class="sidebar-section-meta">({{ scoring_factors | length }})</span>
+                </span>
+                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="sidebar-section-body">
+                <div class="sidebar-section-inner">
+                    <p class="sidebar-section-hint">{{ t.factors_hint }}</p>
+                    <div class="factor-card-list" id="factor-list">
+                        {% for factor in scoring_factors %}
+                        <div class="factor-card" data-factor-id="{{ factor.id }}">
+                            <span class="factor-card-sign {{ 'plus' if factor.direction == 'plus' else 'minus' }}">
+                                {% if factor.direction == 'plus' %}{{ '+' * factor.weight }}{% else %}{{ '-' * factor.weight }}{% endif %}
+                            </span>
+                            <span class="factor-card-text">{{ factor.text }}</span>
+                            <button type="button" class="factor-card-remove factor-remove-btn" data-factor-id="{{ factor.id }}">&times;</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="factor-add-panel">
+                        <input type="text" id="new-factor-input" class="autosave-input" style="margin-top:0;" placeholder="e.g. salary above $120k">
+                        <div class="segmented-row">
+                            <span class="segmented-group-label">Direction</span>
+                            <div class="segmented-group" id="factor-direction-group">
+                                <button type="button" class="segmented-btn plus active" data-direction="plus">+</button>
+                                <button type="button" class="segmented-btn minus" data-direction="minus">−</button>
+                            </div>
+                            <span class="segmented-group-label">Weight</span>
+                            <div class="segmented-group" id="factor-weight-group">
+                                <button type="button" class="segmented-btn weight active" data-weight="1">1</button>
+                                <button type="button" class="segmented-btn weight" data-weight="2">2</button>
+                                <button type="button" class="segmented-btn weight" data-weight="3">3</button>
+                            </div>
+                            <button type="button" class="btn" id="add-factor-btn" style="margin-top:0;padding:6px 14px;font-size:12px;">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RESUME EDITOR MODAL -->
+<div class="modal-overlay-centered" id="resume-modal-overlay" style="display:none;">
+    <div class="editor-modal-box">
+        <div class="editor-modal-header">
+            <span class="editor-modal-title">📄 {{ t.using_resume }}</span>
+            <button type="button" class="editor-modal-close" id="resume-modal-close">&times;</button>
+        </div>
+        <div class="editor-modal-body">
+            {% if active_resume %}
+            <div class="mini-resume-toolbar" id="resume-toolbar">
+                <button type="button" id="r-bold-btn"><b>B</b></button>
+                <button type="button" id="r-italic-btn"><i>I</i></button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="r-align-btn">⬅</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="r-color-black" title="Black"><span style="background:#000;width:14px;height:14px;display:inline-block;border-radius:3px;"></span></button>
+                <button type="button" id="r-color-gray" title="Gray"><span style="background:#595959;width:14px;height:14px;display:inline-block;border-radius:3px;"></span></button>
+                <input type="color" id="r-color-picker" title="Custom">
+                <div class="autosave-status" id="resume-save-status" style="margin-left:auto;align-self:center;">✓ Saved</div>
+            </div>
+            <div class="mini-resume-doc" id="resume-doc" contenteditable="true" data-resume-id="{{ active_resume.id }}">{{ active_resume.content_html | safe }}</div>
+            {% else %}
+            <p class="salary-line" style="margin-top:0;">{{ t.none_set }}</p>
+            {% endif %}
+        </div>
+        <div class="editor-modal-footer">
+            <div class="resume-upload-row">
+                <label for="resume-upload-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Upload new file
+                </label>
+                <input type="file" id="resume-upload-input" accept=".pdf,.docx,.txt">
+                <span class="resume-upload-status" id="resume-upload-status"></span>
+            </div>
+            <button type="button" class="btn-ghost btn" style="margin-top:0;" id="resume-modal-done-btn">{{ t.close_editor }}</button>
+        </div>
+    </div>
+</div>
+
+<!-- LINKEDIN EDITOR MODAL -->
+<div class="modal-overlay-centered" id="linkedin-modal-overlay" style="display:none;">
+    <div class="editor-modal-box">
+        <div class="editor-modal-header">
+            <span class="editor-modal-title">💼 {{ t.linkedin }}</span>
+            <button type="button" class="editor-modal-close" id="linkedin-modal-close">&times;</button>
+        </div>
+        <div class="editor-modal-body">
+            <textarea class="autosave-textarea linkedin-modal-textarea" id="linkedin-textarea" data-resume-id="{{ active_linkedin.id if active_linkedin else '' }}" placeholder="Paste your LinkedIn experience export here...">{{ active_linkedin.raw_text if active_linkedin else '' }}</textarea>
+        </div>
+        <div class="editor-modal-footer">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" class="reparse-link-btn" id="linkedin-reparse-btn">✨ Re-structure with AI</button>
+                <span class="autosave-status" id="linkedin-reparse-status">Done</span>
+                <span class="autosave-status" id="linkedin-save-status">✓ Saved</span>
+            </div>
+            <button type="button" class="btn-ghost btn" style="margin-top:0;" id="linkedin-modal-done-btn">{{ t.close_editor }}</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const I18N = {{ t | tojson }};
+const HAS_RESUME = {{ (active_resume is not none) | tojson }};
 
-bindAjaxForm("evaluator-form", (data) => {
-    document.getElementById("page-title").innerHTML = `${I18N.page_title} <span class="loading-dot"></span>`;
-    document.getElementById("evaluator-result").innerHTML = "";
-    document.getElementById("evaluator-form").reset();
+document.querySelectorAll('.sidebar-section-header[data-toggle="inline"]').forEach((header) => {
+    header.addEventListener("click", () => header.closest(".sidebar-section").classList.toggle("expanded"));
+});
+document.querySelectorAll('.sidebar-section-header:not([data-toggle="inline"])').forEach((header) => {
+    header.addEventListener("click", () => header.closest(".sidebar-section").classList.toggle("expanded"));
+});
+
+function flashSaved(el) {
+    el.classList.add("visible");
+    clearTimeout(el._hideTimeout);
+    el._hideTimeout = setTimeout(() => el.classList.remove("visible"), 1600);
+}
+
+function openModal(id) { document.getElementById(id).style.display = "flex"; }
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+document.getElementById("open-resume-modal-btn").addEventListener("click", () => openModal("resume-modal-overlay"));
+document.getElementById("resume-modal-close").addEventListener("click", () => closeModal("resume-modal-overlay"));
+document.getElementById("resume-modal-done-btn").addEventListener("click", () => closeModal("resume-modal-overlay"));
+
+document.getElementById("open-linkedin-modal-btn").addEventListener("click", () => openModal("linkedin-modal-overlay"));
+document.getElementById("linkedin-modal-close").addEventListener("click", () => closeModal("linkedin-modal-overlay"));
+document.getElementById("linkedin-modal-done-btn").addEventListener("click", () => closeModal("linkedin-modal-overlay"));
+
+["resume-modal-overlay", "linkedin-modal-overlay"].forEach((id) => {
+    document.getElementById(id).addEventListener("click", (e) => {
+        if (e.target.id === id) closeModal(id);
+    });
+});
+
+// ---- job posting textarea / extra info toggle ----
+const textarea = document.getElementById("job_posting_text");
+const charCount = document.getElementById("char-count");
+textarea.addEventListener("input", () => {
+    charCount.textContent = `${textarea.value.length} ${I18N.char_count_suffix}`;
+});
+
+const extraInfoToggle = document.getElementById("extra-info-toggle");
+const extraInfoBlock = document.getElementById("extra-info-block");
+extraInfoToggle.addEventListener("click", () => {
+    const expanded = extraInfoBlock.classList.toggle("expanded");
+    extraInfoToggle.classList.toggle("expanded", expanded);
+});
+
+// ---- context warning banner ----
+function checkContextWarnings() {
+    const missing = [];
+    if (document.querySelectorAll("#blocker-list .blocker-card").length === 0) missing.push(I18N.warning_no_blockers);
+    if (document.querySelectorAll("#factor-list .factor-card").length === 0) missing.push(I18N.warning_no_factors);
+
+    const hasLinks = [...document.querySelectorAll('#profile-fields [data-profile-field="github_url"], #profile-fields [data-profile-field="linkedin_url"], #profile-fields [data-profile-field="extra_links_text"]')]
+        .some((el) => el.value.trim().length > 0);
+    if (!hasLinks) missing.push(I18N.warning_no_links);
+
+    const banner = document.getElementById("context-warning-banner");
+    if (missing.length > 0 && !banner.dataset.dismissed) {
+        document.getElementById("context-warning-text").innerHTML = `<strong>${I18N.warning_missing_context_prefix}</strong> ${missing.join(", ")}.`;
+        banner.classList.add("visible");
+    } else {
+        banner.classList.remove("visible");
+    }
+}
+document.getElementById("context-warning-close").addEventListener("click", () => {
+    const banner = document.getElementById("context-warning-banner");
+    banner.dataset.dismissed = "1";
+    banner.classList.remove("visible");
+});
+
+// ---- submit flow ----
+const form = document.getElementById("evaluator-form");
+const submitBtn = document.getElementById("evaluate-submit-btn");
+const btnLabel = document.getElementById("evaluate-btn-label");
+const progressSteps = document.getElementById("progress-steps");
+const stepExtract = document.getElementById("step-extract");
+const stepEvaluate = document.getElementById("step-evaluate");
+const loadingOverlay = document.getElementById("evaluator-loading-overlay");
+const loadingText = document.getElementById("evaluator-loading-text");
+const resultContainer = document.getElementById("evaluator-result");
+const submitError = document.getElementById("submit-error");
+
+function setSubmitting(value) {
+    submitBtn.disabled = value;
+    progressSteps.classList.toggle("active", value);
+    btnLabel.textContent = value ? I18N.evaluating_button : I18N.evaluate_button;
+    loadingOverlay.classList.toggle("active", value);
+    if (value) {
+        stepExtract.classList.add("active");
+        stepExtract.classList.remove("done");
+        stepEvaluate.classList.remove("active", "done");
+        loadingText.textContent = I18N.step_extracting;
+    }
+}
+
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (submitBtn.disabled) return;
+
+    if (!HAS_RESUME) {
+        submitError.classList.add("visible");
+        return;
+    }
+    submitError.classList.remove("visible");
+
+    setSubmitting(true);
+    resultContainer.innerHTML = "";
+
+    const formData = new FormData(form);
+    const response = await fetch("/evaluator", { method: "POST", body: formData });
+
+    if (!response.ok) {
+        setSubmitting(false);
+        showToast("Error", "danger");
+        return;
+    }
+
+    const data = await response.json();
+    const jobId = data.job_id;
 
     pollTaskStatus([data.task_id], (tasks) => {
         const task = tasks[0];
         if (task.status === "done") {
-            document.getElementById("page-title").textContent = I18N.page_title;
-            showToast(I18N.job_added_toast, "success");
+            stepExtract.classList.remove("active");
+            stepExtract.classList.add("done");
+            stepEvaluate.classList.add("active");
+            loadingText.textContent = I18N.step_evaluating;
+            pollEvaluationResult(jobId);
         } else if (task.status === "failed") {
-            document.getElementById("page-title").textContent = I18N.page_title;
-            document.getElementById("evaluator-result").innerHTML =
-                `<div class="result-card">${I18N.evaluation_failed} ${task.error}</div>`;
+            setSubmitting(false);
+            resultContainer.innerHTML = `<div class="result-card">${I18N.evaluation_failed} ${task.error}</div>`;
         }
     });
 });
 
-function renderResult(result) {
+function pollEvaluationResult(jobId) {
+    const poll = async () => {
+        const response = await fetch(`/jobs/${jobId}/evaluation`);
+        if (!response.ok) return;
+        const resultData = await response.json();
+
+        if (resultData.ready) {
+            setSubmitting(false);
+            stepEvaluate.classList.remove("active");
+            stepEvaluate.classList.add("done");
+            renderResult(resultData, jobId);
+            form.reset();
+            charCount.textContent = `0 ${I18N.char_count_suffix}`;
+            extraInfoBlock.classList.remove("expanded");
+            extraInfoToggle.classList.remove("expanded");
+            showToast(I18N.job_added_toast, "success");
+        } else {
+            setTimeout(poll, 1500);
+        }
+    };
+    poll();
+}
+
+function renderResult(result, jobId) {
     const scoreClass = result.score >= 7 ? "score-high" : result.score >= 4 ? "score-mid" : "score-low";
 
     let matchedFactorsHtml = "";
@@ -86,7 +778,7 @@ function renderResult(result) {
     const prosHtml = (result.pros || []).map((pro) => `<li>${pro}</li>`).join("");
     const consHtml = (result.cons || []).map((con) => `<li>${con}</li>`).join("");
 
-    document.getElementById("evaluator-result").innerHTML = `
+    resultContainer.innerHTML = `
         <div class="result-card">
             <div class="result-header">
                 <div class="result-title">
@@ -95,31 +787,299 @@ function renderResult(result) {
                 </div>
                 <div class="score-badge ${scoreClass}">${result.score}</div>
             </div>
-
             <div class="badge-row">
                 ${result.location ? `<span class="badge">${result.location}</span>` : ""}
                 ${result.work_mode ? `<span class="badge badge-work-mode">${result.work_mode}</span>` : ""}
                 ${result.salary.is_estimate ? '<span class="badge badge-estimate">Estimated salary</span>' : ""}
             </div>
-
             <p class="salary-line">${result.salary.original_text || ""}</p>
-
             ${matchedFactorsHtml}
-
             <div class="pros-cons-grid">
-                <div>
-                    <h3>${I18N.pros}</h3>
-                    <ul class="pros">${prosHtml}</ul>
-                </div>
-                <div>
-                    <h3>${I18N.cons}</h3>
-                    <ul class="cons">${consHtml}</ul>
-                </div>
+                <div><h3>${I18N.pros}</h3><ul class="pros">${prosHtml}</ul></div>
+                <div><h3>${I18N.cons}</h3><ul class="cons">${consHtml}</ul></div>
             </div>
-
             <p class="summary-text">${result.summary || ""}</p>
+            <div class="evaluator-result-actions">
+                <a href="/jobs/${jobId}" class="btn" style="text-decoration:none;">${I18N.view_dashboard_button}</a>
+                <a href="/tailor?job_id=${jobId}" class="btn-ghost btn" style="text-decoration:none;">${I18N.prepare_resume_button}</a>
+            </div>
         </div>
     `;
+    resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// ---- resume contenteditable autosave + mini toolbar ----
+const resumeDoc = document.getElementById("resume-doc");
+if (resumeDoc) {
+    const resumeSaveStatus = document.getElementById("resume-save-status");
+    const resumeId = resumeDoc.dataset.resumeId;
+    let resumeSaveTimeout = null;
+
+    function saveResumeHtml() {
+        const formData = new FormData();
+        formData.append("html_content", resumeDoc.innerHTML);
+        fetch(`/settings/resume/${resumeId}/edit-html`, { method: "POST", body: formData }).then(() => flashSaved(resumeSaveStatus));
+    }
+
+    resumeDoc.addEventListener("input", () => {
+        clearTimeout(resumeSaveTimeout);
+        resumeSaveTimeout = setTimeout(saveResumeHtml, 800);
+    });
+    resumeDoc.addEventListener("blur", () => { clearTimeout(resumeSaveTimeout); saveResumeHtml(); });
+
+    let savedRange = null;
+    function restoreSelection() {
+        if (!savedRange) return;
+        resumeDoc.focus({ preventScroll: true });
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+    }
+    document.addEventListener("selectionchange", () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        const range = selection.getRangeAt(0);
+        if (!resumeDoc.contains(range.commonAncestorContainer)) return;
+        savedRange = range;
+    });
+
+    document.getElementById("r-bold-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("bold"); saveResumeHtml(); });
+    document.getElementById("r-italic-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("italic"); saveResumeHtml(); });
+
+    let alignState = "left";
+    const alignIcons = { left: "⬅", center: "↔", right: "➡" };
+    document.getElementById("r-align-btn").addEventListener("click", () => {
+        restoreSelection();
+        const states = ["left", "center", "right"];
+        alignState = states[(states.indexOf(alignState) + 1) % states.length];
+        if (alignState === "left") document.execCommand("justifyLeft");
+        else if (alignState === "center") document.execCommand("justifyCenter");
+        else document.execCommand("justifyRight");
+        document.getElementById("r-align-btn").textContent = alignIcons[alignState];
+        saveResumeHtml();
+    });
+
+    function applyForeColor(color) {
+        restoreSelection();
+        document.execCommand("foreColor", false, color);
+        document.getElementById("r-color-picker").value = color;
+        saveResumeHtml();
+    }
+    document.getElementById("r-color-black").addEventListener("click", () => applyForeColor("#000000"));
+    document.getElementById("r-color-gray").addEventListener("click", () => applyForeColor("#595959"));
+    document.getElementById("r-color-picker").addEventListener("input", (e) => applyForeColor(e.target.value));
+
+    document.querySelectorAll("#resume-toolbar button").forEach((btn) => btn.addEventListener("mousedown", (e) => e.preventDefault()));
+}
+
+const resumeUploadInput = document.getElementById("resume-upload-input");
+const resumeUploadStatus = document.getElementById("resume-upload-status");
+resumeUploadInput.addEventListener("change", async () => {
+    if (!resumeUploadInput.files.length) return;
+    resumeUploadStatus.textContent = "Uploading...";
+
+    const formData = new FormData();
+    formData.append("resume_file", resumeUploadInput.files[0]);
+    const response = await fetch("/settings/resume", { method: "POST", body: formData });
+    if (!response.ok) { resumeUploadStatus.textContent = "Failed"; return; }
+    const data = await response.json();
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") { resumeUploadStatus.textContent = ""; window.location.reload(); }
+        else if (task.status === "failed") { resumeUploadStatus.textContent = "Failed: " + task.error; }
+    });
+});
+
+// ---- linkedin raw text autosave ----
+const linkedinTextarea = document.getElementById("linkedin-textarea");
+const linkedinSaveStatus = document.getElementById("linkedin-save-status");
+let linkedinSaveTimeout = null;
+
+function saveLinkedinText() {
+    const resumeId = linkedinTextarea.dataset.resumeId;
+    const text = linkedinTextarea.value;
+
+    if (!resumeId) {
+        const formData = new FormData();
+        formData.append("linkedin_text", text);
+        fetch("/settings/linkedin", { method: "POST", body: formData }).then(async (response) => {
+            if (!response.ok) return;
+            const data = await response.json();
+            pollTaskStatus([data.task_id], (tasks) => {
+                const task = tasks[0];
+                if (task.status === "done" && task.result && task.result.resume_version_id) {
+                    linkedinTextarea.dataset.resumeId = task.result.resume_version_id;
+                    flashSaved(linkedinSaveStatus);
+                }
+            });
+        });
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("raw_text", text);
+    fetch(`/settings/linkedin/${resumeId}/edit-text`, { method: "POST", body: formData }).then(() => flashSaved(linkedinSaveStatus));
+}
+
+linkedinTextarea.addEventListener("input", () => {
+    clearTimeout(linkedinSaveTimeout);
+    linkedinSaveTimeout = setTimeout(saveLinkedinText, 900);
+    checkContextWarnings();
+});
+linkedinTextarea.addEventListener("blur", () => { clearTimeout(linkedinSaveTimeout); saveLinkedinText(); });
+
+document.getElementById("linkedin-reparse-btn").addEventListener("click", async () => {
+    const statusEl = document.getElementById("linkedin-reparse-status");
+    statusEl.textContent = "Re-parsing...";
+    statusEl.classList.add("visible");
+
+    const formData = new FormData();
+    formData.append("linkedin_text", linkedinTextarea.value);
+    const response = await fetch("/settings/linkedin", { method: "POST", body: formData });
+    if (!response.ok) { statusEl.textContent = "Failed"; return; }
+    const data = await response.json();
+    pollTaskStatus([data.task_id], (tasks) => {
+        const task = tasks[0];
+        if (task.status === "done") {
+            statusEl.textContent = "Done";
+            if (task.result && task.result.resume_version_id) linkedinTextarea.dataset.resumeId = task.result.resume_version_id;
+            setTimeout(() => statusEl.classList.remove("visible"), 1500);
+        } else if (task.status === "failed") {
+            statusEl.textContent = "Failed: " + task.error;
+        }
+    });
+});
+
+// ---- profile fields autosave ----
+const profileSaveStatus = document.getElementById("profile-save-status");
+let profileSaveTimeout = null;
+
+function saveProfile() {
+    const formData = new FormData();
+    document.querySelectorAll("#profile-fields [data-profile-field]").forEach((el) => formData.append(el.dataset.profileField, el.value));
+    fetch("/settings/profile", { method: "POST", body: formData }).then(() => flashSaved(profileSaveStatus));
+}
+
+document.querySelectorAll("#profile-fields [data-profile-field]").forEach((el) => {
+    el.addEventListener("input", () => {
+        clearTimeout(profileSaveTimeout);
+        profileSaveTimeout = setTimeout(saveProfile, 800);
+        checkContextWarnings();
+    });
+    el.addEventListener("blur", () => { clearTimeout(profileSaveTimeout); saveProfile(); });
+});
+
+// ---- blockers ----
+function addBlockerCard(id, text) {
+    const list = document.getElementById("blocker-list");
+    const card = document.createElement("div");
+    card.className = "blocker-card";
+    card.dataset.blockerId = id;
+    card.innerHTML = `<span class="blocker-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></span><span class="blocker-card-text">${text.replace(/</g, "&lt;")}</span><button type="button" class="blocker-card-remove blocker-remove-btn" data-blocker-id="${id}">&times;</button>`;
+    list.appendChild(card);
+    checkContextWarnings();
+}
+
+document.getElementById("add-blocker-btn").addEventListener("click", async () => {
+    const input = document.getElementById("new-blocker-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const formData = new FormData();
+    formData.append("text", text);
+    const response = await fetch("/settings/blockers", { method: "POST", body: formData });
+    if (!response.ok) return;
+    const data = await response.json();
+    addBlockerCard(data.id, data.text);
+    input.value = "";
+});
+
+document.getElementById("new-blocker-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("add-blocker-btn").click(); }
+});
+
+document.getElementById("blocker-list").addEventListener("click", async (e) => {
+    if (!e.target.classList.contains("blocker-remove-btn")) return;
+    const id = e.target.dataset.blockerId;
+    await fetch(`/settings/blockers/${id}/delete`, { method: "POST" });
+    e.target.closest(".blocker-card").remove();
+    checkContextWarnings();
+});
+
+document.getElementById("remote-only-chip").addEventListener("click", async (e) => {
+    const chip = e.currentTarget;
+    const text = I18N.remote_only_blocker_text;
+    const alreadyExists = [...document.querySelectorAll("#blocker-list .blocker-card-text")].some((el) => el.textContent === text);
+    if (alreadyExists) { chip.classList.add("used"); return; }
+
+    const formData = new FormData();
+    formData.append("text", text);
+    const response = await fetch("/settings/blockers", { method: "POST", body: formData });
+    if (!response.ok) return;
+    const data = await response.json();
+    addBlockerCard(data.id, data.text);
+    chip.classList.add("used");
+});
+
+// ---- scoring factors ----
+let selectedDirection = "plus";
+let selectedWeight = "1";
+
+document.querySelectorAll("#factor-direction-group .segmented-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll("#factor-direction-group .segmented-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedDirection = btn.dataset.direction;
+    });
+});
+document.querySelectorAll("#factor-weight-group .segmented-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll("#factor-weight-group .segmented-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedWeight = btn.dataset.weight;
+    });
+});
+
+function addFactorCard(data) {
+    const list = document.getElementById("factor-list");
+    const card = document.createElement("div");
+    card.className = "factor-card";
+    card.dataset.factorId = data.id;
+    const signClass = data.direction === "plus" ? "plus" : "minus";
+    const signChar = data.direction === "plus" ? "+" : "−";
+    card.innerHTML = `<span class="factor-card-sign ${signClass}">${signChar.repeat(data.weight)}</span><span class="factor-card-text">${data.text.replace(/</g, "&lt;")}</span><button type="button" class="factor-card-remove factor-remove-btn" data-factor-id="${data.id}">&times;</button>`;
+    list.appendChild(card);
+    checkContextWarnings();
+}
+
+document.getElementById("add-factor-btn").addEventListener("click", async () => {
+    const input = document.getElementById("new-factor-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const formData = new FormData();
+    formData.append("text", text);
+    formData.append("direction", selectedDirection);
+    formData.append("weight", selectedWeight);
+    const response = await fetch("/settings/scoring-factors", { method: "POST", body: formData });
+    if (!response.ok) return;
+    const data = await response.json();
+    addFactorCard(data);
+    input.value = "";
+});
+
+document.getElementById("new-factor-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("add-factor-btn").click(); }
+});
+
+document.getElementById("factor-list").addEventListener("click", async (e) => {
+    if (!e.target.classList.contains("factor-remove-btn")) return;
+    const id = e.target.dataset.factorId;
+    await fetch(`/settings/scoring-factors/${id}/delete`, { method: "POST" });
+    e.target.closest(".factor-card").remove();
+    checkContextWarnings();
+});
+
+checkContextWarnings();
 </script>
 {% endblock %}

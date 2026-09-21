@@ -7,22 +7,55 @@
 main { max-width: 100%; width: 100%; padding: 16px 20px 8px; }
 html, body { height: 100%; overflow: hidden; }
 
-.tracker-board {
+.tracker-header {
     display: flex;
-    gap: 16px;
-    height: calc(100vh - 52px - 24px - 48px);
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.sort-date-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.sort-date-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.sort-date-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.tracker-board {
+    display: grid;
+    grid-template-columns: repeat({{ statuses | length }}, minmax(210px, 1fr));
+    gap: 14px;
+    height: calc(100vh - 52px - 24px - 64px);
     overflow-x: auto;
     padding-bottom: 8px;
 }
 
 .tracker-column {
-    flex: 0 0 300px;
     display: flex;
     flex-direction: column;
     background-color: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     min-height: 0;
+    min-width: 0;
 }
 
 .tracker-column-header {
@@ -72,7 +105,6 @@ html, body { height: 100%; overflow: hidden; }
     padding: 12px 14px;
     cursor: grab;
     transition: border-color 0.12s ease, transform 0.12s ease;
-    position: relative;
 }
 
 .tracker-card:hover {
@@ -91,16 +123,33 @@ html, body { height: 100%; overflow: hidden; }
     gap: 8px;
 }
 
+.tracker-card-heading {
+    min-width: 0;
+}
+
 .tracker-card-company {
     font-size: 13.5px;
     font-weight: 600;
     color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tracker-card-role {
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tracker-card-top-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .tracker-card-score {
@@ -116,19 +165,17 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 .tracker-card-remove {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     background: transparent;
     border: none;
     color: var(--text-tertiary);
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
-    padding: 2px 5px;
+    padding: 2px 4px;
     border-radius: 4px;
     opacity: 0;
-    transition: opacity 0.12s ease;
+    transition: opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+    flex-shrink: 0;
 }
 
 .tracker-card:hover .tracker-card-remove {
@@ -152,6 +199,12 @@ html, body { height: 100%; overflow: hidden; }
     padding: 2px 7px;
 }
 
+.tracker-card-created {
+    margin-top: 8px;
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+}
+
 .tracker-card-interview {
     margin-top: 8px;
     font-size: 11.5px;
@@ -164,12 +217,19 @@ html, body { height: 100%; overflow: hidden; }
 
 .tracker-card-interview-empty {
     margin-top: 8px;
-    font-size: 11px;
-    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px dashed var(--accent);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
     cursor: pointer;
+    transition: background-color 0.12s ease;
 }
 .tracker-card-interview-empty:hover {
-    color: var(--text-secondary);
+    background-color: rgba(91, 141, 239, 0.22);
 }
 
 .interview-editor {
@@ -184,15 +244,27 @@ html, body { height: 100%; overflow: hidden; }
 .interview-editor input[type="datetime-local"] {
     font-size: 11.5px;
     padding: 6px 8px;
-}
-.interview-editor .btn {
-    padding: 5px 10px;
-    font-size: 11px;
-    margin-top: 0;
+    color-scheme: dark;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
 }
 </style>
 
-<h1>{{ t.page_title }}</h1>
+<div class="tracker-header">
+    <h1 style="margin:0;">{{ t.page_title }}</h1>
+    <button type="button" class="sort-date-btn" id="sort-date-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="14" y2="6"></line>
+            <line x1="4" y1="12" x2="11" y2="12"></line>
+            <line x1="4" y1="18" x2="8" y2="18"></line>
+            <polyline points="17 14 20 18 23 14"></polyline>
+            <line x1="20" y1="6" x2="20" y2="18"></line>
+        </svg>
+        {{ t.sort_by_date_button }}
+    </button>
+</div>
 
 <div class="tracker-board" id="tracker-board">
     {% for status in statuses %}
@@ -203,41 +275,50 @@ html, body { height: 100%; overflow: hidden; }
         </div>
         <div class="tracker-column-body" data-status="{{ status }}">
             {% for card in columns[status] %}
-            <div class="tracker-card" draggable="true" data-application-id="{{ card.application_id }}" data-job-id="{{ card.job_id }}">
-                <button type="button" class="tracker-card-remove" data-application-id="{{ card.application_id }}">&times;</button>
+            <div class="tracker-card" draggable="true" data-application-id="{{ card.application_id }}" data-job-id="{{ card.job_id }}" data-created-at="{{ card.created_at or '' }}" data-interview-at="{{ card.interview_at or '' }}">
                 <div class="tracker-card-top">
-                    <div>
+                    <div class="tracker-card-heading">
                         <div class="tracker-card-company">{{ card.company or t.unknown_company }}</div>
                         <div class="tracker-card-role">{{ card.role or t.unknown_role }}</div>
                     </div>
-                    {% if card.score is not none %}
-                    <div class="tracker-card-score {% if card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">{{ card.score }}</div>
-                    {% endif %}
+                    <div class="tracker-card-top-right">
+                        {% if card.score is not none %}
+                        <div class="tracker-card-score {% if card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">{{ card.score }}</div>
+                        {% endif %}
+                        <button type="button" class="tracker-card-remove" data-application-id="{{ card.application_id }}">&times;</button>
+                    </div>
                 </div>
                 <div class="tracker-card-badges">
                     {% if card.location %}<span class="badge">{{ card.location }}</span>{% endif %}
                     {% if card.work_mode %}<span class="badge badge-work-mode">{{ card.work_mode }}</span>{% endif %}
                     {% if card.source_platform %}<span class="badge">{{ card.source_platform }}</span>{% endif %}
                 </div>
-                {% if card.interview_at %}
-                <div class="tracker-card-interview interview-trigger" data-application-id="{{ card.application_id }}">📅 <span class="interview-display"></span></div>
-                {% else %}
-                <div class="tracker-card-interview-empty interview-trigger" data-application-id="{{ card.application_id }}">+ {{ t.set_interview }}</div>
-                {% endif %}
-                <div class="interview-editor" data-application-id="{{ card.application_id }}">
-                    <input type="datetime-local" class="interview-input">
-                    <button type="button" class="btn save-interview-btn">{{ t.btn_save }}</button>
+
+                <div class="tracker-card-created">🕐 {{ t.added_label }} <span class="created-date-display"></span></div>
+
+                <div class="tracker-card-interview-slot">
+                    {% if status in ("interviewing", "offer") %}
+                    {% if card.interview_at %}
+                    <div class="tracker-card-interview interview-trigger" data-application-id="{{ card.application_id }}">📅 <span class="interview-display"></span></div>
+                    {% else %}
+                    <div class="tracker-card-interview-empty interview-trigger" data-application-id="{{ card.application_id }}">+ {{ t.set_interview }}</div>
+                    {% endif %}
+                    <div class="interview-editor" data-application-id="{{ card.application_id }}">
+                        <input type="datetime-local" class="interview-input">
+                    </div>
+                    {% endif %}
                 </div>
+
                 <script>
                 (function(){
-                    var raw = {{ card.interview_at | tojson }};
-                    if (raw) {
-                        var el = document.currentScript.previousElementSibling.previousElementSibling.querySelector(".interview-display");
-                        if (el) {
-                            var d = new Date(raw);
-                            el.textContent = d.toLocaleString();
-                        }
-                    }
+                    var card = document.currentScript.closest(".tracker-card");
+                    var createdRaw = {{ card.created_at | tojson }};
+                    var createdEl = card.querySelector(".created-date-display");
+                    if (createdRaw && createdEl) createdEl.textContent = new Date(createdRaw).toLocaleDateString();
+
+                    var interviewRaw = {{ card.interview_at | tojson }};
+                    var interviewEl = card.querySelector(".interview-display");
+                    if (interviewRaw && interviewEl) interviewEl.textContent = new Date(interviewRaw).toLocaleString();
                 })();
                 </script>
             </div>
@@ -250,13 +331,47 @@ html, body { height: 100%; overflow: hidden; }
 <script>
 const I18N = {{ t | tojson }};
 const board = document.getElementById("tracker-board");
+const INTERVIEW_STATUSES = ["interviewing", "offer"];
 
 let draggedCard = null;
+let dragOriginStatus = null;
+
+function getDragAfterElement(container, y) {
+    const elements = [...container.querySelectorAll(".tracker-card:not(.dragging)")];
+    return elements.reduce(
+        (closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset, element: child };
+            }
+            return closest;
+        },
+        { offset: Number.NEGATIVE_INFINITY, element: null }
+    ).element;
+}
+
+function interviewBlockHtml(applicationId, interviewAt) {
+    const displayHtml = interviewAt
+        ? `<div class="tracker-card-interview interview-trigger" data-application-id="${applicationId}">📅 <span class="interview-display">${new Date(interviewAt).toLocaleString()}</span></div>`
+        : `<div class="tracker-card-interview-empty interview-trigger" data-application-id="${applicationId}">+ ${I18N.set_interview}</div>`;
+    return `${displayHtml}<div class="interview-editor" data-application-id="${applicationId}"><input type="datetime-local" class="interview-input"></div>`;
+}
+
+function renderInterviewSlot(card, newStatus) {
+    const slot = card.querySelector(".tracker-card-interview-slot");
+    if (INTERVIEW_STATUSES.includes(newStatus)) {
+        slot.innerHTML = interviewBlockHtml(card.dataset.applicationId, card.dataset.interviewAt || null);
+    } else {
+        slot.innerHTML = "";
+    }
+}
 
 board.addEventListener("dragstart", (e) => {
     const card = e.target.closest(".tracker-card");
     if (!card) return;
     draggedCard = card;
+    dragOriginStatus = card.closest(".tracker-column-body").dataset.status;
     card.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
 });
@@ -271,31 +386,58 @@ board.querySelectorAll(".tracker-column-body").forEach((columnBody) => {
     columnBody.addEventListener("dragover", (e) => {
         e.preventDefault();
         columnBody.classList.add("drag-over");
+        if (!draggedCard) return;
+
+        const afterElement = getDragAfterElement(columnBody, e.clientY);
+        if (afterElement == null) {
+            columnBody.appendChild(draggedCard);
+        } else {
+            columnBody.insertBefore(draggedCard, afterElement);
+        }
     });
-    columnBody.addEventListener("dragleave", () => {
-        columnBody.classList.remove("drag-over");
+
+    columnBody.addEventListener("dragleave", (e) => {
+        if (!columnBody.contains(e.relatedTarget)) {
+            columnBody.classList.remove("drag-over");
+        }
     });
+
     columnBody.addEventListener("drop", async (e) => {
         e.preventDefault();
         columnBody.classList.remove("drag-over");
         if (!draggedCard) return;
 
-        const fromColumn = draggedCard.closest(".tracker-column-body");
         const newStatus = columnBody.dataset.status;
         const applicationId = draggedCard.dataset.applicationId;
+        const statusChanged = dragOriginStatus !== newStatus;
 
-        columnBody.appendChild(draggedCard);
         updateCounts();
 
-        const response = await fetch(`/tracker/applications/${applicationId}/move`, {
-            method: "POST",
-            body: new URLSearchParams({ status: newStatus }),
-        });
-        if (!response.ok) {
-            fromColumn.appendChild(draggedCard);
-            updateCounts();
-            showToast(I18N.move_failed_toast, "danger");
+        if (statusChanged) {
+            const response = await fetch(`/tracker/applications/${applicationId}/move`, {
+                method: "POST",
+                body: new URLSearchParams({ status: newStatus }),
+            });
+            if (!response.ok) {
+                const originColumn = board.querySelector(`.tracker-column-body[data-status="${dragOriginStatus}"]`);
+                originColumn.appendChild(draggedCard);
+                updateCounts();
+                showToast(I18N.move_failed_toast, "danger");
+                draggedCard = null;
+                return;
+            }
+            const data = await response.json();
+            draggedCard.dataset.interviewAt = data.interview_at || "";
+            renderInterviewSlot(draggedCard, newStatus);
         }
+
+        const orderedIds = [...columnBody.querySelectorAll(".tracker-card")].map((c) => c.dataset.applicationId);
+        await fetch(`/tracker/applications/reorder`, {
+            method: "POST",
+            body: new URLSearchParams({ status: newStatus, ordered_ids: orderedIds.join(",") }),
+        });
+
+        draggedCard = null;
     });
 });
 
@@ -310,12 +452,13 @@ function updateCounts() {
 board.addEventListener("click", async (e) => {
     if (e.target.classList.contains("tracker-card-remove")) {
         e.stopPropagation();
-        const applicationId = e.target.dataset.applicationId;
-        const response = await fetch(`/tracker/applications/${applicationId}/delete`, { method: "POST" });
+        const card = e.target.closest(".tracker-card");
+        const jobId = card.dataset.jobId;
+        const response = await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
         if (response.ok) {
-            const card = e.target.closest(".tracker-card");
             card.remove();
             updateCounts();
+            showToast(I18N.job_removed_toast, "danger");
         } else {
             showToast(I18N.delete_failed_toast, "danger");
         }
@@ -326,21 +469,7 @@ board.addEventListener("click", async (e) => {
         e.stopPropagation();
         const applicationId = e.target.closest(".interview-trigger").dataset.applicationId;
         const editor = board.querySelector(`.interview-editor[data-application-id="${applicationId}"]`);
-        editor.classList.toggle("open");
-        return;
-    }
-
-    if (e.target.classList.contains("save-interview-btn")) {
-        e.stopPropagation();
-        const editor = e.target.closest(".interview-editor");
-        const applicationId = editor.dataset.applicationId;
-        const value = editor.querySelector(".interview-input").value;
-
-        await fetch(`/tracker/applications/${applicationId}/interview`, {
-            method: "POST",
-            body: new URLSearchParams({ interview_at: value }),
-        });
-        window.location.reload();
+        if (editor) editor.classList.toggle("open");
         return;
     }
 
@@ -352,6 +481,46 @@ board.addEventListener("click", async (e) => {
     if (card && card.dataset.jobId && card.dataset.jobId !== "None") {
         window.location.href = `/jobs/${card.dataset.jobId}`;
     }
+});
+
+board.addEventListener("change", async (e) => {
+    if (!e.target.classList.contains("interview-input")) return;
+    e.stopPropagation();
+    e.target.blur();
+
+    const editor = e.target.closest(".interview-editor");
+    const applicationId = editor.dataset.applicationId;
+    const value = e.target.value;
+    const card = e.target.closest(".tracker-card");
+
+    const response = await fetch(`/tracker/applications/${applicationId}/interview`, {
+        method: "POST",
+        body: new URLSearchParams({ interview_at: value }),
+    });
+    if (response.ok && card) {
+        const isoValue = value ? new Date(value).toISOString() : "";
+        card.dataset.interviewAt = isoValue;
+        const currentStatus = card.closest(".tracker-column-body").dataset.status;
+        renderInterviewSlot(card, currentStatus);
+    }
+});
+
+document.getElementById("sort-date-btn").addEventListener("click", async () => {
+    const columnBodies = [...document.querySelectorAll(".tracker-column-body")];
+
+    for (const columnBody of columnBodies) {
+        const cards = [...columnBody.querySelectorAll(".tracker-card")];
+        cards.sort((a, b) => new Date(b.dataset.createdAt || 0) - new Date(a.dataset.createdAt || 0));
+        cards.forEach((card) => columnBody.appendChild(card));
+
+        const orderedIds = cards.map((c) => c.dataset.applicationId);
+        await fetch(`/tracker/applications/reorder`, {
+            method: "POST",
+            body: new URLSearchParams({ status: columnBody.dataset.status, ordered_ids: orderedIds.join(",") }),
+        });
+    }
+
+    showToast(I18N.sort_by_date_button, "success");
 });
 </script>
 {% endblock %}

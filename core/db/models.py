@@ -95,6 +95,7 @@ class JobPosting(Base):
     pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
     source: Mapped[str] = mapped_column(String(16), default="manual")
     pipeline_stage: Mapped[str] = mapped_column(String(32), nullable=True)
+    activity_label: Mapped[str] = mapped_column(String(255), nullable=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="job_posting"
@@ -161,6 +162,7 @@ class Application(Base):
     )
 
     status: Mapped[str] = mapped_column(String(32), default="draft")
+    board_order: Mapped[int] = mapped_column(Integer, default=0)
     applied_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     interview_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
     interview_notes: Mapped[str] = mapped_column(Text, nullable=True)

@@ -34,6 +34,7 @@ def evaluator_page(
     scoring_factors = crud.list_scoring_factors(session)
     active_resume = crud.get_active_resume_version(session, "resume")
     active_linkedin = crud.get_active_resume_version(session, "linkedin")
+    profile = crud.get_candidate_profile(session)
 
     return templates.TemplateResponse(
         "evaluator.html",
@@ -43,6 +44,7 @@ def evaluator_page(
             "scoring_factors": scoring_factors,
             "active_resume": active_resume,
             "active_linkedin": active_linkedin,
+            "profile": profile,
             "result": None,
             "lang": lang,
             "t": load_page_strings("ui/evaluator_page", lang),
@@ -59,6 +61,7 @@ def run_evaluation(
     lang: str = Depends(get_language),
 ):
     job = crud.create_job_posting(session, raw_text=job_posting_text, source_url=source_url or None)
+    crud.set_job_activity(session, job.id, "Evaluating fit...")
 
     task_id = run_tracked_task(
         "job_quick_extract", _quick_extract_and_save, job.id, job_posting_text, extra_info or None, lang
@@ -158,8 +161,10 @@ def _evaluate_and_save(
                 "summary": result["summary"],
             },
         )
+        crud.ensure_draft_application(session, job_posting_id, source_platform="manual")
 
         crud.set_job_pending_task(session, job_posting_id, None)
+        crud.set_job_activity(session, job_posting_id, None)
 
         app_settings = crud.get_app_settings(session)
         score = result["score"]

@@ -80,3 +80,21 @@ def set_active_resume_version(
     session.commit()
     session.refresh(resume)
     return resume
+
+
+def update_resume_content(
+    session: Session,
+    resume_version_id: int,
+    content_html: str | None = None,
+    raw_text: str | None = None,
+) -> ResumeVersion | None:
+    resume = session.get(ResumeVersion, resume_version_id)
+    if resume is None:
+        return None
+    if content_html is not None:
+        resume.content_html = content_html
+    if raw_text is not None:
+        resume.raw_text = raw_text
+    session.commit()
+    session.refresh(resume)
+    return resume

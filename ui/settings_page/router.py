@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.parsing.file_extraction import extract_text
+from core.parsing.html_sanitize import sanitize_html
+from core.parsing.html_to_text import html_to_text
 from core.providers.factory import get_llm_provider
 from core.structuring.html_pipeline import structure_resume_to_html
 from core.structuring.pipeline import structure_linkedin_text
@@ -131,6 +133,32 @@ def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -
         return {"resume_version_id": resume.id, "content_html": content_html}
     finally:
         session.close()
+
+
+@router.post("/resume/{resume_version_id}/edit-html")
+def edit_resume_html(
+    resume_version_id: int,
+    html_content: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    cleaned = sanitize_html(html_content)
+    plain_text = html_to_text(cleaned)
+    resume = crud.update_resume_content(session, resume_version_id, content_html=cleaned, raw_text=plain_text)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/linkedin/{resume_version_id}/edit-text")
+def edit_linkedin_text(
+    resume_version_id: int,
+    raw_text: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    resume = crud.update_resume_content(session, resume_version_id, raw_text=raw_text)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+    return JSONResponse({"status": "ok"})
 
 
 @router.post("/linkedin")

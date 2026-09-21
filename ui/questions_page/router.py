@@ -286,9 +286,15 @@ def _run_split_only(application_id: int, raw_text: str) -> dict:
 def _run_generate_category(application_id: int, category: str, question_ids: list[int]) -> dict:
     session = SessionLocal()
     try:
+        application = crud.get_application(session, application_id)
+        if application is not None:
+            crud.set_job_activity(session, application.job_posting_id, "Answering application questions...")
+
         questions = [q for q in (crud.get_form_question(session, qid) for qid in question_ids) if q is not None]
         if not questions:
             logger.warning("[app %s] generate_category(%s): no matching questions found for ids=%s", application_id, category, question_ids)
+            if application is not None:
+                crud.set_job_activity(session, application.job_posting_id, None)
             return {"questions": []}
 
         context = _gather_context(session, application_id)
@@ -358,6 +364,9 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
             )
             crud.set_question_pending_task(session, question.id, None)
             updated_questions.append(updated)
+
+        if application is not None:
+            crud.set_job_activity(session, application.job_posting_id, None)
 
         return {"questions": [_serialize_question(q) for q in updated_questions]}
     finally:

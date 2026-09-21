@@ -8,20 +8,29 @@
 </head>
 <body>
     <nav class="topnav">
-        <a href="/">{{ t.nav_dashboard }}</a>
-        <a href="/settings">{{ t.nav_settings }}</a>
-        <a href="/evaluator">{{ t.nav_evaluator }}</a>
-        <a href="/tailor">{{ t.nav_tailor }}</a>
-        <a href="/questions">{{ t.nav_questions }}</a>
-        <a href="/tracker">{{ t.nav_tracker }}</a>
-        <a href="/automation">{{ t.nav_automation }}</a>
+        <a href="/" class="topnav-brand">
+            <span class="topnav-brand-icon">🧭</span>
+            <span class="topnav-brand-name">JobPilot</span>
+        </a>
 
-        <form id="lang-form" class="lang-form">
-            <select name="lang" id="lang-select">
-                <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
-                <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>
-            </select>
-        </form>
+        <div class="topnav-links">
+            <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">{{ t.nav_dashboard }}</a>
+            <a href="/automation" class="{% if request.url.path.startswith('/automation') %}active{% endif %}">{{ t.nav_automation }}</a>
+            <a href="/tracker" class="{% if request.url.path.startswith('/tracker') %}active{% endif %}">{{ t.nav_tracker }}</a>
+            <a href="/settings" class="{% if request.url.path.startswith('/settings') %}active{% endif %}">{{ t.nav_settings }}</a>
+        </div>
+
+        <div class="topnav-right">
+            <a href="https://github.com/sponsors/YOUR_GITHUB_USERNAME" target="_blank" rel="noopener noreferrer" class="sponsor-link" title="{{ t.sponsor_label }}">
+                ♥ <span>{{ t.sponsor_label }}</span>
+            </a>
+            <form id="lang-form" class="lang-form">
+                <select name="lang" id="lang-select">
+                    <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
+                    <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>
+                </select>
+            </form>
+        </div>
     </nav>
     <main>
         {% block content %}{% endblock %}

@@ -5,10 +5,12 @@
     "status_interviewing": "Interviewing",
     "status_offer": "Offer",
     "status_rejected": "Rejected",
-    "status_withdrawn": "Withdrawn",
     "unknown_company": "Unknown company",
     "unknown_role": "Unknown role",
     "set_interview": "Set interview",
+    "added_label": "Added",
+    "sort_by_date_button": "Sort by date",
     "move_failed_toast": "Couldn't move the card, please try again.",
-    "delete_failed_toast": "Couldn't remove the card, please try again."
+    "delete_failed_toast": "Couldn't remove the card, please try again.",
+    "job_removed_toast": "Job archived and removed from the board."
 }

@@ -14,7 +14,7 @@ from core.discovery.ats_extractor import detect_platform, extract_job_text
 from core.discovery.quick_filter import quick_filter_search_results
 from core.discovery.search_provider import SerpentSearchError, get_search_provider
 from core.discovery.url_utils import normalize_url
-from core.evaluator.pipeline import evaluate_job_posting
+from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
 from core.providers.factory import get_llm_provider
 from core.questions.pipeline import (
     classify_template_category,
@@ -253,6 +253,7 @@ def _process_search_result(
         crud.update_job_pipeline_stage(session, job.id, stages.SCRAPED)
         crud.set_promoted_job_posting(session, search_result_id, job.id)
         crud.increment_run_counters(session, run_id, scraped_count=1)
+        crud.set_job_activity(session, job.id, "Evaluating fit...")
 
         provider = get_llm_provider()
         try:
@@ -273,6 +274,7 @@ def _process_search_result(
             crud.append_run_warning(
                 session, run_id, f"Evaluation failed for job {job.id} ({job.source_url}): {error}"
             )
+            crud.set_job_activity(session, job.id, None)
             return False
         _log_llm_usage(session, provider, run_id, "evaluation", job_posting_id=job.id)
 
@@ -302,6 +304,7 @@ def _process_search_result(
             },
         )
 
+        crud.set_job_activity(session, job.id, None)
         crud.update_job_pipeline_stage(session, job.id, stages.EVALUATED)
         crud.increment_run_counters(session, run_id, evaluated_count=1)
 
@@ -395,12 +398,15 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
         )
         return
 
+    crud.set_job_activity(session, job.id, "Tailoring resume...")
+
     resume = crud.get_active_resume_version(session, "resume")
     if resume is None or not resume.content_html:
         logger.warning(
             "[run %s] job %s: auto-tailoring skipped - no active resume with content_html", run_id, job.id
         )
         crud.append_run_warning(session, run_id, "Auto-tailor skipped: no active resume HTML set")
+        crud.set_job_activity(session, job.id, None)
         return
 
     tailoring_session = crud.get_tailoring_session_for_job(session, job.id)
@@ -449,6 +455,8 @@ def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_te
         logger.info("[run %s] job %s: no automation base questions configured, skipping", run_id, job.id)
         return
 
+    crud.set_job_activity(session, job.id, "Answering application questions...")
+
     existing_applications = [a for a in crud.list_applications(session) if a.job_posting_id == job.id]
     application = existing_applications[0] if existing_applications else crud.create_application(
         session, job_posting_id=job.id, source_platform="automation"
@@ -462,6 +470,7 @@ def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_te
     ]
     if not to_create:
         logger.info("[run %s] job %s: all base questions already asked on application %s", run_id, job.id, application.id)
+        crud.set_job_activity(session, job.id, None)
         return
 
     provider = get_llm_provider()
@@ -528,6 +537,7 @@ def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_te
                 flag_reason=result["flag_reason"],
             )
 
+    crud.set_job_activity(session, job.id, None)
     logger.info(
         "[run %s] job %s: auto-answered %s base questions on application %s",
         run_id, job.id, len(created), application.id,

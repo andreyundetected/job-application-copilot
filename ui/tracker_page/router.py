@@ -20,7 +20,7 @@ templates.env.loader = ChoiceLoader(
     ]
 )
 
-STATUSES = ["draft", "applied", "interviewing", "offer", "rejected", "withdrawn"]
+STATUSES = ["draft", "applied", "interviewing", "offer", "rejected"]
 
 
 def _serialize_card(application, job, evaluation) -> dict:
@@ -50,15 +50,24 @@ def _gather_board(session: Session) -> dict:
     columns: dict[str, list] = {status: [] for status in STATUSES}
 
     for application in applications:
+        if application.status not in columns:
+            continue
+
         job = crud.get_job_posting(session, application.job_posting_id)
-        evaluations = crud.list_evaluations_for_job(session, application.job_posting_id) if job else []
+        if job is None or job.archived:
+            continue
+
+        evaluations = crud.list_evaluations_for_job(session, application.job_posting_id)
         latest_evaluation = evaluations[0] if evaluations else None
         card = _serialize_card(application, job, latest_evaluation)
-        columns.setdefault(application.status, [])
+        card["board_order"] = application.board_order or 0
         columns[application.status].append(card)
 
     for status in columns:
         columns[status].sort(key=lambda c: c["created_at"] or "", reverse=True)
+        columns[status].sort(key=lambda c: c["board_order"])
+        for card in columns[status]:
+            card.pop("board_order", None)
 
     return columns
 
@@ -101,6 +110,26 @@ def move_application(
     if application is None:
         raise HTTPException(status_code=404, detail="Application not found")
 
+    return JSONResponse(
+        {
+            "status": "ok",
+            "applied_at": application.applied_at.isoformat() if application.applied_at else None,
+            "interview_at": application.interview_at.isoformat() if application.interview_at else None,
+        }
+    )
+
+
+@router.post("/applications/reorder")
+def reorder_applications(
+    status: str = Form(...),
+    ordered_ids: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    if status not in STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    ids = [int(item) for item in ordered_ids.split(",") if item.strip().isdigit()]
+    crud.reorder_applications(session, status, ids)
     return JSONResponse({"status": "ok"})
 
 
