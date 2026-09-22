@@ -278,9 +278,9 @@ h1 { display: flex; align-items: center; gap: 10px; }
     border: 1px solid var(--border);
     color: var(--text-secondary);
     text-decoration: none;
+    cursor: default;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
-.site-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
 .site-chip.used {
     background-color: var(--accent-soft);
     border-color: var(--accent);
@@ -397,7 +397,7 @@ details.advanced-details .advanced-body { margin-top: 14px; }
             <label style="margin-top:0;">{{ t.sites_in_use_label }}</label>
             <div class="site-chip-row" id="site-chip-row">
                 {% for site in target_sites %}
-                <a href="https://{{ site }}" target="_blank" rel="noopener noreferrer" class="site-chip" data-site="{{ site }}">{{ site }}</a>
+                <span class="site-chip" data-site="{{ site }}">{{ site }}</span>
                 {% endfor %}
             </div>
 
@@ -605,13 +605,6 @@ details.advanced-details .advanced-body { margin-top: 14px; }
                 <label for="max_queries_override">{{ t.queries_cap_label }}</label>
                 <input type="text" inputmode="numeric" id="max_queries_override" placeholder="{{ t.queries_cap_placeholder }}">
             </div>
-        </div>
-
-        <h3 style="margin:16px 0 4px;">{{ t.planned_sites_title }}</h3>
-        <div class="site-chip-row">
-            {% for site in planned_sites %}
-            <span class="site-chip planned">{{ site }}</span>
-            {% endfor %}
         </div>
     </div>
 </details>

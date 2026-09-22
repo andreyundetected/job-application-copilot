@@ -36,5 +36,7 @@
     "employment_contract": "Контракт",
     "employment_internship": "Стажировка",
     "loading_card": "Загружаем детали...",
-    "job_added_toast": "Вакансия добавлена на дашборд."
+    "job_added_toast": "Вакансия добавлена на дашборд.",
+    "filter_salary_label": "Минимальная зарплата",
+    "filter_salary_include_estimated_label": "Включать зарплаты, предположенные ИИ"
 }

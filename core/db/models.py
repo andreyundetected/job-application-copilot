@@ -75,6 +75,8 @@ class AppSettings(Base):
     pregenerate_min_score: Mapped[int] = mapped_column(Integer, default=7)
     auto_answer_questions_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     manual_assist_min_score: Mapped[int] = mapped_column(Integer, default=7)
+    preferred_currency: Mapped[str] = mapped_column(String(8), default="USD")
+    preferred_salary_period: Mapped[str] = mapped_column(String(8), default="year")
 
 
 class JobPosting(Base):

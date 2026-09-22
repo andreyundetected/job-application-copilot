@@ -41,5 +41,12 @@
     "auto_answer_title": "Auto-answer",
     "auto_answer_hint": "Applies to the manual Questions flow - when you paste a form, answers are drafted automatically for cover letter, summary, and general questions.",
     "auto_answer_enabled_label": "Automatically generate answers right after splitting a pasted form",
-    "saved_status": "Saved"
+    "saved_status": "Saved",
+    "salary_prefs_title": "Salary display",
+    "salary_prefs_hint": "How salaries are shown across the app - all figures are converted from the posting's original currency/period into this one.",
+    "preferred_currency_label": "Currency",
+    "preferred_period_label": "Period",
+    "period_hour": "Hour",
+    "period_month": "Month",
+    "period_year": "Year"
 }

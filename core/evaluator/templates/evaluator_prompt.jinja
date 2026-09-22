@@ -54,10 +54,10 @@ Respond using only the following tags, in this exact order, with no extra text o
 <score>A single integer from 0 to 10, following the scoring scale above</score>
 <location>City, country, or region as stated in the posting. If not stated, write "N/A"</location>
 <work_mode>Exactly one of: remote, hybrid, onsite, unclear</work_mode>
-<salary_min>The minimum salary figure as a plain number, no currency symbol, no separators, e.g. "100000". If a single figure is given rather than a range, repeat it here. If salary is not stated in the posting, give your best estimated minimum for this role/seniority/company size/market as a plain number</salary_min>
-<salary_max>The maximum salary figure as a plain number, same rules as salary_min. If a single figure is given, repeat it here too</salary_max>
-<salary_currency>The ISO 4217 currency code, e.g. "USD", "EUR", "GBP". If genuinely unclear, write "USD"</salary_currency>
-<salary_period>Exactly one of: hour, month, year - matching how the figure is normally paid out for this kind of number (e.g. "25" per "hour", "8000" per "month", "120000" per "year"). Infer this from context even if not explicitly stated</salary_period>
+<salary_min>The minimum of the salary range, as a bare integer with ONLY digits - no currency symbols, no separators, no words like "k", "approx", "per year". Example: "100000", never "100k" or "$100,000". If the posting gives a single figure rather than a range, repeat that exact figure here as the minimum too. If salary is not stated in the posting at all, give your best estimated minimum for this role/seniority/company size/market, still as a bare integer</salary_min>
+<salary_max>The maximum of the salary range, same bare-integer rules as salary_min. If the posting gives a single figure, repeat that same figure here as the maximum</salary_max>
+<salary_currency>The ISO 4217 currency code and nothing else - exactly one of: USD, EUR, GBP, CHF, PLN, CZK, UAH, TRY, ILS, AED, INR, CNY, JPY, CAD, AUD, SGD, SEK, NOK, DKK, MXN, BRL, RSD, GEL, KZT. Pick the code matching the currency actually used or implied by the posting (stated symbol, or the country/company location if no symbol is given). If genuinely unclear, write "USD"</salary_currency>
+<salary_period>Exactly one of: hour, month, year - matching how the figure is normally paid out for this kind of number (e.g. "25" per "hour", "8000" per "month", "120000" per "year"). Infer this from context even if not explicitly stated. Never write anything other than one of these three words</salary_period>
 <salary_is_estimate>Exactly one of: true, false - "true" if the posting did not state a salary and you estimated it yourself, "false" if the posting explicitly stated it</salary_is_estimate>
 <salary_original_text>The salary exactly as written in the posting, verbatim. If not stated, write "Not stated in posting - estimated based on role, seniority, company size and market"</salary_original_text>
 {% if scoring_factors %}

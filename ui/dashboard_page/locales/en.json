@@ -36,5 +36,7 @@
     "employment_contract": "Contract",
     "employment_internship": "Internship",
     "loading_card": "Loading details...",
-    "job_added_toast": "Job added to the dashboard."
+    "job_added_toast": "Job added to the dashboard.",
+    "filter_salary_label": "Minimum salary",
+    "filter_salary_include_estimated_label": "Include AI-estimated salaries"
 }

@@ -13,6 +13,8 @@ def upsert_app_settings(
     pregenerate_min_score: int | None = None,
     auto_answer_questions_enabled: bool | None = None,
     manual_assist_min_score: int | None = None,
+    preferred_currency: str | None = None,
+    preferred_salary_period: str | None = None,
 ) -> AppSettings:
     settings_row = session.query(AppSettings).first()
 
@@ -24,6 +26,8 @@ def upsert_app_settings(
                 auto_answer_questions_enabled if auto_answer_questions_enabled is not None else True
             ),
             manual_assist_min_score=manual_assist_min_score if manual_assist_min_score is not None else 7,
+            preferred_currency=preferred_currency if preferred_currency is not None else "USD",
+            preferred_salary_period=preferred_salary_period if preferred_salary_period is not None else "year",
         )
         session.add(settings_row)
     else:
@@ -35,6 +39,10 @@ def upsert_app_settings(
             settings_row.auto_answer_questions_enabled = auto_answer_questions_enabled
         if manual_assist_min_score is not None:
             settings_row.manual_assist_min_score = manual_assist_min_score
+        if preferred_currency is not None:
+            settings_row.preferred_currency = preferred_currency
+        if preferred_salary_period is not None:
+            settings_row.preferred_salary_period = preferred_salary_period
 
     session.commit()
     session.refresh(settings_row)

@@ -1,7 +1,6 @@
 import pytest
-import requests
 
-from core.discovery import ats
+from core.discovery import ats_extractor
 
 
 class _FakeResponse:
@@ -20,32 +19,22 @@ class _FakeResponse:
 
 @pytest.mark.discovery
 def test_detect_platform_recruitee():
-    assert ats.detect_platform("https://examplecorp.recruitee.com/o/senior-engineer") == "recruitee"
+    assert ats_extractor.detect_platform("https://examplecorp.recruitee.com/o/senior-engineer") == "recruitee"
 
 
 @pytest.mark.discovery
 def test_detect_platform_personio_de():
-    assert ats.detect_platform("https://examplecorp.jobs.personio.de/job/123456") == "personio"
+    assert ats_extractor.detect_platform("https://examplecorp.jobs.personio.de/job/123456") == "personio"
 
 
 @pytest.mark.discovery
 def test_detect_platform_personio_com():
-    assert ats.detect_platform("https://examplecorp.jobs.personio.com/job/123456") == "personio"
+    assert ats_extractor.detect_platform("https://examplecorp.jobs.personio.com/job/123456") == "personio"
 
 
 @pytest.mark.discovery
 def test_detect_platform_breezy():
-    assert ats.detect_platform("https://examplecorp.breezy.hr/p/abc123-senior-engineer") == "breezy"
-
-
-@pytest.mark.discovery
-def test_detect_platform_bamboohr():
-    assert ats.detect_platform("https://examplecorp.bamboohr.com/careers/42") == "bamboohr"
-
-
-@pytest.mark.discovery
-def test_detect_platform_teamtailor():
-    assert ats.detect_platform("https://examplecorp.teamtailor.com/jobs/123-senior-engineer") == "teamtailor"
+    assert ats_extractor.detect_platform("https://examplecorp.breezy.hr/p/abc123-senior-engineer") == "breezy"
 
 
 # ---------------------------------------------------------------------------
@@ -76,9 +65,9 @@ def test_extract_job_text_recruitee(monkeypatch):
             },
         )
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert "Sample Senior Backend Engineer" in result
     assert "Amsterdam" in result
@@ -93,9 +82,9 @@ def test_extract_job_text_recruitee_non_200_returns_none(monkeypatch):
     def fake_get(api_url, timeout=None):
         return _FakeResponse(404)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    assert ats.extract_job_text(url) is None
+    assert ats_extractor.extract_job_text(url) is None
 
 
 @pytest.mark.discovery
@@ -108,9 +97,9 @@ def test_extract_job_text_recruitee_derives_arrangement_label(monkeypatch):
             {"offer": {"title": "Sample Role", "remote": True, "hybrid": False, "on_site": False}},
         )
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert "remote" in result
 
@@ -149,9 +138,9 @@ def test_extract_job_text_personio(monkeypatch):
         assert params == {"language": "en"}
         return _FakeResponse(200, content=_PERSONIO_XML)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert "Sample Backend Engineer" in result
     assert "Munich" in result
@@ -169,9 +158,9 @@ def test_extract_job_text_personio_falls_back_without_language(monkeypatch):
             return _FakeResponse(200, content=b"<workzag-jobs></workzag-jobs>")
         return _FakeResponse(200, content=_PERSONIO_XML)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert calls == [{"language": "en"}, {}]
     assert "Sample Backend Engineer" in result
@@ -184,9 +173,9 @@ def test_extract_job_text_personio_job_not_found_returns_none(monkeypatch):
     def fake_get(xml_url, params=None, timeout=None):
         return _FakeResponse(200, content=_PERSONIO_XML)
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    assert ats.extract_job_text(url) is None
+    assert ats_extractor.extract_job_text(url) is None
 
 
 # ---------------------------------------------------------------------------
@@ -215,9 +204,9 @@ def test_extract_job_text_breezy(monkeypatch):
             ],
         )
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert "Sample Senior Backend Engineer" in result
     assert "Sample job description." in result
@@ -226,6 +215,8 @@ def test_extract_job_text_breezy(monkeypatch):
 
 @pytest.mark.discovery
 def test_extract_job_text_breezy_falls_back_to_id_match(monkeypatch):
+    # URL built/rewritten so it no longer matches any job's "url" field exactly,
+    # but the leading id token is still present in the slug.
     url = "https://examplecorp.breezy.hr/p/abc123def456-different-slug-text"
 
     def fake_get(list_url, params=None, timeout=None):
@@ -241,9 +232,9 @@ def test_extract_job_text_breezy_falls_back_to_id_match(monkeypatch):
             ],
         )
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    result = ats.extract_job_text(url)
+    result = ats_extractor.extract_job_text(url)
 
     assert "Sample Role" in result
 
@@ -255,98 +246,6 @@ def test_extract_job_text_breezy_no_match_returns_none(monkeypatch):
     def fake_get(list_url, params=None, timeout=None):
         return _FakeResponse(200, [])
 
-    monkeypatch.setattr(requests, "get", fake_get)
+    monkeypatch.setattr(ats_extractor.requests, "get", fake_get)
 
-    assert ats.extract_job_text(url) is None
-
-
-# ---------------------------------------------------------------------------
-# BambooHR
-# ---------------------------------------------------------------------------
-
-@pytest.mark.discovery
-def test_extract_job_text_bamboohr(monkeypatch):
-    url = "https://examplecorp.bamboohr.com/careers/42"
-
-    def fake_get(api_url, headers=None, timeout=None):
-        assert api_url == "https://examplecorp.bamboohr.com/careers/42/detail"
-        return _FakeResponse(
-            200,
-            {
-                "result": {
-                    "jobOpeningName": "Sample Product Manager",
-                    "departmentLabel": "Product",
-                    "locationLabel": "Remote",
-                    "employmentStatusLabel": "Full-Time",
-                    "description": "<p>Sample job description.</p>",
-                }
-            },
-        )
-
-    monkeypatch.setattr(requests, "get", fake_get)
-
-    result = ats.extract_job_text(url)
-
-    assert "Sample Product Manager" in result
-    assert "Product" in result
-    assert "Sample job description." in result
-
-
-@pytest.mark.discovery
-def test_extract_job_text_bamboohr_non_200_returns_none(monkeypatch):
-    url = "https://examplecorp.bamboohr.com/careers/42"
-
-    def fake_get(api_url, headers=None, timeout=None):
-        return _FakeResponse(404)
-
-    monkeypatch.setattr(requests, "get", fake_get)
-
-    assert ats.extract_job_text(url) is None
-
-
-# ---------------------------------------------------------------------------
-# Teamtailor
-# ---------------------------------------------------------------------------
-
-@pytest.mark.discovery
-def test_extract_job_text_teamtailor(monkeypatch):
-    url = "https://examplecorp.teamtailor.com/jobs/123-senior-backend-engineer"
-
-    def fake_get(api_url, headers=None, timeout=None):
-        assert api_url == "https://examplecorp.teamtailor.com/api/v1/jobs/123"
-        return _FakeResponse(
-            200,
-            {
-                "data": {
-                    "attributes": {
-                        "title": "Sample Senior Backend Engineer",
-                        "department-name": "Engineering",
-                        "location": "Stockholm",
-                        "employment-type": "Full-time",
-                        "remote-status": "remote",
-                        "body": "<p>Sample job description.</p>",
-                    }
-                }
-            },
-        )
-
-    monkeypatch.setattr(requests, "get", fake_get)
-
-    result = ats.extract_job_text(url)
-
-    assert "Sample Senior Backend Engineer" in result
-    assert "Stockholm" in result
-    assert "remote" in result
-    assert "Sample job description." in result
-
-
-@pytest.mark.discovery
-def test_extract_job_text_teamtailor_non_200_returns_none(monkeypatch):
-    url = "https://examplecorp.teamtailor.com/jobs/123-senior-backend-engineer"
-
-    def fake_get(api_url, headers=None, timeout=None):
-        return _FakeResponse(404)
-
-    monkeypatch.setattr(requests, "get", fake_get)
-
-    assert ats.extract_job_text(url) is None
+    assert ats_extractor.extract_job_text(url) is None

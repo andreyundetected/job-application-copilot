@@ -46,13 +46,24 @@
 
 <div class="filters-panel-wrap" id="filters-panel-wrap">
     <div class="filters-panel">
+        <div class="filter-section" id="filter-salary-section" style="display:none;">
+            <span class="filter-section-label">{{ t.filter_salary_label }}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <input type="range" id="salary-min-slider" min="0" max="0" value="0" step="1" style="flex:1;">
+                <span id="salary-min-display" style="font-size:12.5px;color:var(--text-secondary);min-width:70px;text-align:right;"></span>
+            </div>
+            <label class="filter-pill" id="include-estimated-pill" style="cursor:pointer;">
+                <svg class="filter-pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>{{ t.filter_salary_include_estimated_label }}</span>
+            </label>
+        </div>
         <div id="filter-groups"></div>
     </div>
 </div>
 
 <div class="job-grid" id="job-grid">
     {% for card in cards %}
-    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-tags="{{ (card.tags or []) | join(',') }}">
+    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-tags="{{ (card.tags or []) | join(',') }}" data-salary-max="{{ card.salary_max_converted if card.salary_max_converted is not none else '' }}" data-is-estimate="{{ 'true' if card.is_estimate else 'false' }}">
         <div class="job-card-top">
             {% if card.pending and card.score is none %}
             <div class="job-card-score-loading"><span class="loading-dot"></span></div>
@@ -114,6 +125,8 @@ const filterState = {
     workModes: new Set(),
     countries: new Set(),
     tags: new Set(),
+    salaryMin: 0,
+    includeEstimated: false,
 };
 
 function countActiveFilters() {
@@ -121,8 +134,51 @@ function countActiveFilters() {
         filterState.employmentTypes.size +
         filterState.workModes.size +
         filterState.countries.size +
-        filterState.tags.size
+        filterState.tags.size +
+        (filterState.salaryMin > 0 ? 1 : 0)
     );
+}
+
+function buildSalarySection() {
+    const cards = [...document.querySelectorAll(".job-card")];
+    const maxSalarySeen = cards.reduce((max, card) => {
+        const val = parseFloat(card.dataset.salaryMax);
+        return isNaN(val) ? max : Math.max(max, val);
+    }, 0);
+
+    const section = document.getElementById("filter-salary-section");
+    if (maxSalarySeen <= 0) {
+        section.style.display = "none";
+        return false;
+    }
+    section.style.display = "flex";
+
+    const slider = document.getElementById("salary-min-slider");
+    const display = document.getElementById("salary-min-display");
+    const roundedMax = Math.ceil(maxSalarySeen / 100) * 100;
+    slider.max = roundedMax;
+    slider.step = Math.max(1, Math.round(roundedMax / 100));
+
+    function renderDisplay() {
+        display.textContent = filterState.salaryMin > 0 ? filterState.salaryMin.toLocaleString() : "any";
+    }
+    renderDisplay();
+
+    slider.addEventListener("input", () => {
+        filterState.salaryMin = parseFloat(slider.value) || 0;
+        renderDisplay();
+        updateFiltersToggleBadge();
+        applyFilters();
+    });
+
+    const includePill = document.getElementById("include-estimated-pill");
+    includePill.addEventListener("click", () => {
+        filterState.includeEstimated = !filterState.includeEstimated;
+        includePill.classList.toggle("active", filterState.includeEstimated);
+        applyFilters();
+    });
+
+    return true;
 }
 
 function updateFiltersToggleBadge() {
@@ -150,7 +206,9 @@ function buildFilterGroups() {
     const toggleWrap = document.getElementById("filters-toggle-wrap");
     container.innerHTML = "";
 
-    if (employmentTypes.size === 0 && workModes.size === 0 && countries.size === 0 && tags.size === 0) {
+    const hasSalary = buildSalarySection();
+
+    if (employmentTypes.size === 0 && workModes.size === 0 && countries.size === 0 && tags.size === 0 && !hasSalary) {
         toggleWrap.style.display = "none";
         return;
     }
@@ -212,7 +270,15 @@ function buildFilterGroups() {
         filterState.workModes.clear();
         filterState.countries.clear();
         filterState.tags.clear();
+        filterState.salaryMin = 0;
+        filterState.includeEstimated = false;
         container.querySelectorAll(".filter-pill.active").forEach((el) => el.classList.remove("active"));
+        const slider = document.getElementById("salary-min-slider");
+        if (slider) slider.value = 0;
+        const includePill = document.getElementById("include-estimated-pill");
+        if (includePill) includePill.classList.remove("active");
+        const display = document.getElementById("salary-min-display");
+        if (display) display.textContent = "any";
         updateFiltersToggleBadge();
         applyFilters();
     });
@@ -241,7 +307,16 @@ function applyFilters() {
         const matchesTags =
             filterState.tags.size === 0 || cardTags.some((tag) => filterState.tags.has(tag));
 
-        const visible = matchesSearch && matchesEmployment && matchesWorkMode && matchesCountry && matchesTags;
+        let matchesSalary = true;
+        if (filterState.salaryMin > 0) {
+            const cardMax = parseFloat(card.dataset.salaryMax);
+            const isEstimate = card.dataset.isEstimate === "true";
+            if (!isNaN(cardMax)) {
+                matchesSalary = isEstimate && !filterState.includeEstimated ? false : cardMax >= filterState.salaryMin;
+            }
+        }
+
+        const visible = matchesSearch && matchesEmployment && matchesWorkMode && matchesCountry && matchesTags && matchesSalary;
         card.style.display = visible ? "" : "none";
         if (visible) visibleCount += 1;
     });
@@ -308,6 +383,9 @@ function renderCardInPlace(cardEl, card) {
         : `<div class="job-card-score ${scoreClassFor(card.score)}">${card.score !== null ? card.score : "?"}</div>`;
     scoreContainer.innerHTML = scoreHtml;
     scoreContainer.appendChild(archiveBtn);
+
+    cardEl.dataset.salaryMax = card.salary_max_converted !== null && card.salary_max_converted !== undefined ? card.salary_max_converted : "";
+    cardEl.dataset.isEstimate = card.is_estimate ? "true" : "false";
 
     let badgesHtml = "";
     if (card.location) badgesHtml += `<span class="badge">${card.location}</span>`;

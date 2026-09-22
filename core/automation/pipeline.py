@@ -10,7 +10,7 @@ from core.automation import stages
 from core.automation.executor import submit_automation_task
 from core.db import crud
 from core.db.session import SessionLocal
-from core.discovery.ats_extractor import detect_platform, extract_job_text
+from core.discovery.ats import detect_platform, extract_job_text
 from core.discovery.quick_filter import quick_filter_search_results
 from core.discovery.search_provider import SerpentSearchError, get_search_provider
 from core.discovery.url_utils import normalize_url

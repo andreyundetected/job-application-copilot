@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from core.discovery.ats import default_target_sites
 from core.parsing.html_like_parser import parse_html_like
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -12,23 +13,17 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-# Only sites core/discovery/ats_extractor.py can actually parse a posting from -
-# no point surfacing a search result we can't scrape and evaluate.
-DEFAULT_TARGET_SITES = [
-    "boards.greenhouse.io",
-    "jobs.lever.co",
-    "jobs.ashbyhq.com",
-    "apply.workable.com",
-    "careers.smartrecruiters.com",
-]
+# Pulled live from every registered core/discovery/ats/*.py extractor - no
+# point surfacing a search result we can't scrape and evaluate, and adding a
+# new ATS file adds its domain(s) here automatically, no edit needed.
+DEFAULT_TARGET_SITES = default_target_sites()
 
-# Roadmap: ATS platforms worth adding once ats_extractor.py has a parser for them.
+# Roadmap: ATS platforms whose public boards don't return a full description in
+# one call (Gem, Rippling) or don't expose one without a customer key (JazzHR,
+# iCIMS) - not worth a parser until that changes.
 PLANNED_TARGET_SITES = [
-    "careers.recruitee.com",
-    "jobs.breezy.hr",
     "jobs.gem.com",
-    "rippling-ats.com",
-    "jobs.personio.com",
+    "ats.rippling.com",
 ]
 
 DEFAULT_MAX_QUERY_WORDS = 32

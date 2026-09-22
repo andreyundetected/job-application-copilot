@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 from sqlalchemy.orm import Session
 
+from core.currency.converter import SUPPORTED_CURRENCIES
 from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.parsing.file_extraction import extract_text
@@ -54,6 +55,9 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
         "pregenerate_enabled": app_settings.pregenerate_enabled if app_settings else False,
         "pregenerate_min_score": app_settings.pregenerate_min_score if app_settings else 7,
         "auto_answer_questions_enabled": app_settings.auto_answer_questions_enabled if app_settings else True,
+        "preferred_currency": app_settings.preferred_currency if app_settings else "USD",
+        "preferred_salary_period": app_settings.preferred_salary_period if app_settings else "year",
+        "supported_currencies": SUPPORTED_CURRENCIES,
         "lang": lang,
         "t": load_page_strings("ui/settings_page", lang),
     }
@@ -243,5 +247,24 @@ def update_auto_answer_settings(
     crud.upsert_app_settings(
         session,
         auto_answer_questions_enabled=auto_answer_questions_enabled,
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/salary-preferences")
+def update_salary_preferences(
+    preferred_currency: str = Form(...),
+    preferred_salary_period: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    if preferred_currency not in SUPPORTED_CURRENCIES:
+        raise HTTPException(status_code=400, detail="Unsupported currency")
+    if preferred_salary_period not in ("hour", "month", "year"):
+        raise HTTPException(status_code=400, detail="Invalid period")
+
+    crud.upsert_app_settings(
+        session,
+        preferred_currency=preferred_currency,
+        preferred_salary_period=preferred_salary_period,
     )
     return JSONResponse({"status": "ok"})

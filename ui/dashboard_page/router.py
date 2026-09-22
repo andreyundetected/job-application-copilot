@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
 from sqlalchemy.orm import Session
 
+from core.currency.converter import CurrencyConversionError, convert_salary
 from core.db import crud
 from core.db.session import get_session
 from ui.common.i18n import get_language, load_page_strings
@@ -26,7 +27,49 @@ def _derive_country(location: str | None) -> str | None:
     return segment or None
 
 
-def _card_data(job) -> dict:
+def _convert_salary_for_display(salary: dict | None, preferred_currency: str, preferred_period: str) -> dict:
+    if not salary or salary.get("min") is None:
+        return {"text": None, "min_converted": None, "max_converted": None, "is_estimate": False}
+
+    currency = salary.get("currency") or "USD"
+    period = salary.get("period") or "year"
+    is_estimate = bool(salary.get("is_estimate"))
+
+    try:
+        min_converted = convert_salary(salary["min"], currency, period, preferred_currency, preferred_period)
+        max_converted = convert_salary(
+            salary.get("max") or salary["min"], currency, period, preferred_currency, preferred_period
+        )
+    except CurrencyConversionError:
+        return {
+            "text": salary.get("original_text"),
+            "min_converted": None,
+            "max_converted": None,
+            "is_estimate": is_estimate,
+        }
+
+    period_suffix = {"hour": "/hr", "month": "/mo", "year": "/yr"}.get(preferred_period, "")
+    if round(min_converted) == round(max_converted):
+        text = f"{round(min_converted):,} {preferred_currency}{period_suffix}"
+    else:
+        text = f"{round(min_converted):,}\u2013{round(max_converted):,} {preferred_currency}{period_suffix}"
+
+    return {
+        "text": text,
+        "min_converted": min_converted,
+        "max_converted": max_converted,
+        "is_estimate": is_estimate,
+    }
+
+
+def _get_currency_prefs(session: Session) -> tuple[str, str]:
+    app_settings = crud.get_app_settings(session)
+    if app_settings is None:
+        return "USD", "year"
+    return app_settings.preferred_currency or "USD", app_settings.preferred_salary_period or "year"
+
+
+def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
     latest_evaluation = job.evaluations[-1] if job.evaluations else None
     pending = job.pending_task_id is not None or job.activity_label is not None
 
@@ -42,13 +85,15 @@ def _card_data(job) -> dict:
             "employment_type": job.employment_type,
             "tags": job.tags or [],
             "salary_text": None,
+            "salary_min_converted": None,
+            "salary_max_converted": None,
             "is_estimate": False,
             "pending": pending,
             "activity_label": job.activity_label,
         }
 
     checked = latest_evaluation.checked_keywords or {}
-    salary = checked.get("salary") or {}
+    salary_display = _convert_salary_for_display(checked.get("salary"), preferred_currency, preferred_period)
     location = checked.get("location") or job.location
 
     return {
@@ -61,8 +106,10 @@ def _card_data(job) -> dict:
         "work_mode": checked.get("work_mode") or job.work_mode,
         "employment_type": job.employment_type,
         "tags": job.tags or [],
-        "salary_text": salary.get("original_text"),
-        "is_estimate": salary.get("is_estimate", False),
+        "salary_text": salary_display["text"],
+        "salary_min_converted": salary_display["min_converted"],
+        "salary_max_converted": salary_display["max_converted"],
+        "is_estimate": salary_display["is_estimate"],
         "pending": pending,
         "activity_label": job.activity_label,
     }
@@ -73,7 +120,8 @@ def job_card_data(job_id: int, session: Session = Depends(get_session)):
     job = crud.get_job_posting(session, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
-    return JSONResponse(_card_data(job))
+    currency, period = _get_currency_prefs(session)
+    return JSONResponse(_card_data(job, currency, period))
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -83,7 +131,8 @@ def dashboard_page(
     lang: str = Depends(get_language),
 ):
     jobs = crud.list_job_postings(session, include_archived=False)
-    cards = [_card_data(job) for job in jobs]
+    currency, period = _get_currency_prefs(session)
+    cards = [_card_data(job, currency, period) for job in jobs]
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -177,7 +226,8 @@ def archive_page(
     lang: str = Depends(get_language),
 ):
     jobs = [job for job in crud.list_job_postings(session, include_archived=True) if job.archived]
-    cards = [_card_data(job) for job in jobs]
+    currency, period = _get_currency_prefs(session)
+    cards = [_card_data(job, currency, period) for job in jobs]
 
     return templates.TemplateResponse(
         "archive.html",

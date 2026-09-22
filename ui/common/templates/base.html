@@ -9,22 +9,41 @@
 <body>
     <nav class="topnav">
         <a href="/" class="topnav-brand">
-            <span class="topnav-brand-icon">🧭</span>
+            <span class="topnav-logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2.5L14.6 9.4L21.5 12L14.6 14.6L12 21.5L9.4 14.6L2.5 12L9.4 9.4L12 2.5Z" fill="white"/>
+                </svg>
+            </span>
             <span class="topnav-brand-name">JobPilot</span>
         </a>
 
+        <span class="topnav-divider"></span>
+
         <div class="topnav-links">
-            <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">{{ t.nav_dashboard }}</a>
-            <a href="/automation" class="{% if request.url.path.startswith('/automation') %}active{% endif %}">{{ t.nav_automation }}</a>
-            <a href="/tracker" class="{% if request.url.path.startswith('/tracker') %}active{% endif %}">{{ t.nav_tracker }}</a>
-            <a href="/settings" class="{% if request.url.path.startswith('/settings') %}active{% endif %}">{{ t.nav_settings }}</a>
+            <a href="/" class="topnav-link {% if request.url.path == '/' %}active{% endif %}">
+                <svg class="topnav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>{{ t.nav_dashboard }}</span>
+            </a>
+            <a href="/automation" class="topnav-link {% if request.url.path.startswith('/automation') %}active{% endif %}">
+                <svg class="topnav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>{{ t.nav_automation }}</span>
+            </a>
+            <a href="/tracker" class="topnav-link {% if request.url.path.startswith('/tracker') %}active{% endif %}">
+                <svg class="topnav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.5"></rect><rect x="14" y="3" width="7" height="11" rx="1.5"></rect></svg>
+                <span>{{ t.nav_tracker }}</span>
+            </a>
+            <a href="/settings" class="topnav-link {% if request.url.path.startswith('/settings') %}active{% endif %}">
+                <svg class="topnav-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>{{ t.nav_settings }}</span>
+            </a>
         </div>
 
         <div class="topnav-right">
             <a href="https://github.com/sponsors/YOUR_GITHUB_USERNAME" target="_blank" rel="noopener noreferrer" class="sponsor-link" title="{{ t.sponsor_label }}">
-                ♥ <span>{{ t.sponsor_label }}</span>
+                <svg class="sponsor-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.9-4.35-9.5-8.15C.7 9.95 1.4 6.35 4.3 4.75c2.3-1.25 4.9-.55 6.4 1.35L12 7.6l1.3-1.5c1.5-1.9 4.1-2.6 6.4-1.35 2.9 1.6 3.6 5.2 1.8 8.1C18.9 16.65 12 21 12 21z"></path></svg>
+                <span>{{ t.sponsor_label }}</span>
             </a>
-            <form id="lang-form" class="lang-form">
+            <form id="lang-form" class="lang-switcher">
                 <select name="lang" id="lang-select">
                     <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
                     <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>

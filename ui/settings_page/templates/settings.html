@@ -291,6 +291,74 @@
     </div>
 </div>
 
+<!-- SALARY PREFERENCES -->
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div class="settings-card-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <h2>{{ t.salary_prefs_title }}</h2>
+        </div>
+        <span class="autosave-status" id="salary-save-status">✓ {{ t.saved_status }}</span>
+    </div>
+    <p class="settings-card-hint">{{ t.salary_prefs_hint }}</p>
+
+    <div class="field-grid">
+        <div>
+            <label class="autosave-field-label">{{ t.preferred_currency_label }}</label>
+            <select id="preferred_currency" class="autosave-input">
+                {% for currency in supported_currencies %}
+                <option value="{{ currency }}" {% if currency == preferred_currency %}selected{% endif %}>{{ currency }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="autosave-field-label">{{ t.preferred_period_label }}</label>
+            <div class="range-toggle" id="salary-period-toggle" style="margin-top:4px;">
+                <button type="button" data-period="hour">{{ t.period_hour }}</button>
+                <button type="button" data-period="month">{{ t.period_month }}</button>
+                <button type="button" data-period="year">{{ t.period_year }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.range-toggle { display: flex; gap: 6px; }
+.range-toggle button {
+    padding: 8px 14px; font-size: 12.5px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background-color: var(--bg-input); color: var(--text-secondary); cursor: pointer;
+}
+.range-toggle button.active { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+</style>
+
+<script>
+(function () {
+    const status = document.getElementById("salary-save-status");
+    const currencySelect = document.getElementById("preferred_currency");
+    const periodToggle = document.getElementById("salary-period-toggle");
+    let currentPeriod = {{ preferred_salary_period | tojson }};
+
+    periodToggle.querySelectorAll("button").forEach((btn) => {
+        if (btn.dataset.period === currentPeriod) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+            periodToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentPeriod = btn.dataset.period;
+            saveSalaryPrefs();
+        });
+    });
+
+    function saveSalaryPrefs() {
+        const formData = new FormData();
+        formData.append("preferred_currency", currencySelect.value);
+        formData.append("preferred_salary_period", currentPeriod);
+        fetch("/settings/salary-preferences", { method: "POST", body: formData }).then(() => flashSaved(status));
+    }
+
+    currencySelect.addEventListener("change", saveSalaryPrefs);
+})();
+</script>
+
 <!-- BLOCKERS -->
 <div class="settings-card">
     <div class="settings-card-header">
