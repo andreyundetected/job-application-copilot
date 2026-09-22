@@ -33,7 +33,7 @@
 
     {% if job.source_url %}
     <p class="salary-line">
-        <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">{{ t.original_posting_link }}</a>
+        <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" class="accent-link">{{ t.original_posting_link }}</a>
     </p>
     {% endif %}
 
@@ -87,7 +87,41 @@
 </div>
 
 <div class="card">
-    <h3>{{ t.job_posting_text_title }}</h3>
-    <p class="summary-text" style="white-space: pre-wrap;">{{ job.raw_text }}</p>
+    <button type="button" class="raw-text-toggle" id="raw-text-toggle">
+        <h3 style="margin:0;">{{ t.job_posting_text_title }}</h3>
+        <svg class="raw-text-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <div class="raw-text-body" id="raw-text-body">
+        <p class="summary-text" style="white-space: pre-wrap;">{{ job.raw_text }}</p>
+    </div>
 </div>
+
+<style>
+.accent-link { color: var(--accent); text-decoration: none; }
+.accent-link:hover { text-decoration: underline; }
+
+.raw-text-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+.raw-text-toggle-chevron { width: 14px; height: 14px; color: var(--text-tertiary); transition: transform 0.2s ease; flex-shrink: 0; }
+.raw-text-toggle.expanded .raw-text-toggle-chevron { transform: rotate(180deg); }
+
+.raw-text-body { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+.raw-text-body.expanded { max-height: 4000px; margin-top: 14px; }
+</style>
+
+<script>
+document.getElementById("raw-text-toggle").addEventListener("click", () => {
+    document.getElementById("raw-text-toggle").classList.toggle("expanded");
+    document.getElementById("raw-text-body").classList.toggle("expanded");
+});
+</script>
 {% endblock %}

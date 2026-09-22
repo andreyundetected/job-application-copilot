@@ -27,6 +27,59 @@
 
 .job-posting-textarea { min-height: 260px; font-size: 13.5px; line-height: 1.55; }
 
+.info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: var(--bg-input);
+    color: var(--text-tertiary);
+    font-size: 9.5px;
+    font-style: normal;
+    flex-shrink: 0;
+}
+.tooltip-bubble {
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-primary);
+    width: max-content;
+    max-width: 230px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 60;
+    text-align: left;
+    white-space: normal;
+}
+.tooltip-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--border);
+}
+.info-icon:hover .tooltip-bubble,
+.info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
+.info-icon { z-index: 1; }
+.info-icon .tooltip-bubble { z-index: 10; }
+
 .field-label-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; margin-bottom: 6px; }
 .field-label-row label { margin: 0; }
 .char-count { font-size: 11px; color: var(--text-tertiary); }
@@ -137,15 +190,10 @@
     margin-bottom: 12px;
 }
 
-.open-editor-btn {
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    width: 100%; padding: 9px; font-size: 12px; font-weight: 500;
-    background-color: var(--bg-input); border: 1px dashed var(--border-hover);
-    color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer;
-    transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
-}
-.open-editor-btn:hover { border-color: var(--accent); color: var(--accent); background-color: var(--accent-soft); }
-.open-editor-btn svg { width: 13px; height: 13px; }
+.sidebar-section-trigger { cursor: pointer; transition: border-color 0.12s ease, background-color 0.12s ease; }
+.sidebar-section-trigger:hover { border-color: var(--border-hover); background-color: var(--bg-elevated); }
+.sidebar-section-trigger:hover .sidebar-section-arrow { color: var(--accent); transform: translate(1px, -1px); }
+.sidebar-section-arrow { width: 14px; height: 14px; color: var(--text-tertiary); flex-shrink: 0; transition: color 0.12s ease, transform 0.12s ease; }
 
 .editor-preview {
     font-size: 11.5px;
@@ -173,17 +221,37 @@
 }
 .autosave-status.visible { opacity: 1; }
 
-/* ---- large editor modal (resume / linkedin) ---- */
-.editor-modal-box {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
+/* ---- inline editor panel (resume / linkedin) ---- */
+.editor-inline-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-lg);
-    width: min(920px, 94vw);
-    height: min(88vh, 900px);
+    margin-top: 20px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+}
+.editor-inline-panel.open {
+    max-height: 900px;
+    opacity: 1;
+}
+
+.editor-modal-box {
     display: flex;
     flex-direction: column;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
 }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    background-color: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 12px; color: var(--text-primary);
+    max-width: 100%;
+}
+.chip-item-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.chip-item-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 6px; border-radius: 50%; flex-shrink: 0; }
+.chip-item-remove:hover { color: var(--score-low); background-color: var(--score-low-soft); }
 
 .editor-modal-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -207,7 +275,7 @@
 
 .mini-resume-doc {
     background: #ffffff; color: #111; border-radius: var(--radius); padding: 32px 40px;
-    flex: 1; overflow-y: auto; font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10.5pt;
+    height: 560px; overflow-y: auto; font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10.5pt;
     outline: none; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
 }
 .mini-resume-doc p { margin: 3px 0; line-height: 1.45; }
@@ -215,13 +283,27 @@
 .mini-resume-doc li { margin: 2px 0; line-height: 1.45; }
 
 .linkedin-modal-textarea {
-    flex: 1;
     width: 100%;
+    height: 340px;
     resize: none;
     font-size: 13px;
     line-height: 1.6;
-    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
 }
+.linkedin-modal-textarea::-webkit-scrollbar { width: 8px; }
+.linkedin-modal-textarea::-webkit-scrollbar-track { background: transparent; }
+.linkedin-modal-textarea::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; border: 2px solid var(--bg-elevated); }
+.linkedin-modal-textarea::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+.mini-resume-doc {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+}
+.mini-resume-doc::-webkit-scrollbar { width: 8px; }
+.mini-resume-doc::-webkit-scrollbar-track { background: transparent; }
+.mini-resume-doc::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 999px; }
+.mini-resume-doc::-webkit-scrollbar-thumb:hover { background-color: rgba(0,0,0,0.35); }
 
 .editor-modal-footer {
     display: flex; align-items: center; justify-content: space-between;
@@ -308,6 +390,168 @@
 .segmented-btn.active.minus { background-color: var(--score-low); color: white; }
 .segmented-btn.active.weight { background-color: var(--accent); color: white; }
 .segmented-group-label { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.ma-level-group { margin-bottom: 12px; }
+
+.ma-level-group-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+
+.ma-toggle-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.ma-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background-color: var(--bg-input);
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+.ma-toggle-row:hover { background-color: var(--bg-elevated); }
+.ma-toggle-row + .ma-toggle-row { border-top: 1px solid var(--border); }
+.ma-toggle-row-label { font-size: 12px; color: var(--text-primary); }
+
+.ma-toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.ma-toggle-switch input { opacity: 0; width: 0; height: 0; }
+.ma-toggle-slider {
+    position: absolute; inset: 0; background-color: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 999px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.ma-toggle-slider::before {
+    content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px;
+    background-color: var(--text-secondary); border-radius: 50%;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.ma-toggle-switch input:checked + .ma-toggle-slider { background-color: var(--accent); border-color: var(--accent); }
+.ma-toggle-switch input:checked + .ma-toggle-slider::before { transform: translateX(16px); background-color: white; }
+
+.manual-assist-block {
+    background: linear-gradient(160deg, var(--bg-card), rgba(91, 141, 239, 0.08));
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-top: 20px;
+    overflow: visible;
+    position: static;
+    z-index: 0;
+}
+
+.manual-assist-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.manual-assist-icon { font-size: 22px; line-height: 1.2; flex-shrink: 0; }
+.manual-assist-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.manual-assist-hint { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+
+.manual-assist-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 16px;
+    overflow: visible;
+}
+.manual-assist-columns > div { overflow: visible; }
+@media (max-width: 800px) { .manual-assist-columns { grid-template-columns: 1fr; } }
+
+.ma-column-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin: 0 0 8px;
+}
+
+.ma-level-group { margin-bottom: 10px; }
+.ma-level-group:last-child { margin-bottom: 0; }
+
+.ma-level-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 5px;
+}
+
+.ma-toggle-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: visible;
+}
+.ma-toggle-list label:first-child { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.ma-toggle-list label:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.ma-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 11px;
+    margin: 0;
+    background-color: var(--bg-input);
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+    position: relative;
+    z-index: auto;
+    overflow: visible;
+}
+.ma-toggle-row:hover { background-color: var(--bg-elevated); }
+.ma-toggle-row:has(.info-icon:hover) { z-index: 2; }
+.ma-toggle-row + .ma-toggle-row { border-top: 1px solid var(--border); }
+.ma-toggle-row-label { font-size: 12.5px; color: var(--text-primary); margin: 0; }
+
+.ma-question-card {
+    display: flex; align-items: flex-start; gap: 9px;
+    background-color: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+}
+.ma-question-card-text {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+}
+.ma-question-card-remove {
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+}
+.ma-question-card-remove:hover { color: var(--score-low); }
+
+.ma-quick-add-row { display: flex; gap: 8px; margin-top: 10px; }
+.ma-quick-add-row input[type="text"] { flex: 1; margin-top: 0; }
+.ma-quick-add-row .btn { margin-top: 0; padding: 9px 15px; font-size: 12.5px; white-space: nowrap; }
+
+.ma-column-example { font-size: 11px; color: var(--text-tertiary); margin: -4px 0 10px; }
+
+.manual-assist-threshold {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+.manual-assist-threshold label { margin: 0; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.manual-assist-threshold input[type="text"] { max-width: 60px; margin-top: 0; }
 </style>
 
 <div class="evaluator-header">
@@ -372,6 +616,7 @@
                     </div>
                 </div>
             </form>
+
         </div>
 
         <div id="evaluator-result"></div>
@@ -379,54 +624,29 @@
 
     <div>
         <!-- RESUME -->
-        <div class="sidebar-section" data-section="resume">
-            <div class="sidebar-section-header" data-toggle="inline">
+        <div class="sidebar-section sidebar-section-trigger" data-section="resume" id="open-resume-modal-btn">
+            <div class="sidebar-section-header">
                 <span class="sidebar-section-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                     {{ t.using_resume }}
                     <span class="sidebar-section-meta">{% if active_resume %}— {{ active_resume.label }}{% else %}— {{ t.none_set }}{% endif %}</span>
                 </span>
-                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-            <div class="sidebar-section-body">
-                <div class="sidebar-section-inner">
-                    {% if active_resume %}
-                    <div class="editor-preview">{{ active_resume.raw_text[:220] }}</div>
-                    {% else %}
-                    <p class="salary-line" style="margin-top:0;">{{ t.none_set }}</p>
-                    {% endif %}
-                    <button type="button" class="open-editor-btn" id="open-resume-modal-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
-                        {{ t.open_resume_editor }}
-                    </button>
-                </div>
+                <svg class="sidebar-section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
             </div>
         </div>
 
         <!-- LINKEDIN -->
-        <div class="sidebar-section" data-section="linkedin">
-            <div class="sidebar-section-header" data-toggle="inline">
+        <div class="sidebar-section sidebar-section-trigger" data-section="linkedin" id="open-linkedin-modal-btn">
+            <div class="sidebar-section-header">
                 <span class="sidebar-section-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                     {{ t.linkedin }}
                     <span class="sidebar-section-meta">{% if active_linkedin %}— {{ active_linkedin.label }}{% else %}— {{ t.none_set }}{% endif %}</span>
                 </span>
-                <svg class="sidebar-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-            <div class="sidebar-section-body">
-                <div class="sidebar-section-inner">
-                    {% if active_linkedin %}
-                    <div class="editor-preview">{{ active_linkedin.raw_text[:220] }}</div>
-                    {% else %}
-                    <p class="salary-line" style="margin-top:0;">{{ t.none_set }}</p>
-                    {% endif %}
-                    <button type="button" class="open-editor-btn" id="open-linkedin-modal-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
-                        {{ t.open_linkedin_editor }}
-                    </button>
-                </div>
+                <svg class="sidebar-section-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M9 21H3v-6"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
             </div>
         </div>
+        <!-- MODALS_PLACEHOLDER_MOVED_BELOW -->
 
         <!-- PROFILE / LINKS -->
         <div class="sidebar-section" data-section="profile">
@@ -440,17 +660,28 @@
             <div class="sidebar-section-body">
                 <div class="sidebar-section-inner" id="profile-fields">
                     <label class="autosave-field-label">Full name</label>
-                    <input type="text" class="autosave-input" data-profile-field="full_name" value="{{ profile.full_name if profile else '' }}">
+                    <input type="text" class="autosave-input" data-profile-field="full_name" value="{{ profile.full_name or '' if profile else '' }}">
                     <label class="autosave-field-label">Email</label>
-                    <input type="text" class="autosave-input" data-profile-field="email" value="{{ profile.email if profile else '' }}">
+                    <input type="text" class="autosave-input" data-profile-field="email" value="{{ profile.email or '' if profile else '' }}">
                     <label class="autosave-field-label">GitHub</label>
-                    <input type="text" class="autosave-input" data-profile-field="github_url" value="{{ profile.github_url if profile else '' }}">
+                    <input type="text" class="autosave-input" data-profile-field="github_url" value="{{ profile.github_url or '' if profile else '' }}">
                     <label class="autosave-field-label">LinkedIn URL</label>
-                    <input type="text" class="autosave-input" data-profile-field="linkedin_url" value="{{ profile.linkedin_url if profile else '' }}">
-                    <label class="autosave-field-label">Additional links (one per line)</label>
-                    <textarea class="autosave-textarea" data-profile-field="extra_links_text">{% if profile and profile.extra_links %}{{ profile.extra_links | join('\n') }}{% endif %}</textarea>
+                    <input type="text" class="autosave-input" data-profile-field="linkedin_url" value="{{ profile.linkedin_url or '' if profile else '' }}">
+                    <label class="autosave-field-label">Additional links</label>
+                    <div class="chip-row" id="profile-links-list">
+                        {% for link in (profile.extra_links if profile else []) or [] %}
+                        <span class="chip-item" data-index="{{ loop.index0 }}">
+                            <span class="chip-item-text">{{ link }}</span>
+                            <button type="button" class="chip-item-remove profile-link-remove-btn" data-index="{{ loop.index0 }}">&times;</button>
+                        </span>
+                        {% endfor %}
+                    </div>
+                    <div class="mini-add-row" style="margin-top:8px;">
+                        <input type="text" id="profile_link_input" placeholder="https://...">
+                        <button type="button" class="btn" id="add-profile-link-btn">{{ t.add_button }}</button>
+                    </div>
                     <label class="autosave-field-label">Additional info</label>
-                    <textarea class="autosave-textarea" data-profile-field="extra_info">{{ profile.extra_info if profile else '' }}</textarea>
+                    <textarea class="autosave-textarea" data-profile-field="extra_info">{{ profile.extra_info or '' if profile else '' }}</textarea>
                     <div class="autosave-status" id="profile-save-status">✓ Saved</div>
                 </div>
             </div>
@@ -469,9 +700,6 @@
             <div class="sidebar-section-body">
                 <div class="sidebar-section-inner">
                     <p class="sidebar-section-hint">{{ t.blockers_hint }}</p>
-                    <div class="quick-chip-row">
-                        <button type="button" class="quick-chip" id="remote-only-chip">{{ t.remote_only_chip }}</button>
-                    </div>
                     <div class="blocker-card-list" id="blocker-list">
                         {% for blocker in blockers %}
                         <div class="blocker-card" data-blocker-id="{{ blocker.id }}">
@@ -482,7 +710,7 @@
                         {% endfor %}
                     </div>
                     <div class="mini-add-row">
-                        <input type="text" id="new-blocker-input" placeholder="e.g. requires a university degree">
+                        <input type="text" id="new-blocker-input" placeholder="e.g. я не рассматриваю оффлайн вакансии">
                         <button type="button" class="btn" id="add-blocker-btn">+</button>
                     </div>
                 </div>
@@ -534,11 +762,12 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
-<!-- RESUME EDITOR MODAL -->
-<div class="modal-overlay-centered" id="resume-modal-overlay" style="display:none;">
+<!-- RESUME EDITOR PANEL -->
+<div class="editor-inline-panel" id="resume-modal-overlay">
     <div class="editor-modal-box">
         <div class="editor-modal-header">
             <span class="editor-modal-title">📄 {{ t.using_resume }}</span>
@@ -571,13 +800,12 @@
                 <input type="file" id="resume-upload-input" accept=".pdf,.docx,.txt">
                 <span class="resume-upload-status" id="resume-upload-status"></span>
             </div>
-            <button type="button" class="btn-ghost btn" style="margin-top:0;" id="resume-modal-done-btn">{{ t.close_editor }}</button>
         </div>
     </div>
 </div>
 
-<!-- LINKEDIN EDITOR MODAL -->
-<div class="modal-overlay-centered" id="linkedin-modal-overlay" style="display:none;">
+<!-- LINKEDIN EDITOR PANEL -->
+<div class="editor-inline-panel" id="linkedin-modal-overlay">
     <div class="editor-modal-box">
         <div class="editor-modal-header">
             <span class="editor-modal-title">💼 {{ t.linkedin }}</span>
@@ -588,11 +816,98 @@
         </div>
         <div class="editor-modal-footer">
             <div style="display:flex;align-items:center;gap:10px;">
-                <button type="button" class="reparse-link-btn" id="linkedin-reparse-btn">✨ Re-structure with AI</button>
-                <span class="autosave-status" id="linkedin-reparse-status">Done</span>
                 <span class="autosave-status" id="linkedin-save-status">✓ Saved</span>
             </div>
-            <button type="button" class="btn-ghost btn" style="margin-top:0;" id="linkedin-modal-done-btn">{{ t.close_editor }}</button>
+        </div>
+    </div>
+</div>
+
+<div class="manual-assist-block">
+    <div class="manual-assist-header">
+        <span class="manual-assist-icon">🪄</span>
+        <div>
+            <div class="manual-assist-title">{{ t.manual_assist_title }}</div>
+            <p class="manual-assist-hint">{{ t.manual_assist_hint }}</p>
+        </div>
+    </div>
+
+    <div class="manual-assist-threshold">
+        <label for="ma_min_score">{{ t.manual_assist_min_score_label }}</label>
+        <input type="text" inputmode="numeric" id="ma_min_score" value="{{ manual_assist_min_score }}">
+        <span class="info-icon">i<span class="tooltip-bubble">{{ t.manual_assist_min_score_tooltip }}</span></span>
+    </div>
+
+    <div class="manual-assist-columns">
+        <div>
+            <div class="ma-column-title">
+                {{ t.manual_assist_tailoring_title }}
+                <span class="info-icon">i<span class="tooltip-bubble">{{ t.manual_assist_tailoring_tooltip }}</span></span>
+            </div>
+
+            <div class="ma-level-group">
+                <div class="ma-level-group-header">
+                    {{ t.level_soft }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.level_soft_tooltip }}</span></span>
+                </div>
+                <div class="ma-toggle-list" id="ma-tailoring-matrix-soft">
+                    {% for row in tailoring_matrix %}
+                    {% if row.level == "soft" %}
+                    <label class="ma-toggle-row">
+                        <span class="ma-toggle-switch">
+                            <input type="checkbox" class="ma-tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                            <span class="ma-toggle-slider"></span>
+                        </span>
+                        <span class="ma-toggle-row-label">{{ t["change_type_" + row.change_type] }}</span>
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span>
+                    </label>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="ma-level-group">
+                <div class="ma-level-group-header">
+                    {{ t.level_medium }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.level_medium_tooltip }}</span></span>
+                </div>
+                <div class="ma-toggle-list" id="ma-tailoring-matrix-medium">
+                    {% for row in tailoring_matrix %}
+                    {% if row.level == "medium" %}
+                    <label class="ma-toggle-row">
+                        <span class="ma-toggle-switch">
+                            <input type="checkbox" class="ma-tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                            <span class="ma-toggle-slider"></span>
+                        </span>
+                        <span class="ma-toggle-row-label">{{ t["change_type_" + row.change_type] }}</span>
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span>
+                    </label>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="ma-column-title">
+                {{ t.manual_assist_questions_title }}
+                <span class="info-icon">i<span class="tooltip-bubble">{{ t.manual_assist_questions_tooltip }}</span></span>
+            </div>
+            <p class="ma-column-example">{{ t.manual_assist_questions_example }}</p>
+            <div class="factor-card-list" id="ma-base-question-list">
+                {% for question in base_questions %}
+                <div class="ma-question-card" data-question-id="{{ question.id }}">
+                    <span class="ma-question-card-text">{{ question.question_text }}</span>
+                    <button type="button" class="ma-question-card-remove ma-delete-base-question-btn">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not base_questions %}
+            <p class="salary-line" id="ma-question-empty-hint" style="margin:8px 0;">{{ t.manual_assist_no_questions }}</p>
+            {% endif %}
+            <div class="ma-quick-add-row">
+                <input type="text" id="ma_base_question_input" placeholder="{{ t.manual_assist_question_placeholder }}">
+                <button type="button" class="btn" id="ma-btn-add-base-question">{{ t.add_button }}</button>
+            </div>
         </div>
     </div>
 </div>
@@ -601,10 +916,7 @@
 const I18N = {{ t | tojson }};
 const HAS_RESUME = {{ (active_resume is not none) | tojson }};
 
-document.querySelectorAll('.sidebar-section-header[data-toggle="inline"]').forEach((header) => {
-    header.addEventListener("click", () => header.closest(".sidebar-section").classList.toggle("expanded"));
-});
-document.querySelectorAll('.sidebar-section-header:not([data-toggle="inline"])').forEach((header) => {
+document.querySelectorAll('.sidebar-section:not(.sidebar-section-trigger) > .sidebar-section-header').forEach((header) => {
     header.addEventListener("click", () => header.closest(".sidebar-section").classList.toggle("expanded"));
 });
 
@@ -614,22 +926,34 @@ function flashSaved(el) {
     el._hideTimeout = setTimeout(() => el.classList.remove("visible"), 1600);
 }
 
-function openModal(id) { document.getElementById(id).style.display = "flex"; }
-function closeModal(id) { document.getElementById(id).style.display = "none"; }
+const EDITOR_PANEL_IDS = ["resume-modal-overlay", "linkedin-modal-overlay"];
 
-document.getElementById("open-resume-modal-btn").addEventListener("click", () => openModal("resume-modal-overlay"));
-document.getElementById("resume-modal-close").addEventListener("click", () => closeModal("resume-modal-overlay"));
-document.getElementById("resume-modal-done-btn").addEventListener("click", () => closeModal("resume-modal-overlay"));
-
-document.getElementById("open-linkedin-modal-btn").addEventListener("click", () => openModal("linkedin-modal-overlay"));
-document.getElementById("linkedin-modal-close").addEventListener("click", () => closeModal("linkedin-modal-overlay"));
-document.getElementById("linkedin-modal-done-btn").addEventListener("click", () => closeModal("linkedin-modal-overlay"));
-
-["resume-modal-overlay", "linkedin-modal-overlay"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", (e) => {
-        if (e.target.id === id) closeModal(id);
+function openModal(id) {
+    EDITOR_PANEL_IDS.filter((otherId) => otherId !== id).forEach((otherId) => {
+        const other = document.getElementById(otherId);
+        if (other && other.classList.contains("open")) closeModal(otherId);
     });
-});
+    const el = document.getElementById(id);
+    el.classList.add("open");
+    setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+}
+function toggleModal(id) {
+    const el = document.getElementById(id);
+    if (el.classList.contains("open")) {
+        closeModal(id);
+    } else {
+        openModal(id);
+    }
+}
+
+document.getElementById("open-resume-modal-btn").addEventListener("click", () => toggleModal("resume-modal-overlay"));
+document.getElementById("resume-modal-close").addEventListener("click", () => closeModal("resume-modal-overlay"));
+
+document.getElementById("open-linkedin-modal-btn").addEventListener("click", () => toggleModal("linkedin-modal-overlay"));
+document.getElementById("linkedin-modal-close").addEventListener("click", () => closeModal("linkedin-modal-overlay"));
 
 // ---- job posting textarea / extra info toggle ----
 const textarea = document.getElementById("job_posting_text");
@@ -651,8 +975,8 @@ function checkContextWarnings() {
     if (document.querySelectorAll("#blocker-list .blocker-card").length === 0) missing.push(I18N.warning_no_blockers);
     if (document.querySelectorAll("#factor-list .factor-card").length === 0) missing.push(I18N.warning_no_factors);
 
-    const hasLinks = [...document.querySelectorAll('#profile-fields [data-profile-field="github_url"], #profile-fields [data-profile-field="linkedin_url"], #profile-fields [data-profile-field="extra_links_text"]')]
-        .some((el) => el.value.trim().length > 0);
+    const hasLinks = [...document.querySelectorAll('#profile-fields [data-profile-field="github_url"], #profile-fields [data-profile-field="linkedin_url"]')]
+        .some((el) => el.value.trim().length > 0) || document.querySelectorAll("#profile-links-list .chip-item").length > 0;
     if (!hasLinks) missing.push(I18N.warning_no_links);
 
     const banner = document.getElementById("context-warning-banner");
@@ -905,13 +1229,10 @@ function saveLinkedinText() {
         fetch("/settings/linkedin", { method: "POST", body: formData }).then(async (response) => {
             if (!response.ok) return;
             const data = await response.json();
-            pollTaskStatus([data.task_id], (tasks) => {
-                const task = tasks[0];
-                if (task.status === "done" && task.result && task.result.resume_version_id) {
-                    linkedinTextarea.dataset.resumeId = task.result.resume_version_id;
-                    flashSaved(linkedinSaveStatus);
-                }
-            });
+            if (data.resume_version_id) {
+                linkedinTextarea.dataset.resumeId = data.resume_version_id;
+                flashSaved(linkedinSaveStatus);
+            }
         });
         return;
     }
@@ -927,28 +1248,6 @@ linkedinTextarea.addEventListener("input", () => {
     checkContextWarnings();
 });
 linkedinTextarea.addEventListener("blur", () => { clearTimeout(linkedinSaveTimeout); saveLinkedinText(); });
-
-document.getElementById("linkedin-reparse-btn").addEventListener("click", async () => {
-    const statusEl = document.getElementById("linkedin-reparse-status");
-    statusEl.textContent = "Re-parsing...";
-    statusEl.classList.add("visible");
-
-    const formData = new FormData();
-    formData.append("linkedin_text", linkedinTextarea.value);
-    const response = await fetch("/settings/linkedin", { method: "POST", body: formData });
-    if (!response.ok) { statusEl.textContent = "Failed"; return; }
-    const data = await response.json();
-    pollTaskStatus([data.task_id], (tasks) => {
-        const task = tasks[0];
-        if (task.status === "done") {
-            statusEl.textContent = "Done";
-            if (task.result && task.result.resume_version_id) linkedinTextarea.dataset.resumeId = task.result.resume_version_id;
-            setTimeout(() => statusEl.classList.remove("visible"), 1500);
-        } else if (task.status === "failed") {
-            statusEl.textContent = "Failed: " + task.error;
-        }
-    });
-});
 
 // ---- profile fields autosave ----
 const profileSaveStatus = document.getElementById("profile-save-status");
@@ -967,6 +1266,41 @@ document.querySelectorAll("#profile-fields [data-profile-field]").forEach((el) =
         checkContextWarnings();
     });
     el.addEventListener("blur", () => { clearTimeout(profileSaveTimeout); saveProfile(); });
+});
+
+// ---- profile links ----
+function renderEvaluatorProfileLinks(links) {
+    const list = document.getElementById("profile-links-list");
+    list.innerHTML = links.map((link, index) => `
+        <span class="chip-item" data-index="${index}">
+            <span class="chip-item-text">${link.replace(/</g, "&lt;")}</span>
+            <button type="button" class="chip-item-remove profile-link-remove-btn" data-index="${index}">&times;</button>
+        </span>
+    `).join("");
+}
+
+document.getElementById("add-profile-link-btn").addEventListener("click", async () => {
+    const input = document.getElementById("profile_link_input");
+    const text = input.value.trim();
+    if (!text) return;
+    const response = await fetch("/settings/profile/links", { method: "POST", body: new URLSearchParams({ link: text }) });
+    if (!response.ok) return;
+    const data = await response.json();
+    renderEvaluatorProfileLinks(data.extra_links);
+    input.value = "";
+    checkContextWarnings();
+});
+document.getElementById("profile_link_input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("add-profile-link-btn").click(); }
+});
+document.getElementById("profile-links-list").addEventListener("click", async (e) => {
+    if (!e.target.classList.contains("profile-link-remove-btn")) return;
+    const index = e.target.dataset.index;
+    const response = await fetch(`/settings/profile/links/${index}/delete`, { method: "POST" });
+    if (!response.ok) return;
+    const data = await response.json();
+    renderEvaluatorProfileLinks(data.extra_links);
+    checkContextWarnings();
 });
 
 // ---- blockers ----
@@ -1004,21 +1338,6 @@ document.getElementById("blocker-list").addEventListener("click", async (e) => {
     await fetch(`/settings/blockers/${id}/delete`, { method: "POST" });
     e.target.closest(".blocker-card").remove();
     checkContextWarnings();
-});
-
-document.getElementById("remote-only-chip").addEventListener("click", async (e) => {
-    const chip = e.currentTarget;
-    const text = I18N.remote_only_blocker_text;
-    const alreadyExists = [...document.querySelectorAll("#blocker-list .blocker-card-text")].some((el) => el.textContent === text);
-    if (alreadyExists) { chip.classList.add("used"); return; }
-
-    const formData = new FormData();
-    formData.append("text", text);
-    const response = await fetch("/settings/blockers", { method: "POST", body: formData });
-    if (!response.ok) return;
-    const data = await response.json();
-    addBlockerCard(data.id, data.text);
-    chip.classList.add("used");
 });
 
 // ---- scoring factors ----
@@ -1078,6 +1397,89 @@ document.getElementById("factor-list").addEventListener("click", async (e) => {
     await fetch(`/settings/scoring-factors/${id}/delete`, { method: "POST" });
     e.target.closest(".factor-card").remove();
     checkContextWarnings();
+});
+
+let maMinScoreTimeout = null;
+document.getElementById("ma_min_score").addEventListener("input", () => {
+    clearTimeout(maMinScoreTimeout);
+    maMinScoreTimeout = setTimeout(saveMaMinScore, 500);
+});
+document.getElementById("ma_min_score").addEventListener("blur", () => {
+    clearTimeout(maMinScoreTimeout);
+    saveMaMinScore();
+});
+async function saveMaMinScore() {
+    const formData = new FormData();
+    formData.append("manual_assist_min_score", document.getElementById("ma_min_score").value);
+    await fetch("/evaluator/manual-assist/min-score", { method: "POST", body: formData });
+}
+
+document.querySelectorAll(".ma-tailoring-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", async () => {
+        const formData = new FormData();
+        formData.append("level", checkbox.dataset.level);
+        formData.append("change_type", checkbox.dataset.changeType);
+        formData.append("auto_apply", checkbox.checked ? "true" : "");
+        await fetch("/evaluator/manual-assist/tailoring-permissions", { method: "POST", body: formData });
+    });
+});
+
+function maUpdateEmptyHint() {
+    const list = document.getElementById("ma-base-question-list");
+    const existingHint = document.getElementById("ma-question-empty-hint");
+    if (list.children.length === 0) {
+        if (!existingHint) {
+            const hint = document.createElement("p");
+            hint.className = "salary-line";
+            hint.id = "ma-question-empty-hint";
+            hint.style.margin = "8px 0";
+            hint.textContent = I18N.manual_assist_no_questions;
+            list.insertAdjacentElement("afterend", hint);
+        }
+    } else if (existingHint) {
+        existingHint.remove();
+    }
+}
+
+function addMaBaseQuestionRow(id, text) {
+    const list = document.getElementById("ma-base-question-list");
+    const row = document.createElement("div");
+    row.className = "ma-question-card";
+    row.dataset.questionId = id;
+    row.innerHTML = `<span class="ma-question-card-text">${text.replace(/</g, "&lt;")}</span><button type="button" class="ma-question-card-remove ma-delete-base-question-btn">&times;</button>`;
+    list.appendChild(row);
+    maUpdateEmptyHint();
+}
+
+document.getElementById("ma-btn-add-base-question").addEventListener("click", async () => {
+    const input = document.getElementById("ma_base_question_input");
+    const text = input.value.trim();
+    if (!text) return;
+    const response = await fetch("/evaluator/manual-assist/base-questions", {
+        method: "POST",
+        body: new URLSearchParams({ question_text: text }),
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    addMaBaseQuestionRow(data.id, data.question_text);
+    input.value = "";
+});
+
+document.getElementById("ma_base_question_input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("ma-btn-add-base-question").click();
+    }
+});
+
+document.getElementById("ma-base-question-list").addEventListener("click", async (event) => {
+    if (!event.target.classList.contains("ma-delete-base-question-btn")) return;
+    const questionId = event.target.closest(".ma-question-card").dataset.questionId;
+    const response = await fetch(`/evaluator/manual-assist/base-questions/${questionId}/delete`, { method: "POST" });
+    if (response.ok) {
+        event.target.closest(".ma-question-card").remove();
+        maUpdateEmptyHint();
+    }
 });
 
 checkContextWarnings();

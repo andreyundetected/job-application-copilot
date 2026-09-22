@@ -20,13 +20,17 @@ main {
 
 .questions-layout {
     display: grid;
-    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(300px, 360px);
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(300px, 360px);
     gap: 20px;
     align-items: stretch;
     width: 100%;
     flex: 1;
     min-height: 0;
 }
+
+html, body { background-color: var(--bg); }
+
+.doc-page-title { text-align: center; font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px; }
 
 .copilot-panel, .questions-column, .side-column {
     height: 100%;
@@ -168,8 +172,8 @@ main {
     border: 1px solid var(--border);
     border-left: 3px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    margin-bottom: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
     cursor: pointer;
     transition: border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, transform 0.12s ease;
 }
@@ -178,7 +182,7 @@ main {
 .question-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .question-card.pending { opacity: 0.6; cursor: default; }
 
-.question-text { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.question-text { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .question-meta { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 
 .answer-body { font-size: 13px; color: var(--text-primary); white-space: pre-wrap; line-height: 1.5; }
@@ -270,18 +274,13 @@ textarea.answer-body-editable:focus {
         </div>
 
         <div class="card">
-            <h3 style="margin:0 0 8px;">{{ t.progress_title }}</h3>
-            <p class="salary-line" id="progress-text"></p>
-            <ul class="attention-list" id="attention-list"></ul>
-        </div>
-
-        <div class="card">
             <h3 style="margin:0 0 8px;">{{ t.raw_text_title }}</h3>
             <div class="raw-text-block">{{ job.raw_text }}</div>
         </div>
     </div>
 
     <div class="questions-column">
+        <h2 class="doc-page-title">{{ t.page_title }} — {{ job.company or "" }}</h2>
         <div id="questions-list">
             {% if not questions %}
             <p class="salary-line" id="empty-hint">{{ t.empty_state }}</p>
@@ -365,22 +364,8 @@ textarea.answer-body-editable:focus {
     }
 
     function renderProgress() {
-        const total = state.questions.length;
-        const answered = state.questions.filter((q) => q.answer_text && !isFlagged(q)).length;
-        progressText.textContent = `${I18N.answered_prefix} ${answered} / ${total}`;
-
-        const flagged = state.questions.filter(isFlagged);
-        attentionList.innerHTML = "";
-        flagged.forEach((q) => {
-            const li = document.createElement("li");
-            li.textContent = q.question_text.slice(0, 60) + (q.question_text.length > 60 ? "…" : "");
-            li.addEventListener("click", () => {
-                const card = questionsList.querySelector(`[data-question-id="${q.id}"]`);
-                if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
-                selectQuestion(q.id);
-            });
-            attentionList.appendChild(li);
-        });
+        // Progress panel removed from the UI; kept as a no-op so existing call
+        // sites don't need touching.
     }
 
     function questionCardHtml(q) {

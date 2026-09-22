@@ -12,6 +12,7 @@ def upsert_app_settings(
     pregenerate_enabled: bool | None = None,
     pregenerate_min_score: int | None = None,
     auto_answer_questions_enabled: bool | None = None,
+    manual_assist_min_score: int | None = None,
 ) -> AppSettings:
     settings_row = session.query(AppSettings).first()
 
@@ -22,6 +23,7 @@ def upsert_app_settings(
             auto_answer_questions_enabled=(
                 auto_answer_questions_enabled if auto_answer_questions_enabled is not None else True
             ),
+            manual_assist_min_score=manual_assist_min_score if manual_assist_min_score is not None else 7,
         )
         session.add(settings_row)
     else:
@@ -31,6 +33,8 @@ def upsert_app_settings(
             settings_row.pregenerate_min_score = pregenerate_min_score
         if auto_answer_questions_enabled is not None:
             settings_row.auto_answer_questions_enabled = auto_answer_questions_enabled
+        if manual_assist_min_score is not None:
+            settings_row.manual_assist_min_score = manual_assist_min_score
 
     session.commit()
     session.refresh(settings_row)

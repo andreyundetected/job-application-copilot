@@ -231,7 +231,7 @@ def test_maybe_auto_answer_base_questions_creates_application_and_answers(monkey
         },
     )
 
-    pipeline._maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
+    pipeline.maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
 
     applications = [a for a in applications_crud.list_applications(db_session) if a.job_posting_id == job.id]
     assert len(applications) == 1
@@ -249,7 +249,7 @@ def test_maybe_auto_answer_base_questions_skips_when_no_questions_configured(db_
 
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
 
-    pipeline._maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
+    pipeline.maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
 
     applications = [a for a in applications_crud.list_applications(db_session) if a.job_posting_id == job.id]
     assert applications == []
@@ -271,7 +271,7 @@ def test_maybe_auto_answer_base_questions_does_not_duplicate_already_asked(monke
 
     monkeypatch.setattr(pipeline, "get_llm_provider", lambda: _FakeLLMProvider())
 
-    pipeline._maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
+    pipeline.maybe_auto_answer_base_questions(db_session, run_id=1, job=job, job_text="job text")
 
     questions = form_questions_crud.list_form_questions_for_application(db_session, application.id)
     assert len(questions) == 1
@@ -568,3 +568,71 @@ def test_run_automation_pipeline_marks_run_failed_on_unexpected_error(monkeypatc
 @pytest.mark.automation
 def test_run_automation_pipeline_noop_for_missing_run(db_session):
     pipeline.run_automation_pipeline(db_session, 999)
+
+
+@pytest.mark.automation
+def test_maybe_auto_tailor_uses_injected_permission_source(monkeypatch, db_session):
+    resumes_crud.create_resume_version(
+        db_session, source_type="resume", raw_text="resume text", content_html="<p>Old Skills Line</p>", is_active=True
+    )
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+
+    calls = {"level_has_auto_apply": 0, "is_auto_apply": 0}
+
+    def fake_level_has_auto_apply(session, level):
+        calls["level_has_auto_apply"] += 1
+        return level == "soft"
+
+    def fake_is_auto_apply(session, level, change_type):
+        calls["is_auto_apply"] += 1
+        return True
+
+    monkeypatch.setattr(pipeline, "get_llm_provider", lambda: _FakeLLMProvider())
+    monkeypatch.setattr(
+        pipeline,
+        "propose_soft_fragment_changes",
+        lambda *a, **k: [
+            {
+                "level": "soft",
+                "change_type": "skills",
+                "field_path": None,
+                "target_ref": None,
+                "original_text": "Old Skills Line",
+                "proposed_text": "New Skills Line",
+                "proposed_content": None,
+            }
+        ],
+    )
+
+    pipeline.maybe_auto_tailor(
+        db_session,
+        None,
+        job,
+        "job text",
+        {"matched_factors": []},
+        level_has_auto_apply=fake_level_has_auto_apply,
+        is_auto_apply=fake_is_auto_apply,
+    )
+
+    assert calls["level_has_auto_apply"] == 2
+    assert calls["is_auto_apply"] == 1
+
+    tailoring_session = tailoring_sessions_crud.get_tailoring_session_for_job(db_session, job.id)
+    assert "New Skills Line" in tailoring_session.working_html
+
+
+@pytest.mark.automation
+def test_maybe_auto_answer_base_questions_uses_injected_source(monkeypatch, db_session):
+    job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="manual")
+
+    called_with = []
+
+    def fake_list_base_questions(session):
+        called_with.append(True)
+        return []
+
+    pipeline.maybe_auto_answer_base_questions(
+        db_session, None, job, "job text", list_base_questions=fake_list_base_questions
+    )
+
+    assert called_with == [True]

@@ -14,7 +14,6 @@ from core.parsing.html_sanitize import sanitize_html
 from core.parsing.html_to_text import html_to_text
 from core.providers.factory import get_llm_provider
 from core.structuring.html_pipeline import structure_resume_to_html
-from core.structuring.pipeline import structure_linkedin_text
 from core.tasks.runner import run_tracked_task
 from ui.common.i18n import get_language, load_page_strings
 import config
@@ -44,7 +43,6 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
     blockers = crud.list_blocker_rules(session)
     scoring_factors = crud.list_scoring_factors(session)
     app_settings = crud.get_app_settings(session)
-    question_templates = crud.list_question_templates(session)
 
     return {
         "request": request,
@@ -53,7 +51,6 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
         "active_linkedin": active_linkedin,
         "blockers": blockers,
         "scoring_factors": scoring_factors,
-        "question_templates": question_templates,
         "pregenerate_enabled": app_settings.pregenerate_enabled if app_settings else False,
         "pregenerate_min_score": app_settings.pregenerate_min_score if app_settings else 7,
         "auto_answer_questions_enabled": app_settings.auto_answer_questions_enabled if app_settings else True,
@@ -77,23 +74,36 @@ def update_profile(
     email: str = Form(""),
     github_url: str = Form(""),
     linkedin_url: str = Form(""),
-    extra_links_text: str = Form(""),
     extra_info: str = Form(""),
     session: Session = Depends(get_session),
 ):
-    extra_links = [line.strip() for line in extra_links_text.splitlines() if line.strip()]
-
     crud.upsert_candidate_profile(
         session,
         full_name=full_name or None,
         email=email or None,
         github_url=github_url or None,
         linkedin_url=linkedin_url or None,
-        extra_links=extra_links,
         extra_info=extra_info or None,
     )
 
     return JSONResponse({"status": "ok"})
+
+
+@router.post("/profile/links")
+def add_profile_link(link: str = Form(...), session: Session = Depends(get_session)):
+    text = link.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Link cannot be empty")
+    profile = crud.add_extra_link(session, text)
+    return JSONResponse({"extra_links": profile.extra_links})
+
+
+@router.post("/profile/links/{index}/delete")
+def delete_profile_link(index: int, session: Session = Depends(get_session)):
+    profile = crud.remove_extra_link(session, index)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Link not found")
+    return JSONResponse({"extra_links": profile.extra_links})
 
 
 @router.post("/resume")
@@ -165,31 +175,15 @@ def edit_linkedin_text(
 def submit_linkedin(
     linkedin_text: str = Form(...),
     session: Session = Depends(get_session),
-    lang: str = Depends(get_language),
 ):
-    task_id = run_tracked_task(
-        "linkedin_structuring", _structure_and_save_linkedin, linkedin_text, lang
+    resume = crud.create_resume_version(
+        session,
+        source_type="linkedin",
+        raw_text=linkedin_text,
+        label="LinkedIn experience",
+        is_active=True,
     )
-    return JSONResponse({"status": "processing", "task_id": task_id})
-
-
-def _structure_and_save_linkedin(linkedin_text: str, lang: str = "en") -> dict:
-    session = SessionLocal()
-    try:
-        provider = get_llm_provider()
-        structured_content = structure_linkedin_text(provider, linkedin_text, language=lang)
-
-        resume = crud.create_resume_version(
-            session,
-            source_type="linkedin",
-            raw_text=linkedin_text,
-            structured_content=structured_content,
-            label="LinkedIn experience",
-            is_active=True,
-        )
-        return {"resume_version_id": resume.id, "structured_content": structured_content}
-    finally:
-        session.close()
+    return JSONResponse({"resume_version_id": resume.id})
 
 
 @router.post("/blockers")
@@ -225,36 +219,6 @@ def add_scoring_factor(
 def delete_scoring_factor(factor_id: int, session: Session = Depends(get_session)):
     crud.delete_scoring_factor(session, factor_id)
     return JSONResponse({"status": "ok", "id": factor_id})
-
-
-@router.post("/question-templates")
-def add_question_template(
-    label: str = Form(...),
-    trigger_phrases_text: str = Form(...),
-    instructions: str = Form(...),
-    session: Session = Depends(get_session),
-):
-    phrases = [p.strip() for p in trigger_phrases_text.split(",") if p.strip()]
-    if not phrases:
-        raise HTTPException(status_code=400, detail="At least one trigger phrase is required")
-
-    template = crud.create_question_template(
-        session, label=label, trigger_phrases=phrases, instructions=instructions
-    )
-    return JSONResponse(
-        {
-            "id": template.id,
-            "label": template.label,
-            "trigger_phrases": template.trigger_phrases,
-            "instructions": template.instructions,
-        }
-    )
-
-
-@router.post("/question-templates/{template_id}/delete")
-def delete_question_template(template_id: int, session: Session = Depends(get_session)):
-    crud.delete_question_template(session, template_id)
-    return JSONResponse({"status": "ok", "id": template_id})
 
 
 @router.post("/pregenerate")

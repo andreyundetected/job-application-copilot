@@ -287,6 +287,21 @@ def _process_search_result(
             work_mode=result["work_mode"],
         )
 
+        try:
+            quick_result = quick_extract_job_posting(provider, job_text)
+            _log_llm_usage(session, provider, run_id, "quick_extract", job_posting_id=job.id)
+            crud.update_job_quick_meta(
+                session,
+                job.id,
+                employment_type=quick_result["employment_type"],
+                tags=quick_result["tags"],
+            )
+        except Exception as error:
+            logger.warning(
+                "[run %s] job %s: tag/employment_type quick-extract failed, leaving unset: %s",
+                run_id, job.id, error,
+            )
+
         crud.create_evaluation(
             session,
             job_posting_id=job.id,
@@ -318,8 +333,8 @@ def _process_search_result(
         elif stage == stages.PASSED:
             crud.update_job_pipeline_stage(session, job.id, stages.PASSED)
             crud.increment_run_counters(session, run_id, passed_count=1)
-            _maybe_auto_tailor(session, run_id, job, job_text, result)
-            _maybe_auto_answer_base_questions(session, run_id, job, job_text)
+            maybe_auto_tailor(session, run_id, job, job_text, result)
+            maybe_auto_answer_base_questions(session, run_id, job, job_text)
         else:
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
@@ -385,12 +400,23 @@ def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_arc
     return stages.NEEDS_REVIEW
 
 
-def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_result: dict) -> None:
+def maybe_auto_tailor(
+    session: Session,
+    run_id: int | None,
+    job,
+    job_text: str,
+    eval_result: dict,
+    level_has_auto_apply=crud.level_has_auto_apply,
+    is_auto_apply=crud.is_auto_apply,
+) -> None:
     # There's no separate "run soft/medium" toggle anymore - whether a level runs
     # at all is derived straight from the auto-apply matrix: if nothing in a level
     # is checked, there's no point spending an LLM call proposing changes for it.
-    soft_active = crud.level_has_auto_apply(session, "soft")
-    medium_active = crud.level_has_auto_apply(session, "medium")
+    # level_has_auto_apply/is_auto_apply are injectable so this same function
+    # drives both the Automation pipeline's permission table and the Evaluator
+    # sidebar's independent "manual assist" permission table.
+    soft_active = level_has_auto_apply(session, "soft")
+    medium_active = level_has_auto_apply(session, "medium")
 
     if not soft_active and not medium_active:
         logger.info(
@@ -400,12 +426,15 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
 
     crud.set_job_activity(session, job.id, "Tailoring resume...")
 
+    crud.set_job_activity(session, job.id, "Tailoring resume...")
+
     resume = crud.get_active_resume_version(session, "resume")
     if resume is None or not resume.content_html:
         logger.warning(
             "[run %s] job %s: auto-tailoring skipped - no active resume with content_html", run_id, job.id
         )
-        crud.append_run_warning(session, run_id, "Auto-tailor skipped: no active resume HTML set")
+        if run_id is not None:
+            crud.append_run_warning(session, run_id, "Auto-tailor skipped: no active resume HTML set")
         crud.set_job_activity(session, job.id, None)
         return
 
@@ -431,7 +460,9 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
             keywords=[],
         )
         _log_llm_usage(session, provider, run_id, "tailoring_soft", job_posting_id=job.id)
-        tailoring_session = _apply_auto_tailoring_changes(session, tailoring_session, soft_changes, "soft")
+        tailoring_session = _apply_auto_tailoring_changes(
+            session, tailoring_session, soft_changes, "soft", is_auto_apply
+        )
 
     if medium_active:
         medium_changes = propose_medium_fragment_changes(
@@ -442,15 +473,25 @@ def _maybe_auto_tailor(session: Session, run_id: int, job, job_text: str, eval_r
             keywords=[],
         )
         _log_llm_usage(session, provider, run_id, "tailoring_medium", job_posting_id=job.id)
-        tailoring_session = _apply_auto_tailoring_changes(session, tailoring_session, medium_changes, "medium")
+        tailoring_session = _apply_auto_tailoring_changes(
+            session, tailoring_session, medium_changes, "medium", is_auto_apply
+        )
 
     crud.update_job_pipeline_stage(session, job.id, stages.TAILORED)
 
 
-def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_text: str) -> None:
+def maybe_auto_answer_base_questions(
+    session: Session,
+    run_id: int | None,
+    job,
+    job_text: str,
+    list_base_questions=crud.list_automation_base_questions,
+) -> None:
     # No separate enabled toggle - having at least one base question configured
-    # is itself the signal that this step should run.
-    base_questions = crud.list_automation_base_questions(session)
+    # is itself the signal that this step should run. list_base_questions is
+    # injectable for the same reason as above - Automation and the Evaluator's
+    # "manual assist" keep fully independent question lists.
+    base_questions = list_base_questions(session)
     if not base_questions:
         logger.info("[run %s] job %s: no automation base questions configured, skipping", run_id, job.id)
         return
@@ -544,7 +585,9 @@ def _maybe_auto_answer_base_questions(session: Session, run_id: int, job, job_te
     )
 
 
-def _apply_auto_tailoring_changes(session: Session, tailoring_session, changes: list[dict], level: str):
+def _apply_auto_tailoring_changes(
+    session: Session, tailoring_session, changes: list[dict], level: str, is_auto_apply=crud.is_auto_apply
+):
     if not changes:
         return tailoring_session
 
@@ -554,7 +597,7 @@ def _apply_auto_tailoring_changes(session: Session, tailoring_session, changes: 
     created = crud.bulk_create_session_changes(session, tailoring_session.id, message.id, changes)
 
     for change in created:
-        if not crud.is_auto_apply(session, level, change.change_type):
+        if not is_auto_apply(session, level, change.change_type):
             continue
         try:
             new_html = apply_fragment(

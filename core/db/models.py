@@ -74,6 +74,7 @@ class AppSettings(Base):
     pregenerate_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     pregenerate_min_score: Mapped[int] = mapped_column(Integer, default=7)
     auto_answer_questions_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    manual_assist_min_score: Mapped[int] = mapped_column(Integer, default=7)
 
 
 class JobPosting(Base):
@@ -413,6 +414,31 @@ class AutomationSettings(Base):
     default_time_range: Mapped[str] = mapped_column(String(8), default="w1")
     saved_queries: Mapped[list] = mapped_column(JSON, nullable=True)
     serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
+
+
+class ManualAssistTailoringPermission(Base):
+    __tablename__ = "manual_assist_tailoring_permissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    level: Mapped[str] = mapped_column(String(16))
+    change_type: Mapped[str] = mapped_column(String(64))
+    auto_apply: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class ManualAssistBaseQuestion(Base):
+    """Same shape as AutomationBaseQuestion, but a fully separate store - the
+    manual (Evaluator sidebar) auto-apply/auto-answer config is intentionally
+    independent from the Automation page's config, so toggling one never
+    affects the other."""
+
+    __tablename__ = "manual_assist_base_questions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    question_text: Mapped[str] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class QuestionTemplate(Base):

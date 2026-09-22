@@ -10,13 +10,11 @@ def test_upsert_candidate_profile_creates_when_missing(db_session):
         email="sample@example.com",
         github_url="github.com/sampleuser",
         linkedin_url="linkedin.com/in/sampleuser",
-        extra_links=["example.com/portfolio"],
         extra_info="Sample extra info.",
     )
 
     assert profile.id is not None
     assert profile.email == "sample@example.com"
-    assert profile.extra_links == ["example.com/portfolio"]
 
 
 @pytest.mark.db
@@ -35,3 +33,41 @@ def test_get_candidate_profile_returns_none_when_empty(db_session):
     result = candidate_profile_crud.get_candidate_profile(db_session)
 
     assert result is None
+
+
+@pytest.mark.db
+def test_add_extra_link_creates_profile_when_missing(db_session):
+    profile = candidate_profile_crud.add_extra_link(db_session, "github.com/sampleuser")
+
+    assert profile.id is not None
+    assert profile.extra_links == ["github.com/sampleuser"]
+
+
+@pytest.mark.db
+def test_add_extra_link_appends_to_existing(db_session):
+    candidate_profile_crud.add_extra_link(db_session, "first-link.example.com")
+    profile = candidate_profile_crud.add_extra_link(db_session, "second-link.example.com")
+
+    assert profile.extra_links == ["first-link.example.com", "second-link.example.com"]
+
+
+@pytest.mark.db
+def test_remove_extra_link_by_index(db_session):
+    candidate_profile_crud.add_extra_link(db_session, "first-link.example.com")
+    candidate_profile_crud.add_extra_link(db_session, "second-link.example.com")
+
+    profile = candidate_profile_crud.remove_extra_link(db_session, 0)
+
+    assert profile.extra_links == ["second-link.example.com"]
+
+
+@pytest.mark.db
+def test_remove_extra_link_invalid_index_returns_none(db_session):
+    candidate_profile_crud.add_extra_link(db_session, "only-link.example.com")
+
+    assert candidate_profile_crud.remove_extra_link(db_session, 5) is None
+
+
+@pytest.mark.db
+def test_remove_extra_link_no_profile_returns_none(db_session):
+    assert candidate_profile_crud.remove_extra_link(db_session, 0) is None

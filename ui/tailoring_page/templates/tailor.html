@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
 
 main {
     max-width: 100%;
@@ -48,6 +48,9 @@ main {
     justify-content: center;
     align-items: flex-start;
 }
+
+.resume-doc-wrapper { width: 794px; max-width: 100%; }
+.doc-page-title { text-align: center; font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px; }
 
 .copilot-panel {
     flex: 0 0 360px;
@@ -487,7 +490,10 @@ main {
     </div>
 
     <div class="resume-scroll-column">
-        <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
+        <div class="resume-doc-wrapper">
+            <h2 class="doc-page-title">{{ t.page_title }} — {{ job.company or "" }}</h2>
+            <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
+        </div>
     </div>
 
     <div class="copilot-panel">

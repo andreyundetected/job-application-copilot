@@ -236,8 +236,7 @@ def _run_split_only(application_id: int, raw_text: str) -> dict:
         logger.info("[app %s] splitting questions from pasted text (%s chars)", application_id, len(raw_text))
 
         provider = get_llm_provider()
-        custom_templates = crud.list_question_templates(session)
-        prepared = split_and_prepare_questions(provider, raw_text=raw_text, custom_templates=custom_templates)
+        prepared = split_and_prepare_questions(provider, raw_text=raw_text)
 
         logger.info("[app %s] split result: %s questions found: %s", application_id, len(prepared), [q["question_text"][:60] for q in prepared])
 

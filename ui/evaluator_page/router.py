@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_auto_tailor
 from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
@@ -14,6 +15,25 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from ui.common.i18n import get_language, load_page_strings
 
 router = APIRouter(prefix="/evaluator")
+
+_TAILORING_MATRIX = [
+    ("soft", "title"),
+    ("soft", "company_name"),
+    ("soft", "skills"),
+    ("medium", "summary"),
+    ("medium", "bullet"),
+]
+
+
+def _tailoring_matrix_state(session: Session) -> list[dict]:
+    return [
+        {
+            "level": level,
+            "change_type": change_type,
+            "auto_apply": crud.manual_assist_is_auto_apply(session, level, change_type),
+        }
+        for level, change_type in _TAILORING_MATRIX
+    ]
 
 templates = Jinja2Templates(directory="ui/evaluator_page/templates")
 templates.env.loader = ChoiceLoader(
@@ -45,11 +65,51 @@ def evaluator_page(
             "active_resume": active_resume,
             "active_linkedin": active_linkedin,
             "profile": profile,
+            "tailoring_matrix": _tailoring_matrix_state(session),
+            "base_questions": crud.list_manual_assist_base_questions(session),
+            "manual_assist_min_score": (crud.get_app_settings(session) or crud.upsert_app_settings(session)).manual_assist_min_score,
             "result": None,
             "lang": lang,
             "t": load_page_strings("ui/evaluator_page", lang),
         },
     )
+
+
+@router.post("/manual-assist/min-score")
+def update_manual_assist_min_score(
+    manual_assist_min_score: int = Form(...),
+    session: Session = Depends(get_session),
+):
+    crud.upsert_app_settings(session, manual_assist_min_score=manual_assist_min_score)
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/manual-assist/tailoring-permissions")
+def update_manual_assist_permission(
+    level: str = Form(...),
+    change_type: str = Form(...),
+    auto_apply: bool = Form(False),
+    session: Session = Depends(get_session),
+):
+    if (level, change_type) not in _TAILORING_MATRIX:
+        raise HTTPException(status_code=400, detail="Unknown level/change_type combination")
+    crud.set_manual_assist_tailoring_permission(session, level=level, change_type=change_type, auto_apply=auto_apply)
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/manual-assist/base-questions")
+def add_manual_assist_base_question(question_text: str = Form(...), session: Session = Depends(get_session)):
+    text = question_text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Question text cannot be empty")
+    question = crud.create_manual_assist_base_question(session, question_text=text)
+    return JSONResponse({"id": question.id, "question_text": question.question_text})
+
+
+@router.post("/manual-assist/base-questions/{question_id}/delete")
+def delete_manual_assist_base_question(question_id: int, session: Session = Depends(get_session)):
+    crud.delete_manual_assist_base_question(session, question_id)
+    return JSONResponse({"status": "ok", "id": question_id})
 
 
 @router.post("")
@@ -177,6 +237,24 @@ def _evaluate_and_save(
             from ui.tailoring_page.router import pregenerate_tailoring_context
 
             run_tracked_task("tailoring_pregenerate", pregenerate_tailoring_context, job_posting_id, lang)
+
+        app_settings_for_threshold = crud.get_app_settings(session)
+        manual_assist_min_score = app_settings_for_threshold.manual_assist_min_score if app_settings_for_threshold else 7
+        if score is not None and score >= manual_assist_min_score:
+            job = crud.get_job_posting(session, job_posting_id)
+            if job is not None:
+                maybe_auto_tailor(
+                    session,
+                    None,
+                    job,
+                    job_posting_text,
+                    result,
+                    level_has_auto_apply=crud.manual_assist_level_has_auto_apply,
+                    is_auto_apply=crud.manual_assist_is_auto_apply,
+                )
+                maybe_auto_answer_base_questions(
+                    session, None, job, job_posting_text, list_base_questions=crud.list_manual_assist_base_questions
+                )
 
         return result
     finally:

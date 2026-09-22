@@ -2,6 +2,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from core.parsing.html_sanitize import close_unclosed_tags
+
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 _env = Environment(
@@ -32,4 +34,4 @@ def structure_resume_to_html(provider, raw_text: str) -> str:
         user_prompt=prompt,
     )
 
-    return _strip_code_fences(raw_response)
+    return close_unclosed_tags(_strip_code_fences(raw_response))
