@@ -78,6 +78,11 @@ class AppSettings(Base):
     manual_assist_min_score: Mapped[int] = mapped_column(Integer, default=7)
     preferred_currency: Mapped[str] = mapped_column(String(8), default="USD")
     preferred_salary_period: Mapped[str] = mapped_column(String(8), default="year")
+    telegram_bot_token: Mapped[str] = mapped_column(String(255), nullable=True)
+    telegram_chat_id: Mapped[str] = mapped_column(String(128), nullable=True)
+    telegram_notify_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    telegram_notify_only_successful: Mapped[bool] = mapped_column(Boolean, default=True)
+    telegram_notify_min_score: Mapped[int] = mapped_column(Integer, nullable=True)
 
 
 class JobPosting(Base):
@@ -103,6 +108,7 @@ class JobPosting(Base):
     source: Mapped[str] = mapped_column(String(16), default="manual")
     pipeline_stage: Mapped[str] = mapped_column(String(32), nullable=True)
     activity_label: Mapped[str] = mapped_column(String(255), nullable=True)
+    discovery_key: Mapped[str] = mapped_column(String(64), nullable=True, unique=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="job_posting"
@@ -232,9 +238,42 @@ class TailoringSession(Base):
     working_html: Mapped[str] = mapped_column(Text, nullable=True)
     style: Mapped[dict] = mapped_column(JSON, nullable=True)
     extracted_keywords: Mapped[list] = mapped_column(JSON, nullable=True)
+    block_comments: Mapped[dict] = mapped_column(JSON, nullable=True)
+    gap_analysis_ready: Mapped[bool] = mapped_column(Boolean, default=False)
+    resume_items: Mapped[list] = mapped_column(JSON, nullable=True)
 
     messages: Mapped[list["TailoringMessage"]] = relationship(back_populates="session")
     changes: Mapped[list["TailoringChange"]] = relationship(back_populates="session")
+    gap_items: Mapped[list["GapItem"]] = relationship(back_populates="session")
+
+
+class GapItem(Base):
+    __tablename__ = "gap_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
+    )
+    session_id: Mapped[int] = mapped_column(ForeignKey("tailoring_sessions.id"))
+
+    text: Mapped[str] = mapped_column(String(255))
+    category: Mapped[str] = mapped_column(String(32), nullable=True)
+    status: Mapped[str] = mapped_column(String(16))
+    priority: Mapped[str] = mapped_column(String(16), nullable=True)
+    source: Mapped[str] = mapped_column(String(16), nullable=True)
+    original_field_path: Mapped[str] = mapped_column(String(255), nullable=True)
+    suggested_field_path: Mapped[str] = mapped_column(String(255), nullable=True)
+    suggested_field_paths: Mapped[list] = mapped_column(JSON, nullable=True)
+    suggested_reason: Mapped[str] = mapped_column(Text, nullable=True)
+    assigned_field_path: Mapped[str] = mapped_column(String(255), nullable=True)
+    assigned_field_paths: Mapped[list] = mapped_column(JSON, nullable=True)
+    recommend_keep: Mapped[bool] = mapped_column(Boolean, nullable=True)
+    included: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    session: Mapped["TailoringSession"] = relationship(back_populates="gap_items")
 
 
 class TailoringMessage(Base):

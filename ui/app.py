@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 
 from core.db.crud.tailoring_permissions import seed_default_tailoring_permissions
 from core.db.session import SessionLocal, init_db
+from core.discovery.scheduler import start_discovery_schedulers, stop_discovery_schedulers
+from core.discovery_db.session import init_discovery_db
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,9 +42,17 @@ app.include_router(language_router)
 @app.on_event("startup")
 def on_startup():
     init_db()
+    init_discovery_db()
 
     session = SessionLocal()
     try:
         seed_default_tailoring_permissions(session)
     finally:
         session.close()
+
+    start_discovery_schedulers()
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    stop_discovery_schedulers()

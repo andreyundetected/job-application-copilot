@@ -16,27 +16,25 @@ main {
     flex-direction: column;
 }
 
+.tailor-layout { display: flex; gap: 16px; width: 100%; flex: 1; min-height: 0; }
 
-
-.tailor-layout {
-    display: flex;
-    gap: 20px;
-    width: 100%;
-    flex: 1;
-    min-height: 0;
-}
-
-.job-info-column {
-    flex: 0 1 320px;
+.gaps-panel, .schema-panel {
+    flex: 0 0 300px;
     min-width: 260px;
     max-width: 340px;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    overflow-y: auto;
-    padding-right: 6px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
 }
+
+.panel-header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); flex-shrink: 0; }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.panel-body::-webkit-scrollbar { width: 7px; }
+.panel-body::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
 
 .resume-scroll-column {
     flex: 1 1 auto;
@@ -47,113 +45,14 @@ main {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-}
-
-.resume-doc-wrapper { width: 794px; max-width: 100%; }
-.doc-page-title { text-align: center; font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px; }
-
-.copilot-panel {
-    flex: 0 0 360px;
-    min-width: 320px;
-    max-width: 380px;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.job-info-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.keyword-bubbles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.keyword-bubble {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    font-size: 11.5px;
-    font-weight: 500;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-}
-
-.keyword-bubble.priority-required {
-    background-color: var(--accent-soft);
-    border-color: transparent;
-    color: var(--accent);
-}
-
-.keyword-bubble-category {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-tertiary);
-    background: rgba(255, 255, 255, 0.06);
-    padding: 1px 5px;
-    border-radius: 4px;
-}
-
-.keyword-bubble.priority-required .keyword-bubble-category {
-    color: var(--accent);
-    background: rgba(91, 141, 239, 0.18);
-}
-
-.raw-text-block {
-    font-size: 12px;
-    color: var(--text-secondary);
-    white-space: pre-wrap;
-    max-height: 340px;
-    overflow-y: auto;
-    line-height: 1.5;
-}
-
-.job-info-column,
-.resume-scroll-column,
-.chat-stream,
-.raw-text-block {
     scrollbar-width: thin;
     scrollbar-color: var(--border-hover) transparent;
 }
+.resume-scroll-column::-webkit-scrollbar { width: 7px; }
+.resume-scroll-column::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
 
-.job-info-column::-webkit-scrollbar,
-.resume-scroll-column::-webkit-scrollbar,
-.chat-stream::-webkit-scrollbar,
-.raw-text-block::-webkit-scrollbar {
-    width: 7px;
-}
-
-.job-info-column::-webkit-scrollbar-track,
-.resume-scroll-column::-webkit-scrollbar-track,
-.chat-stream::-webkit-scrollbar-track,
-.raw-text-block::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.job-info-column::-webkit-scrollbar-thumb,
-.resume-scroll-column::-webkit-scrollbar-thumb,
-.chat-stream::-webkit-scrollbar-thumb,
-.raw-text-block::-webkit-scrollbar-thumb {
-    background-color: var(--border-hover);
-    border-radius: 999px;
-    border: 2px solid var(--bg);
-}
-
-.job-info-column::-webkit-scrollbar-thumb:hover,
-.resume-scroll-column::-webkit-scrollbar-thumb:hover,
-.chat-stream::-webkit-scrollbar-thumb:hover,
-.raw-text-block::-webkit-scrollbar-thumb:hover {
-    background-color: var(--accent);
-}
+.resume-doc-wrapper { width: 794px; max-width: 100%; position: relative; }
+.doc-page-title { text-align: center; font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px; }
 
 .resume-doc {
     background: #ffffff;
@@ -168,46 +67,9 @@ main {
     outline: none;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
-
-.resume-doc mark {
-    background-color: rgba(250, 204, 21, 0.35);
-    border-radius: 2px;
-}
-
-.resume-doc mark:hover,
-.resume-doc mark.mark-linked-hover {
-    background-color: rgba(74, 222, 128, 0.5);
-}
-
-.resume-doc mark.approved-mark {
-    background-color: rgba(91, 141, 239, 0.28);
-    cursor: pointer;
-}
-
-.resume-doc mark.approved-mark:hover {
-    background-color: rgba(91, 141, 239, 0.48);
-}
-
-.history-btn {
-    background-color: var(--bg-input) !important;
-    color: var(--text-secondary) !important;
-    border: 1px solid var(--border) !important;
-    width: 38px;
-    height: 38px;
-    padding: 0 !important;
-    margin-top: 0 !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.history-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
+.resume-doc mark { background-color: rgba(250, 204, 21, 0.35); border-radius: 2px; }
+.resume-doc mark.approved-mark { background-color: rgba(91, 141, 239, 0.28); cursor: pointer; }
+.resume-doc mark.approved-mark:hover { background-color: rgba(91, 141, 239, 0.48); }
 .resume-doc p { margin: 2px 0; line-height: 1.4; }
 .resume-doc ul { margin: 2px 0 8px; padding-left: 20px; }
 .resume-doc li { margin: 1px 0; line-height: 1.4; }
@@ -215,152 +77,15 @@ main {
 .resume-doc p[style*="font-size:12pt"] { margin-top: 16px; margin-bottom: 6px; }
 .resume-doc p[style*="font-size:11pt"] { margin-top: 10px; margin-bottom: 1px; }
 
-.copilot-panel-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0 0 10px;
-    flex-shrink: 0;
-}
+.history-btn { background-color: var(--bg-input) !important; color: var(--text-secondary) !important; border: 1px solid var(--border) !important; width: 38px; height: 38px; padding: 0 !important; margin-top: 0 !important; border-radius: var(--radius-sm) !important; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+.history-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.copilot-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-}
-
-.level-action-btn {
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    text-align: left;
-    padding: 10px 12px;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: border-color 0.12s ease, background-color 0.12s ease, transform 0.12s ease;
-}
-
-.level-action-btn:hover:not(:disabled) {
-    border-color: var(--accent);
-    background-color: var(--accent-soft);
-    transform: translateY(-1px);
-}
-
-.level-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.level-action-icon { font-size: 15px; line-height: 1.3; flex-shrink: 0; }
-
-.level-action-text { display: flex; flex-direction: column; gap: 2px; }
-.level-action-text strong { font-size: 13px; color: var(--text-primary); font-weight: 600; }
-.level-action-text small { font-size: 11px; color: var(--text-secondary); line-height: 1.35; font-weight: 400; }
-
-.chat-stream {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 4px 0 8px;
-}
-
-.chat-message {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 400;
-}
-
-.chat-message.role-user {
-    background: var(--accent-soft);
-    border-color: transparent;
-    border-left: 3px solid var(--accent);
-}
-
-.chat-message.level-soft { border-left-color: var(--accent); }
-.chat-message.level-medium { border-left-color: #c084fc; }
-.chat-message.level-custom.role-assistant { border-left-color: var(--text-tertiary); }
-
-.chat-message-header {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-tertiary);
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.chat-message.pending { opacity: 0.75; }
-.chat-message.pending .loading-dot { margin-left: 6px; }
-
-.change-card {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    margin-top: 8px;
-    font-size: 12.5px;
-    font-weight: 400;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.change-card:hover { background-color: var(--accent-soft); border-color: var(--accent); }
-.change-card.resolved { opacity: 0.4; }
-.change-card.resolved:hover { background-color: transparent; border-color: var(--border); }
-.change-card.card-linked-hover { border-color: var(--score-high); box-shadow: 0 0 0 1px var(--score-high); }
-
-.change-card-level {
-    display: inline-block;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-    margin-bottom: 4px;
-    font-weight: 600;
-}
-
-.change-card-diff { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
-.change-card-original { color: var(--text-tertiary); text-decoration: line-through; white-space: pre-wrap; font-weight: 400; }
-.change-card-proposed { color: var(--score-high); white-space: pre-wrap; font-weight: 400; }
-
-.change-card-buttons { display: flex; gap: 6px; margin-top: 8px; }
-.change-card-buttons .btn, .change-card-buttons .btn-ghost { margin-top: 0; padding: 5px 10px; font-size: 12px; }
-
-.chat-input-row { display: flex; align-items: flex-end; gap: 8px; margin-top: 8px; flex-shrink: 0; }
-.chat-input-row textarea { min-height: 44px; max-height: 100px; transition: opacity 0.15s ease, background-color 0.15s ease; }
-.chat-input-row textarea:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-elevated); }
-
-.chat-input-hint { font-size: 10.5px; color: var(--text-tertiary); margin-top: 4px; flex-shrink: 0; }
-
-.send-btn {
-    margin-top: 0 !important;
-    width: 42px;
-    height: 42px;
-    padding: 0 !important;
-    border-radius: 999px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    box-shadow: 0 2px 10px rgba(91, 141, 239, 0.35);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
-}
-
-.send-btn:hover:not(:disabled) { transform: translateY(-1px) scale(1.04); box-shadow: 0 4px 14px rgba(91, 141, 239, 0.45); }
-.send-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-.send-btn svg { width: 18px; height: 18px; }
+.word-count-wrap { display: flex; align-items: center; gap: 8px; }
+.word-count-badge { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background-color: var(--score-high-soft); color: var(--score-high); white-space: nowrap; flex-shrink: 0; }
+.word-count-badge.warn { background-color: var(--score-mid-soft); color: var(--score-mid); }
+.word-count-badge.danger { background-color: var(--score-low-soft); color: var(--score-low); }
+.word-count-note { font-size: 11px; color: var(--text-tertiary); max-width: 260px; line-height: 1.3; display: none; }
+.word-count-note.visible { display: block; }
 
 .style-toolbar {
     position: absolute;
@@ -376,35 +101,11 @@ main {
     font-size: 12px;
     color: var(--text-primary);
 }
-
-.style-toolbar button {
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    border-radius: 4px;
-    width: 26px;
-    height: 26px;
-    cursor: pointer;
-}
-
+.style-toolbar button { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; width: 26px; height: 26px; cursor: pointer; }
 .color-swatch { width: 18px; height: 18px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.3); }
-
-.style-toolbar input[type="color"] {
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--bg-input);
-    cursor: pointer;
-}
-
+.style-toolbar input[type="color"] { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); cursor: pointer; }
 .style-toolbar .toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
-/* hover popover for reverting an already-applied (blue) change - replaces the
-   old window.confirm() box. Shows on hover near the mark, stays open if the
-   pointer moves onto the popover itself, closes after a short grace period
-   otherwise. */
 .revert-popover {
     position: absolute;
     display: none;
@@ -417,10 +118,131 @@ main {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     font-size: 12.5px;
 }
-
 .revert-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600; }
 .revert-popover-text { color: var(--text-secondary); text-decoration: line-through; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; font-weight: 400; }
 .revert-popover-btn { margin-top: 0; padding: 5px 10px; font-size: 12px; width: 100%; }
+
+/* persistent block highlight, wraps whole section */
+.resume-block-wrap { border-radius: 4px; transition: background-color 0.15s ease, outline-color 0.15s ease; outline: 1px solid transparent; margin: 0 -6px; padding: 0 6px; }
+.resume-block-wrap.mapped { background-color: rgba(91, 141, 239, 0.04); }
+.resume-block-wrap.mapped.hot { background-color: rgba(91, 141, 239, 0.16); outline-color: rgba(91, 141, 239, 0.4); }
+
+/* ---- Gaps panel ---- */
+.gap-run-btn { width: 100%; margin-top: 0 !important; background: linear-gradient(135deg, var(--accent), #8b5cf6); border: none; color: white; font-weight: 600; }
+.gap-progress-line { font-size: 11.5px; color: var(--text-secondary); margin: 8px 0 0; text-align: center; }
+.gap-error-line { font-size: 11.5px; color: var(--score-low); background: var(--score-low-soft); border-radius: var(--radius-sm); padding: 8px 10px; }
+
+.gap-section { margin-bottom: 12px; }
+.gap-section-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 2px 0; }
+.gap-section-title { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); }
+.gap-section-title.miss { color: var(--score-mid); }
+.gap-section-count { font-size: 10px; background: var(--bg-input); border-radius: 999px; padding: 1px 6px; color: var(--text-secondary); }
+.gap-section-chevron { width: 11px; height: 11px; color: var(--text-tertiary); transition: transform 0.2s ease; }
+.gap-section.collapsed .gap-section-chevron { transform: rotate(-90deg); }
+.gap-section-body { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.gap-section.collapsed .gap-section-body { display: none; }
+
+.gap-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px; background-color: var(--bg-input); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11.5px; font-weight: 500; cursor: pointer; transition: all 0.12s ease; max-width: 100%; }
+.gap-chip[draggable="true"] { cursor: grab; }
+.gap-chip span.gap-chip-text { white-space: normal; word-break: break-word; }
+.gap-chip:hover { border-color: var(--border-hover); }
+.gap-chip.status-can_add { border-color: rgba(91, 141, 239, 0.4); }
+.gap-chip.status-can_add.placed { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.gap-chip.status-match { background-color: var(--score-high-soft); border-color: transparent; color: var(--score-high); }
+.gap-chip.status-miss { background-color: var(--score-mid-soft); border-color: transparent; color: var(--score-mid); cursor: default; }
+.gap-chip.status-over { background-color: var(--bg-input); border-color: var(--border); color: var(--text-tertiary); cursor: default; opacity: 0.85; }
+.gap-chip.status-over .over-keep-tag { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 5px; border-radius: 4px; }
+.gap-chip.status-over.keep .over-keep-tag { background: var(--score-high-soft); color: var(--score-high); }
+.gap-chip.status-over.drop .over-keep-tag { background: var(--score-low-soft); color: var(--score-low); }
+.gap-chip-check { width: 10px; height: 10px; flex-shrink: 0; opacity: 0; }
+.gap-chip.placed .gap-chip-check { opacity: 1; }
+.gap-empty-hint { font-size: 11.5px; color: var(--text-tertiary); padding: 4px 0; }
+
+.gap-location-popover {
+    position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); flex-direction: column; gap: 2px; min-width: 200px;
+}
+.gap-location-popover.open { display: flex; }
+.gap-location-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); padding: 4px 8px 6px; }
+.gap-location-option { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); cursor: pointer; margin-bottom: 0 !important; transition: background-color 0.12s ease, color 0.12s ease; }
+.gap-location-option:hover { background-color: var(--bg-input); color: var(--text-primary); }
+.gap-location-option.selected { color: var(--accent); }
+.gap-location-option .custom-checkbox-box svg { color: white; }
+.gap-location-option.selected .custom-checkbox-box { background-color: var(--accent); border-color: var(--accent); }
+.gap-location-option.selected .custom-checkbox-box svg { opacity: 1; transform: scale(1); }
+
+/* ---- Schema panel ---- */
+.title-block { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.title-block-heading { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 8px; }
+.title-suggestion-row { background-color: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 8px 9px; margin-bottom: 6px; font-size: 11.5px; }
+.title-suggestion-company { font-size: 9.5px; color: var(--text-tertiary); margin-bottom: 3px; }
+.title-suggestion-current { color: var(--text-tertiary); text-decoration: line-through; margin-bottom: 2px; }
+.title-suggestion-new { color: var(--accent); margin-bottom: 6px; }
+.title-suggestion-buttons { display: flex; gap: 6px; }
+.title-suggestion-buttons button { margin-top: 0; padding: 4px 9px; font-size: 11px; }
+.title-suggestion-unchanged { font-size: 11px; color: var(--text-tertiary); }
+
+.schema-block { margin-bottom: 12px; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background-color: var(--bg-input); transition: border-color 0.15s ease, background-color 0.15s ease; }
+.schema-block.drag-over { border-color: var(--accent); background-color: var(--accent-soft); }
+.schema-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.schema-block-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.schema-block-gen-btn { background: none; border: 1px solid var(--border); color: var(--accent); font-size: 10.5px; padding: 3px 8px; border-radius: var(--radius-sm); cursor: pointer; }
+.schema-block-gen-btn:hover { border-color: var(--accent); background-color: var(--accent-soft); }
+.schema-block-gen-btn.generating { opacity: 0.5; cursor: wait; }
+.schema-block-items { display: flex; flex-wrap: wrap; gap: 4px; }
+.schema-block-item-chip {
+    font-size: 10.5px; padding: 3px 8px; border-radius: 999px; background-color: var(--bg-elevated);
+    color: var(--text-secondary); border: 1px solid var(--border); cursor: grab; display: inline-flex; align-items: center; gap: 4px;
+    border-left: 3px solid var(--border);
+}
+.schema-block-item-chip.is-plain { cursor: default; }
+.schema-block-item-chip.is-kept { border-left-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
+.schema-block-item-chip.is-new { border-left-color: var(--accent); background-color: var(--accent-soft); color: var(--accent); }
+.schema-block-item-remove { cursor: pointer; font-weight: 700; opacity: 0.7; }
+.schema-block-item-remove:hover { opacity: 1; }
+
+.schema-original-toggle {
+    display: flex; align-items: center; gap: 5px; width: 100%; background: none; border: none;
+    color: var(--text-tertiary); font-size: 10.5px; padding: 6px 0 2px; cursor: pointer; text-align: left;
+}
+.schema-original-toggle:hover { color: var(--text-secondary); }
+.schema-original-chevron { width: 10px; height: 10px; transition: transform 0.15s ease; }
+.schema-original-toggle.collapsed .schema-original-chevron { transform: rotate(0deg); }
+.schema-original-toggle:not(.collapsed) .schema-original-chevron { transform: rotate(90deg); }
+.schema-original-body { overflow: hidden; max-height: 500px; margin-top: 5px; transition: max-height 0.2s ease; }
+.schema-original-body.collapsed { max-height: 0; margin-top: 0; }
+.schema-block-add-wrap { position: relative; margin: 8px 0 6px; }
+.schema-block-add-row {
+    display: flex; align-items: center; gap: 8px; background-color: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 4px 3px 14px;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.schema-block-add-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.schema-block-add-input { flex: 1; font-size: 12px; padding: 5px 0; margin-top: 0; background: transparent; border: none; color: var(--text-primary); }
+.schema-block-add-input::placeholder { color: var(--text-tertiary); }
+.schema-block-add-input:focus { outline: none; border: none; }
+.schema-block-add-btn {
+    margin-top: 0; padding: 0; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+    background-color: var(--accent); color: white; border: none; font-size: 16px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; line-height: 1; cursor: pointer;
+    transition: background-color 0.12s ease, transform 0.12s ease;
+}
+.schema-block-add-btn:hover { background-color: var(--accent-hover); transform: scale(1.06); }
+.schema-block-add-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.schema-add-suggestions {
+    position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); padding: 6px;
+    max-height: 220px; overflow-y: auto; flex-direction: column; gap: 1px; min-width: 200px;
+}
+.schema-add-suggestions.open { display: flex; }
+.schema-add-suggestion-item {
+    padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-secondary);
+    cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease;
+}
+.schema-add-suggestion-item:hover { background-color: var(--bg-input); color: var(--text-primary); }
+.schema-block-comment { width: 100%; font-size: 11.5px; min-height: 40px; padding: 6px 8px; }
+.schema-empty-hint { font-size: 11.5px; color: var(--text-tertiary); }
 </style>
 
 <div class="result-header" style="align-items:center;">
@@ -432,114 +254,42 @@ main {
             {{ t.back_link }}
         </a>
         <span class="back-nav-divider"></span>
-        <h1 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.page_title }} — {{ job.company or "" }} / {{ job.title or "" }}</h1>
+        <h1 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.page_title }} — {{ job.company or "" }}</h1>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-            <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
-            <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
-            <select id="download-format" style="width:auto;padding:9px 11px;">
-                <option value="docx">DOCX</option>
-                <option value="pdf">PDF</option>
-                <option value="txt">TXT</option>
-            </select>
-            <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
-        </div>
+        <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
+        <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
+        <select id="download-format" style="width:auto;padding:9px 11px;">
+            <option value="docx">DOCX</option>
+            <option value="pdf">PDF</option>
+            <option value="txt">TXT</option>
+        </select>
+        <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
     </div>
 </div>
 
 <div class="tailor-layout" style="margin-top:16px;">
-    <div class="job-info-column">
-        <div class="card">
-            <div class="job-info-header">
-                <h3 style="margin:0;">{{ t.job_info_title }}</h3>
-                {% if score is not none %}
-                <div class="score-badge" style="width:36px;height:36px;font-size:16px;{% if score >= 7 %}background-color:var(--score-high-soft);color:var(--score-high);{% elif score >= 4 %}background-color:var(--score-mid-soft);color:var(--score-mid);{% else %}background-color:var(--score-low-soft);color:var(--score-low);{% endif %}">{{ score }}</div>
-                {% endif %}
-            </div>
-            <div class="badge-row">
-                {% if location %}<span class="badge">{{ location }}</span>{% endif %}
-                {% if work_mode %}<span class="badge badge-work-mode">{{ work_mode }}</span>{% endif %}
-            </div>
-            {% if salary and salary.original_text %}
-            <p class="salary-line">{{ salary.original_text }}</p>
-            {% endif %}
-            {% if summary %}
-            <p class="salary-line" style="margin-top:10px;">{{ summary }}</p>
-            {% endif %}
-        </div>
+    <div class="gaps-panel">
+        <div class="panel-header">ГЕПЫ</div>
+        <div class="panel-body" id="pane-gaps"></div>
+    </div>
 
-        <div class="card" id="keywords-card">
-            <h3 style="margin:0 0 4px;">{{ t.keywords_title }}</h3>
-            <div class="keyword-bubbles" id="keyword-bubbles">
-                {% for keyword in keywords %}
-                <span class="keyword-bubble priority-{{ keyword.priority }}">
-                    <span class="keyword-bubble-category">{{ t["category_" + keyword.category] if ("category_" + keyword.category) in t else keyword.category }}</span>
-                    {{ keyword.text }}
-                </span>
-                {% endfor %}
-            </div>
-            {% if not keywords %}
-            <p class="salary-line" id="keywords-empty-hint">{{ t.keywords_loading }}</p>
-            {% endif %}
-        </div>
-
-        <div class="card">
-            <h3 style="margin:0 0 8px;">{{ t.raw_text_title }}</h3>
-            <div class="raw-text-block">{{ job.raw_text }}</div>
-        </div>
+    <div class="schema-panel">
+        <div class="panel-header">СХЕМА</div>
+        <div class="panel-body" id="pane-schema"></div>
     </div>
 
     <div class="resume-scroll-column">
         <div class="resume-doc-wrapper">
-            <h2 class="doc-page-title">{{ t.page_title }} — {{ job.company or "" }}</h2>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:12px;">
+                <h2 class="doc-page-title" style="margin:0;">{{ job.company or "" }}</h2>
+                <div class="word-count-wrap">
+                    <span class="word-count-note" id="word-count-note"></span>
+                    <span id="word-count-badge" class="word-count-badge"></span>
+                </div>
+            </div>
             <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
         </div>
-    </div>
-
-    <div class="copilot-panel">
-        <p class="copilot-panel-title">🤖 Copilot</p>
-
-        <div class="copilot-actions">
-            <button type="button" class="level-action-btn" id="btn-propose-soft">
-                <span class="level-action-icon">🪶</span>
-                <span class="level-action-text"><strong>{{ t.propose_soft_button }}</strong><small>{{ t.soft_hint }}</small></span>
-            </button>
-            <button type="button" class="level-action-btn" id="btn-propose-medium">
-                <span class="level-action-icon">🔧</span>
-                <span class="level-action-text"><strong>{{ t.propose_medium_button }}</strong><small>{{ t.medium_hint }}</small></span>
-            </button>
-        </div>
-
-        <div class="revert-popover" id="revert-popover">
-            <div class="revert-popover-label">{{ t.revert_original_label }}</div>
-            <div class="revert-popover-text" id="revert-popover-text"></div>
-            <button type="button" class="btn revert-popover-btn" id="revert-popover-btn">{{ t.revert_button }}</button>
-        </div>
-
-        <div class="chat-stream" id="chat-stream">
-            {% if not messages %}
-            <p class="salary-line" id="empty-chat-hint">{{ t.empty_chat }}</p>
-            {% endif %}
-            {% for message in messages %}
-            <div class="chat-message role-{{ message.role }}">
-                <div>{{ message.text }}</div>
-                {% for change in changes_by_message.get(message.id, []) %}
-                {% include "change_card.html" %}
-                {% endfor %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="chat-input-row">
-            <textarea id="chat-input" placeholder="{{ t.chat_placeholder }}" rows="1"></textarea>
-            <button type="button" class="btn send-btn" id="btn-send" title="{{ t.send_button }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-            </button>
-        </div>
-        <p class="chat-input-hint">{{ t.input_hint }}</p>
     </div>
 </div>
 
@@ -558,34 +308,30 @@ main {
     <input type="color" id="color-picker" title="Custom color">
 </div>
 
+<div class="revert-popover" id="revert-popover">
+    <div class="revert-popover-label">{{ t.revert_original_label }}</div>
+    <div class="revert-popover-text" id="revert-popover-text"></div>
+    <button type="button" class="btn revert-popover-btn" id="revert-popover-btn">{{ t.revert_button }}</button>
+</div>
+
+<div class="gap-location-popover" id="gap-location-popover"></div>
+
 <script>
 (function () {
-    // Fix: pressing the browser's Back/Forward buttons can restore a frozen
-    // bfcache snapshot of this page from the moment it first loaded, wiping out
-    // any highlights/edits made since (Ctrl+Z isn't affected - that's a purely
-    // client-side stack, unrelated to navigation). Force a fresh load instead.
-    window.addEventListener("pageshow", (event) => {
-        if (event.persisted) {
-            window.location.reload();
-        }
-    });
+    window.addEventListener("pageshow", (event) => { if (event.persisted) window.location.reload(); });
 
     const SESSION_ID = {{ session_id }};
-    const I18N = {{ t | tojson }};
-    const INITIAL_MESSAGE_COUNT = {{ messages | length }};
-
-    const chatStream = document.getElementById("chat-stream");
     const resumeDoc = document.getElementById("resume-doc");
     const toolbarEl = document.getElementById("style-toolbar");
-    const chatInput = document.getElementById("chat-input");
-    const sendBtn = document.getElementById("btn-send");
-    const softBtn = document.getElementById("btn-propose-soft");
-    const mediumBtn = document.getElementById("btn-propose-medium");
 
+    // ============================================================
+    // Manual editor: text formatting toolbar, undo/redo, autosave
+    // (kept fully separate from the gaps/schema logic below so
+    // nothing there can break it)
+    // ============================================================
     let saveTimeout = null;
     let savedRange = null;
     let currentAlignState = "left";
-    let isGenerating = false;
     const ALIGN_STATES = ["left", "center", "right"];
     const ALIGN_ICONS = { left: "⬅", center: "↔", right: "➡" };
 
@@ -601,118 +347,81 @@ main {
         redoBtn.disabled = redoStack.length === 0;
     }
 
-    // The history stack stores the fully rendered snapshot (marks included) at
-    // each meaningful point, taken straight from the live DOM. Undo/redo are
-    // then a pure, synchronous-feeling client-side swap - no network round trip,
-    // so two quick Ctrl+Z presses can't race each other, and there's exactly one
-    // stack that both the buttons and the keyboard shortcuts read and write.
     function pushHistorySnapshot() {
         if (isApplyingHistory) return;
         const snapshot = resumeDoc.innerHTML;
-        if (undoStack.length && undoStack[undoStack.length - 1] === snapshot) {
-            updateHistoryButtons();
-            return;
-        }
+        if (undoStack.length && undoStack[undoStack.length - 1] === snapshot) { updateHistoryButtons(); return; }
         undoStack.push(snapshot);
         if (undoStack.length > UNDO_STACK_LIMIT) undoStack.shift();
         redoStack = [];
         updateHistoryButtons();
     }
 
-    async function applyHistorySnapshot(html) {
-        isApplyingHistory = true;
+    function setResumeHtml(html, opts) {
+        opts = opts || {};
         resumeDoc.innerHTML = html;
+        decorateBlocks();
         bindMarkHoverHandlers();
-        // Keep the server's working_html in sync in the background, so future
-        // proposals/downloads work off the right base text - but the visual
-        // undo/redo itself never waits on this or depends on its result.
-        persistRawHtml(stripMarksFromClone());
-        isApplyingHistory = false;
-        updateHistoryButtons();
+        bindBlockHoverSync();
+        if (opts.persist !== false) persistRawHtml(stripMarksFromClone());
+        if (opts.snapshot !== false) pushHistorySnapshot();
+        updateWordCount();
+        renderSchemaPane();
     }
 
     async function undoHistory() {
-        if (isApplyingHistory) return;
-        if (undoStack.length < 2) return;
+        if (isApplyingHistory || undoStack.length < 2) return;
+        isApplyingHistory = true;
         const current = undoStack.pop();
         redoStack.push(current);
-        const previous = undoStack[undoStack.length - 1];
-        await applyHistorySnapshot(previous);
+        const target = undoStack[undoStack.length - 1];
+        resumeDoc.innerHTML = target;
+        decorateBlocks();
+        bindMarkHoverHandlers();
+        bindBlockHoverSync();
+        await persistRawHtml(stripMarksFromClone());
+        isApplyingHistory = false;
+        updateHistoryButtons();
+        updateWordCount();
+        renderSchemaPane();
     }
 
     async function redoHistory() {
-        if (isApplyingHistory) return;
-        if (!redoStack.length) return;
+        if (isApplyingHistory || !redoStack.length) return;
+        isApplyingHistory = true;
         const snapshot = redoStack.pop();
         undoStack.push(snapshot);
-        await applyHistorySnapshot(snapshot);
+        resumeDoc.innerHTML = snapshot;
+        decorateBlocks();
+        bindMarkHoverHandlers();
+        bindBlockHoverSync();
+        await persistRawHtml(stripMarksFromClone());
+        isApplyingHistory = false;
+        updateHistoryButtons();
+        updateWordCount();
+        renderSchemaPane();
     }
 
-    async function flushPendingSave() {
-        clearTimeout(saveTimeout);
-        await persistDoc();
-    }
+    async function flushPendingSave() { clearTimeout(saveTimeout); await persistDoc(); }
 
-    // Single dispatch point for both the button and the keyboard shortcut, so
-    // there is exactly one code path for "undo" and one for "redo" - clicking
-    // the button and pressing the shortcut are now literally the same call.
-    function triggerUndo() { undoHistory(); }
-    function triggerRedo() { redoHistory(); }
-
-    undoBtn.addEventListener("click", triggerUndo);
-    redoBtn.addEventListener("click", triggerRedo);
+    undoBtn.addEventListener("click", () => undoHistory());
+    redoBtn.addEventListener("click", () => redoHistory());
 
     document.addEventListener("keydown", (e) => {
         const isMac = navigator.platform.toUpperCase().includes("MAC");
         const modifier = isMac ? e.metaKey : e.ctrlKey;
         if (!modifier) return;
-
-        // e.key depends on the active keyboard layout (Ctrl+Z on a Cyrillic
-        // layout reports key "я", not "z"), so it can't be trusted alone.
-        // e.code reports the physical key regardless of layout - check that
-        // first, and fall back to key only for browsers old enough to lack code.
         const isZKey = e.code ? e.code === "KeyZ" : e.key.toLowerCase() === "z";
         if (!isZKey) return;
-        if (document.activeElement === chatInput) return;
-
         e.preventDefault();
-        if (e.shiftKey) {
-            triggerRedo();
-        } else {
-            triggerUndo();
-        }
+        if (e.shiftKey) redoHistory(); else undoHistory();
     });
-
-    function setGenerating(value) {
-        isGenerating = value;
-        chatInput.disabled = value;
-        sendBtn.disabled = value;
-        softBtn.disabled = value;
-        mediumBtn.disabled = value;
-        chatInput.placeholder = value ? I18N.generating_placeholder : I18N.chat_placeholder;
-    }
-
-    function renderKeywordBubbles(keywords) {
-        if (!keywords || !keywords.length) return;
-        const container = document.getElementById("keyword-bubbles");
-        if (container.children.length > 0) return;
-
-        const hint = document.getElementById("keywords-empty-hint");
-        if (hint) hint.remove();
-
-        keywords.forEach((keyword) => {
-            const bubble = document.createElement("span");
-            bubble.className = `keyword-bubble priority-${keyword.priority}`;
-            const categoryLabel = I18N["category_" + keyword.category] || keyword.category;
-            bubble.innerHTML = `<span class="keyword-bubble-category">${categoryLabel}</span> ${keyword.text}`;
-            container.appendChild(bubble);
-        });
-    }
 
     function stripMarksFromClone() {
         const clone = resumeDoc.cloneNode(true);
-        clone.querySelectorAll("mark[data-change-id]").forEach((mark) => {
-            mark.replaceWith(...mark.childNodes);
+        clone.querySelectorAll("mark[data-change-id]").forEach((mark) => mark.replaceWith(...mark.childNodes));
+        clone.querySelectorAll(".resume-block-wrap").forEach((wrap) => {
+            wrap.replaceWith(...wrap.childNodes);
         });
         return clone.innerHTML;
     }
@@ -728,16 +437,10 @@ main {
         if (!isApplyingHistory) pushHistorySnapshot();
     }
 
-    function scheduleSave() {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(persistDoc, 600);
-    }
+    function scheduleSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(persistDoc, 600); }
 
-    resumeDoc.addEventListener("input", scheduleSave);
-    resumeDoc.addEventListener("blur", () => {
-        clearTimeout(saveTimeout);
-        persistDoc();
-    });
+    resumeDoc.addEventListener("input", () => { scheduleSave(); updateWordCount(); });
+    resumeDoc.addEventListener("blur", () => { clearTimeout(saveTimeout); persistDoc(); });
 
     const revertPopover = document.getElementById("revert-popover");
     const revertPopoverText = document.getElementById("revert-popover-text");
@@ -746,10 +449,6 @@ main {
     let currentRevertMark = null;
 
     function stripNativeTitles() {
-        // wrap_highlights() puts the original text in a `title` attribute for
-        // approved marks - useful server-side data, but we read it into
-        // data-original-text and strip the attribute so the browser's own
-        // delayed tooltip doesn't show up alongside our custom popover below.
         resumeDoc.querySelectorAll("mark[title]").forEach((mark) => {
             mark.dataset.originalText = mark.getAttribute("title");
             mark.removeAttribute("title");
@@ -761,23 +460,17 @@ main {
         currentRevertMark = mark;
         revertPopoverText.textContent = mark.dataset.originalText || "";
         revertPopover.style.display = "block";
-
         const rect = mark.getBoundingClientRect();
         const popRect = revertPopover.getBoundingClientRect();
         let top = window.scrollY + rect.top - popRect.height - 10;
-        if (top < window.scrollY + 4) {
-            top = window.scrollY + rect.bottom + 10;
-        }
+        if (top < window.scrollY + 4) top = window.scrollY + rect.bottom + 10;
         revertPopover.style.top = `${top}px`;
         revertPopover.style.left = `${window.scrollX + rect.left}px`;
     }
 
     function scheduleHideRevertPopover() {
         clearTimeout(revertHideTimeout);
-        revertHideTimeout = setTimeout(() => {
-            revertPopover.style.display = "none";
-            currentRevertMark = null;
-        }, 220);
+        revertHideTimeout = setTimeout(() => { revertPopover.style.display = "none"; currentRevertMark = null; }, 220);
     }
 
     revertPopover.addEventListener("mouseenter", () => clearTimeout(revertHideTimeout));
@@ -787,15 +480,11 @@ main {
         if (!currentRevertMark) return;
         const changeId = currentRevertMark.dataset.changeId;
         revertPopover.style.display = "none";
-
         await flushPendingSave();
-
         const response = await fetch(`/tailor/changes/${changeId}/revert`, { method: "POST" });
         const data = await response.json();
-        if (data.status === "error") {
-            showToast(data.detail || "Revert failed", "danger");
-        }
-        await refreshDoc();
+        if (data.status === "error") showToast(data.detail || "Revert failed", "danger");
+        await refreshDocFromServer();
     });
 
     function bindMarkHoverHandlers() {
@@ -804,252 +493,17 @@ main {
             if (mark.classList.contains("approved-mark")) {
                 mark.addEventListener("mouseenter", () => showRevertPopover(mark));
                 mark.addEventListener("mouseleave", scheduleHideRevertPopover);
-                return;
             }
-            mark.addEventListener("mouseenter", () => {
-                const card = document.querySelector(`.change-card[data-change-id="${mark.dataset.changeId}"]`);
-                if (card) card.classList.add("card-linked-hover");
-            });
-            mark.addEventListener("mouseleave", () => {
-                const card = document.querySelector(`.change-card[data-change-id="${mark.dataset.changeId}"]`);
-                if (card) card.classList.remove("card-linked-hover");
-            });
         });
     }
 
-    async function refreshDoc() {
-        // Used after Apply/Skip/Revert/agent turns - these genuinely need the
-        // server's recomputed marks (change statuses changed), unlike undo/redo
-        // above which replay a snapshot that already has the right marks baked in.
+    async function refreshDocFromServer() {
         const response = await fetch(`/tailor/session/${SESSION_ID}/render`);
         const data = await response.json();
-        resumeDoc.innerHTML = data.html;
-        bindMarkHoverHandlers();
-        if (!isApplyingHistory) pushHistorySnapshot();
+        setResumeHtml(data.html, { persist: false });
     }
 
-    function renderChangeCard(change) {
-        const card = document.createElement("div");
-        card.className = "change-card";
-        card.dataset.changeId = change.id;
-        card.innerHTML = `
-            <span class="change-card-level">${change.level}${change.change_type ? " · " + change.change_type : ""}</span>
-            <div class="change-card-diff">
-                <div class="change-card-original">${(change.original_text || "").replace(/</g, "&lt;")}</div>
-                <div class="change-card-proposed">${(change.proposed_text || "").replace(/</g, "&lt;")}</div>
-            </div>
-            <div class="change-card-buttons">
-                <button type="button" class="btn approve-btn">${I18N.apply_button}</button>
-                <button type="button" class="btn-ghost btn skip-btn">${I18N.skip_button}</button>
-            </div>
-        `;
-        return card;
-    }
-
-    chatStream.addEventListener("click", async (e) => {
-        const card = e.target.closest(".change-card");
-        if (!card) return;
-        const changeId = card.dataset.changeId;
-
-        if (e.target.classList.contains("approve-btn") || e.target.classList.contains("skip-btn")) {
-            await flushPendingSave();
-        }
-
-        if (e.target.classList.contains("approve-btn")) {
-            const response = await resolveChange(changeId, "approve");
-            card.classList.add("resolved");
-            const buttons = card.querySelector(".change-card-buttons");
-            if (buttons) buttons.remove();
-            if (response.status === "error") {
-                const note = document.createElement("div");
-                note.className = "salary-line";
-                note.textContent = response.detail;
-                card.appendChild(note);
-            }
-            await refreshDoc();
-        } else if (e.target.classList.contains("skip-btn")) {
-            await resolveChange(changeId, "reject");
-            card.classList.add("resolved");
-            const buttons = card.querySelector(".change-card-buttons");
-            if (buttons) buttons.remove();
-        }
-    });
-
-    chatStream.addEventListener("mouseover", (e) => {
-        const card = e.target.closest(".change-card");
-        if (!card) return;
-        const mark = resumeDoc.querySelector(`mark[data-change-id="${card.dataset.changeId}"]`);
-        if (mark) {
-            mark.classList.add("mark-linked-hover");
-            mark.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-    });
-    chatStream.addEventListener("mouseout", (e) => {
-        const card = e.target.closest(".change-card");
-        if (!card) return;
-        const mark = resumeDoc.querySelector(`mark[data-change-id="${card.dataset.changeId}"]`);
-        if (mark) mark.classList.remove("mark-linked-hover");
-    });
-
-    async function resolveChange(changeId, action) {
-        const formData = new FormData();
-        formData.append("action", action);
-        const response = await fetch(`/tailor/changes/${changeId}/resolve`, { method: "POST", body: formData });
-        return response.json();
-    }
-
-    function markSuperseded(ids) {
-        (ids || []).forEach((id) => {
-            const card = document.querySelector(`.change-card[data-change-id="${id}"]`);
-            if (card && !card.classList.contains("resolved")) {
-                card.classList.add("resolved");
-                const buttons = card.querySelector(".change-card-buttons");
-                if (buttons) buttons.remove();
-            }
-        });
-    }
-
-    function appendPendingMessage(level) {
-        const hint = document.getElementById("empty-chat-hint");
-        if (hint) hint.remove();
-
-        const wrapper = document.createElement("div");
-        wrapper.className = `chat-message role-assistant pending${level ? " level-" + level : ""}`;
-
-        const header = document.createElement("div");
-        header.className = "chat-message-header";
-        if (level === "soft" || level === "medium") {
-            header.innerHTML = `${level === "soft" ? I18N.soft_hint : I18N.medium_hint} <span class="loading-dot"></span>`;
-        } else {
-            header.innerHTML = `<span class="loading-dot"></span>`;
-        }
-        wrapper.appendChild(header);
-
-        chatStream.appendChild(wrapper);
-        chatStream.scrollTop = chatStream.scrollHeight;
-        return wrapper;
-    }
-
-    function fillPendingMessage(wrapper, text, changes, level) {
-        wrapper.classList.remove("pending");
-        wrapper.className = `chat-message role-assistant${level ? " level-" + level : ""}`;
-        wrapper.innerHTML = "";
-
-        if (level === "soft" || level === "medium") {
-            const header = document.createElement("div");
-            header.className = "chat-message-header";
-            header.textContent = level === "soft" ? I18N.soft_hint : I18N.medium_hint;
-            wrapper.appendChild(header);
-        }
-
-        const textDiv = document.createElement("div");
-        textDiv.textContent = text;
-        wrapper.appendChild(textDiv);
-
-        (changes || []).forEach((change) => wrapper.appendChild(renderChangeCard(change)));
-        chatStream.scrollTop = chatStream.scrollHeight;
-    }
-
-    function appendMessage(role, text, changes, level) {
-        const hint = document.getElementById("empty-chat-hint");
-        if (hint) hint.remove();
-
-        const wrapper = document.createElement("div");
-        wrapper.className = `chat-message role-${role}${level ? " level-" + level : ""}`;
-
-        if (role === "assistant" && (level === "soft" || level === "medium")) {
-            const header = document.createElement("div");
-            header.className = "chat-message-header";
-            header.textContent = level === "soft" ? I18N.soft_hint : I18N.medium_hint;
-            wrapper.appendChild(header);
-        }
-
-        const textDiv = document.createElement("div");
-        textDiv.textContent = text;
-        wrapper.appendChild(textDiv);
-
-        (changes || []).forEach((change) => wrapper.appendChild(renderChangeCard(change)));
-
-        chatStream.appendChild(wrapper);
-        chatStream.scrollTop = chatStream.scrollHeight;
-    }
-
-    async function submitAgentTask(url, formData, pendingWrapper) {
-        setGenerating(true);
-        try {
-            const response = await fetch(url, { method: "POST", body: formData });
-            const data = await response.json();
-
-            pollTaskStatus([data.task_id], (tasks) => {
-                const task = tasks[0];
-                if (task.status === "done") {
-                    markSuperseded(task.result.superseded_change_ids);
-                    renderKeywordBubbles(task.result.keywords);
-                    if (pendingWrapper) {
-                        fillPendingMessage(pendingWrapper, task.result.message_text, task.result.changes, task.result.level);
-                    } else {
-                        appendMessage("assistant", task.result.message_text, task.result.changes, task.result.level);
-                    }
-                    refreshDoc();
-                    setGenerating(false);
-                } else if (task.status === "failed") {
-                    if (pendingWrapper) {
-                        fillPendingMessage(pendingWrapper, `Error: ${task.error}`, [], null);
-                    } else {
-                        appendMessage("assistant", `Error: ${task.error}`, [], "custom");
-                    }
-                    setGenerating(false);
-                }
-            });
-        } catch (error) {
-            setGenerating(false);
-        }
-    }
-
-    softBtn.addEventListener("click", () => {
-        if (isGenerating) return;
-        const wrapper = appendPendingMessage("soft");
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-soft`, new FormData(), wrapper);
-    });
-
-    mediumBtn.addEventListener("click", () => {
-        if (isGenerating) return;
-        const wrapper = appendPendingMessage("medium");
-        submitAgentTask(`/tailor/session/${SESSION_ID}/propose-medium`, new FormData(), wrapper);
-    });
-
-    function sendChatMessage() {
-        if (isGenerating) return;
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        appendMessage("user", text, [], null);
-        chatInput.value = "";
-        chatInput.style.height = "auto";
-
-        const wrapper = appendPendingMessage(null);
-        const formData = new FormData();
-        formData.append("user_message", text);
-        submitAgentTask(`/tailor/session/${SESSION_ID}/message`, formData, wrapper);
-    }
-
-    sendBtn.addEventListener("click", sendChatMessage);
-
-    chatInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
-
-    chatInput.addEventListener("input", () => {
-        chatInput.style.height = "auto";
-        chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
-    });
-
-    toolbarEl.querySelectorAll("button").forEach((btn) => {
-        btn.addEventListener("mousedown", (e) => e.preventDefault());
-    });
+    toolbarEl.querySelectorAll("button").forEach((btn) => btn.addEventListener("mousedown", (e) => e.preventDefault()));
 
     function rgbStringToHex(rgb) {
         const match = String(rgb).match(/\d+/g);
@@ -1059,38 +513,23 @@ main {
     }
 
     function updateColorSwatch() {
-        try {
-            const value = document.queryCommandValue("foreColor");
-            document.getElementById("color-picker").value = rgbStringToHex(value);
-        } catch (error) {
-            // ignore
-        }
+        try { document.getElementById("color-picker").value = rgbStringToHex(document.queryCommandValue("foreColor")); } catch (error) {}
     }
 
     function updateAlignIcon() {
         if (!savedRange) return;
-        const startNode = savedRange.startContainer.nodeType === 3
-            ? savedRange.startContainer.parentElement
-            : savedRange.startContainer;
+        const startNode = savedRange.startContainer.nodeType === 3 ? savedRange.startContainer.parentElement : savedRange.startContainer;
         const computed = window.getComputedStyle(startNode).textAlign;
-        if (computed === "center") currentAlignState = "center";
-        else if (computed === "right") currentAlignState = "right";
-        else currentAlignState = "left";
+        currentAlignState = computed === "center" ? "center" : computed === "right" ? "right" : "left";
         document.getElementById("align-btn").textContent = ALIGN_ICONS[currentAlignState];
     }
 
     function getCurrentFontSizePt(range) {
-        const node = range.startContainer.nodeType === 3
-            ? range.startContainer.parentElement
-            : range.startContainer;
-        const sizePx = parseFloat(window.getComputedStyle(node).fontSize) || 13.3;
-        return Math.round(sizePx * 0.75);
+        const node = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        return Math.round((parseFloat(window.getComputedStyle(node).fontSize) || 13.3) * 0.75);
     }
 
-    function updateSizeDisplay() {
-        if (!savedRange) return;
-        document.getElementById("size-display").textContent = getCurrentFontSizePt(savedRange);
-    }
+    function updateSizeDisplay() { if (!savedRange) return; document.getElementById("size-display").textContent = getCurrentFontSizePt(savedRange); }
 
     function showToolbarForSelection(range) {
         savedRange = range;
@@ -1105,14 +544,16 @@ main {
 
     document.addEventListener("selectionchange", () => {
         const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-            return;
-        }
+        if (!selection || selection.rangeCount === 0) return;
         const range = selection.getRangeAt(0);
-        if (!resumeDoc.contains(range.commonAncestorContainer)) {
-            return;
-        }
+        if (!resumeDoc.contains(range.commonAncestorContainer)) return;
         showToolbarForSelection(range);
+    });
+
+    resumeDoc.addEventListener("blur", () => {
+        setTimeout(() => {
+            if (!toolbarEl.contains(document.activeElement)) toolbarEl.style.display = "none";
+        }, 120);
     });
 
     function restoreSelection() {
@@ -1123,39 +564,25 @@ main {
         selection.addRange(savedRange);
     }
 
-    document.getElementById("bold-btn").addEventListener("click", () => {
-        restoreSelection();
-        document.execCommand("bold");
-        scheduleSave();
-    });
-
-    document.getElementById("italic-btn").addEventListener("click", () => {
-        restoreSelection();
-        document.execCommand("italic");
-        scheduleSave();
-    });
+    document.getElementById("bold-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("bold"); scheduleSave(); });
+    document.getElementById("italic-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("italic"); scheduleSave(); });
 
     function adjustSelectionFontSize(delta) {
         restoreSelection();
         if (!savedRange || savedRange.collapsed) return;
-
         const newPt = Math.max(6, getCurrentFontSizePt(savedRange) + delta);
-
         const range = savedRange.cloneRange();
         const fragment = range.extractContents();
         const span = document.createElement("span");
         span.style.fontSize = `${newPt}pt`;
         span.appendChild(fragment);
         range.insertNode(span);
-
         const newRange = document.createRange();
         newRange.selectNodeContents(span);
         savedRange = newRange;
-
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(newRange);
-
         document.getElementById("size-display").textContent = newPt;
         scheduleSave();
     }
@@ -1165,13 +592,10 @@ main {
 
     document.getElementById("align-btn").addEventListener("click", () => {
         restoreSelection();
-        const currentIndex = ALIGN_STATES.indexOf(currentAlignState);
-        const nextState = ALIGN_STATES[(currentIndex + 1) % ALIGN_STATES.length];
-
+        const nextState = ALIGN_STATES[(ALIGN_STATES.indexOf(currentAlignState) + 1) % ALIGN_STATES.length];
         if (nextState === "left") document.execCommand("justifyLeft");
         else if (nextState === "center") document.execCommand("justifyCenter");
         else document.execCommand("justifyRight");
-
         currentAlignState = nextState;
         document.getElementById("align-btn").textContent = ALIGN_ICONS[currentAlignState];
         scheduleSave();
@@ -1183,20 +607,39 @@ main {
         document.getElementById("color-picker").value = color;
         scheduleSave();
     }
-
     document.getElementById("color-black").addEventListener("click", () => applyForeColor("#000000"));
     document.getElementById("color-gray").addEventListener("click", () => applyForeColor("#595959"));
     document.getElementById("color-picker").addEventListener("input", (e) => applyForeColor(e.target.value));
 
     document.addEventListener("mousedown", (e) => {
-        if (!toolbarEl.contains(e.target) && !resumeDoc.contains(e.target)) {
-            toolbarEl.style.display = "none";
-        }
+        if (!toolbarEl.contains(e.target) && !resumeDoc.contains(e.target)) toolbarEl.style.display = "none";
     });
 
-    bindMarkHoverHandlers();
-    pushHistorySnapshot();
-    updateHistoryButtons();
+    const wordCountBadge = document.getElementById("word-count-badge");
+    const wordCountNote = document.getElementById("word-count-note");
+    function updateWordCount() {
+        const words = (resumeDoc.innerText || "").trim().split(/\s+/).filter(Boolean).length;
+        wordCountBadge.textContent = `${words} слов`;
+        wordCountBadge.classList.remove("warn", "danger");
+        wordCountNote.classList.remove("visible");
+        if (words < 400) {
+            wordCountBadge.classList.add("danger");
+            wordCountNote.textContent = "Заметно короче нормы (475–600) — возможно теряется важный опыт.";
+            wordCountNote.classList.add("visible");
+        } else if (words < 475) {
+            wordCountBadge.classList.add("warn");
+            wordCountNote.textContent = "Чуть короче обычного — можно раскрыть буллеты подробнее.";
+            wordCountNote.classList.add("visible");
+        } else if (words > 725) {
+            wordCountBadge.classList.add("danger");
+            wordCountNote.textContent = "Заметно длиннее нормы — стоит сократить менее релевантное.";
+            wordCountNote.classList.add("visible");
+        } else if (words > 600) {
+            wordCountBadge.classList.add("warn");
+            wordCountNote.textContent = "Чуть длиннее нормы (475–600) — не критично, но можно ужать.";
+            wordCountNote.classList.add("visible");
+        }
+    }
 
     const downloadFormatSelect = document.getElementById("download-format");
     const downloadBtn = document.getElementById("btn-download");
@@ -1204,31 +647,633 @@ main {
         downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.value}`;
     });
 
-    // No auto-running soft/medium on page load - the person clicks one of the
-    // two cards above when they actually want a pass. We still warm the
-    // keyword bubbles silently in the background since that's cheap and just
-    // informational, not a resume-editing action.
-    function ensureKeywordsSilently() {
-        fetch(`/tailor/session/${SESSION_ID}/extract-keywords`, { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-                if (data.task_id === null) {
-                    renderKeywordBubbles(data.keywords);
-                    return;
-                }
-                pollTaskStatus([data.task_id], (tasks) => {
-                    const task = tasks[0];
-                    if (task.status === "done") {
-                        renderKeywordBubbles(task.result.keywords);
-                    }
-                });
-            })
-            .catch(() => {});
+    // ============================================================
+    // Block detection & persistent highlighting
+    // Each resume block = one header paragraph (Summary/Skills/
+    // Company-Role line) plus every sibling until the next header,
+    // wrapped in a .resume-block-wrap[data-field-path] div.
+    // ============================================================
+    function decorateBlocks() {
+        resumeDoc.querySelectorAll(".resume-block-wrap").forEach((wrap) => {
+            wrap.replaceWith(...wrap.childNodes);
+        });
+
+        const children = [...resumeDoc.childNodes];
+        let currentWrap = null;
+        let currentPath = null;
+
+        function headerFieldPath(el) {
+            if (!el || el.nodeType !== 1) return null;
+            const text = el.textContent.trim();
+            const upper = text.toUpperCase();
+            if (upper === "SUMMARY") return "summary";
+            if (upper === "SKILLS") return "skills";
+            if (el.matches && el.matches('p[style*="font-size:11pt"]')) {
+                return `experience: ${text.split(" - ")[0].trim()}`;
+            }
+            if (el.matches && el.matches('p[style*="font-size:12pt"]') && text) {
+                return `section: ${text}`;
+            }
+            return null;
+        }
+
+        function isSectionHeader(el) {
+            return el.nodeType === 1 && el.matches && el.matches('p[style*="font-size:12pt"]');
+        }
+
+        children.forEach((node) => {
+            const path = headerFieldPath(node);
+            const isHeader = isSectionHeader(node);
+
+            if (path) {
+                currentWrap = document.createElement("div");
+                currentWrap.className = "resume-block-wrap mapped";
+                currentWrap.dataset.fieldPath = path;
+                currentPath = path;
+                node.replaceWith(currentWrap);
+                currentWrap.appendChild(node);
+            } else if (isHeader) {
+                currentWrap = null;
+                currentPath = null;
+            } else if (currentWrap && currentPath) {
+                currentWrap.appendChild(node);
+            }
+        });
     }
 
-    if (INITIAL_MESSAGE_COUNT === 0) {
-        ensureKeywordsSilently();
+    let hoverSourceLock = null;
+
+    function setBlockHot(fieldPath, on, opts) {
+        opts = opts || {};
+        resumeDoc.querySelectorAll(`.resume-block-wrap[data-field-path="${cssEscape(fieldPath)}"]`).forEach((el) => {
+            el.classList.toggle("hot", on);
+            if (on && opts.scrollResume) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+        document.querySelectorAll(`.schema-block[data-field-path="${cssEscape(fieldPath)}"]`).forEach((el) => {
+            el.classList.toggle("drag-over", on);
+            if (on && opts.scrollSchema) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
     }
+
+    function cssEscape(value) {
+        return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+    }
+
+    function bindBlockHoverSync() {
+        resumeDoc.querySelectorAll(".resume-block-wrap[data-field-path]").forEach((wrap) => {
+            const fieldPath = wrap.dataset.fieldPath;
+            wrap.addEventListener("mouseenter", () => {
+                if (hoverSourceLock) return;
+                hoverSourceLock = "resume";
+                setBlockHot(fieldPath, true, { scrollSchema: true });
+            });
+            wrap.addEventListener("mouseleave", () => {
+                setBlockHot(fieldPath, false, {});
+                hoverSourceLock = null;
+            });
+        });
+    }
+
+    // ============================================================
+    // Gaps + Schema panels
+    // ============================================================
+    const paneGaps = document.getElementById("pane-gaps");
+    const paneSchema = document.getElementById("pane-schema");
+    const gapLocationPopover = document.getElementById("gap-location-popover");
+
+    let gapState = { ready: false, items: [], blockComments: {}, blockOrder: [], resumeItems: [] };
+    let titleSuggestions = null;
+
+    function experienceCompanyOptions() {
+        const options = [];
+        resumeDoc.querySelectorAll('.resume-block-wrap[data-field-path^="experience:"]').forEach((el) => {
+            const path = el.dataset.fieldPath;
+            if (!options.some((o) => o.value === path)) {
+                options.push({ value: path, label: fieldPathLabel(path) });
+            }
+        });
+        return options;
+    }
+
+    function genericSectionOptions() {
+        const options = [];
+        resumeDoc.querySelectorAll('.resume-block-wrap[data-field-path^="section:"]').forEach((el) => {
+            const path = el.dataset.fieldPath;
+            if (!options.some((o) => o.value === path)) {
+                options.push({ value: path, label: fieldPathLabel(path) });
+            }
+        });
+        return options;
+    }
+
+    function allLocationOptions() {
+        if (gapState.blockOrder.length) {
+            return gapState.blockOrder.map((path) => ({ value: path, label: fieldPathLabel(path) }));
+        }
+        return [{ value: "summary", label: "Summary" }, { value: "skills", label: "Skills" }, ...experienceCompanyOptions(), ...genericSectionOptions()];
+    }
+
+    function fieldPathLabel(path) {
+        if (!path) return "";
+        if (path.startsWith("experience:")) return path.replace("experience:", "").trim();
+        if (path === "summary") return "Summary";
+        if (path === "skills") return "Skills";
+        return path;
+    }
+
+    function renderGapChip(item) {
+        const chip = document.createElement("span");
+        chip.className = `gap-chip status-${item.status}`;
+        chip.dataset.gapItemId = item.id;
+
+        if (item.status === "miss") {
+            chip.innerHTML = `<span class="gap-chip-text">? ${item.text}</span>`;
+        } else if (item.status === "over") {
+            chip.classList.add(item.recommend_keep ? "keep" : "drop");
+            chip.innerHTML = `<span class="gap-chip-text">${item.text}</span><span class="over-keep-tag">${item.recommend_keep ? "оставить" : "убрать"}</span>`;
+        } else {
+            const placed = (item.assigned_field_paths || []).length > 0;
+            if (placed) chip.classList.add("placed");
+            chip.draggable = true;
+            const locations = (item.assigned_field_paths || []).map(fieldPathLabel).join(", ");
+            chip.innerHTML = `<svg class="gap-chip-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="gap-chip-text">${item.text}${locations ? " · " + locations : ""}</span>`;
+            chip.addEventListener("click", (e) => openLocationPopover(e, item));
+            chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/gap-item-id", String(item.id)));
+        }
+        return chip;
+    }
+
+    function positionFloatingPanel(panelEl, anchorRect) {
+        panelEl.style.top = "-9999px";
+        panelEl.style.left = "-9999px";
+        panelEl.style.visibility = "hidden";
+        panelEl.classList.add("open");
+
+        const panelRect = panelEl.getBoundingClientRect();
+        const margin = 8;
+
+        let left = anchorRect.left;
+        if (left + panelRect.width > window.innerWidth - margin) {
+            left = Math.max(margin, window.innerWidth - panelRect.width - margin);
+        }
+
+        let top = anchorRect.bottom + 6;
+        if (top + panelRect.height > window.innerHeight - margin) {
+            const topAbove = anchorRect.top - panelRect.height - 6;
+            top = topAbove > margin ? topAbove : Math.max(margin, window.innerHeight - panelRect.height - margin);
+        }
+
+        panelEl.style.left = `${left}px`;
+        panelEl.style.top = `${top}px`;
+        panelEl.style.visibility = "visible";
+    }
+
+    function openLocationPopover(e, item) {
+        e.stopPropagation();
+        const options = allLocationOptions();
+        const assigned = new Set(item.assigned_field_paths || []);
+
+        gapLocationPopover.innerHTML = `<div class="gap-location-popover-label">Куда добавить</div>`;
+        options.forEach((opt) => {
+            const isSelected = assigned.has(opt.value);
+            const row = document.createElement("div");
+            row.className = `gap-location-option custom-checkbox${isSelected ? " selected" : ""}`;
+            row.innerHTML = `
+                <span class="custom-checkbox-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </span>
+                <span>${opt.label}</span>
+            `;
+            row.addEventListener("click", async () => {
+                await toggleGapItemLocation(item, opt.value);
+                openLocationPopover(e, item);
+            });
+            gapLocationPopover.appendChild(row);
+        });
+
+        positionFloatingPanel(gapLocationPopover, e.target.closest(".gap-chip").getBoundingClientRect());
+    }
+
+    async function toggleGapItemLocation(item, fieldPath) {
+        const response = await fetch(`/tailor/gap-items/${item.id}/toggle-location`, {
+            method: "POST",
+            body: new URLSearchParams({ field_path: fieldPath }),
+        });
+        const data = await response.json();
+        item.assigned_field_paths = data.assigned_field_paths;
+        if (data.item_status) item.status = data.item_status;
+        renderGapPanel();
+        renderSchemaPane();
+    }
+
+    document.addEventListener("click", (e) => { if (!gapLocationPopover.contains(e.target) && !e.target.closest(".gap-chip")) gapLocationPopover.classList.remove("open"); });
+    document.addEventListener("scroll", () => gapLocationPopover.classList.remove("open"), true);
+
+    function renderGapSection(title, items, cssClass, collapsedByDefault) {
+        const section = document.createElement("div");
+        section.className = "gap-section";
+        if (collapsedByDefault) section.classList.add("collapsed");
+
+        const header = document.createElement("div");
+        header.className = "gap-section-header";
+        header.innerHTML = `
+            <span class="gap-section-title ${cssClass || ""}">${title}</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+                <span class="gap-section-count">${items.length}</span>
+                <svg class="gap-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </span>
+        `;
+        header.addEventListener("click", () => section.classList.toggle("collapsed"));
+
+        const body = document.createElement("div");
+        body.className = "gap-section-body";
+        if (items.length === 0) {
+            const hint = document.createElement("span");
+            hint.className = "gap-empty-hint";
+            hint.textContent = "—";
+            body.appendChild(hint);
+        } else {
+            items.forEach((item) => body.appendChild(renderGapChip(item)));
+        }
+
+        section.appendChild(header);
+        section.appendChild(body);
+        return section;
+    }
+
+    function renderGapPanel() {
+        paneGaps.innerHTML = "";
+
+        if (!gapState.ready) {
+            const runBtn = document.createElement("button");
+            runBtn.type = "button";
+            runBtn.className = "btn gap-run-btn";
+            runBtn.textContent = "Запустить gap-анализ";
+            runBtn.addEventListener("click", runGapAnalysis);
+            paneGaps.appendChild(runBtn);
+            return;
+        }
+
+        const missItems = gapState.items.filter((i) => i.status === "miss");
+        const canAddItems = gapState.items.filter((i) => i.status === "can_add");
+        const matchItems = gapState.items.filter((i) => i.status === "match");
+        const overItems = gapState.items.filter((i) => i.status === "over");
+
+        paneGaps.appendChild(renderGapSection("Miss", missItems, "miss", false));
+        paneGaps.appendChild(renderGapSection("Можно добавить", canAddItems, "", false));
+        paneGaps.appendChild(renderGapSection("Match", matchItems, "", true));
+        paneGaps.appendChild(renderGapSection("Over", overItems, "", true));
+    }
+
+    async function runGapAnalysis() {
+        paneGaps.innerHTML = `<p class="gap-progress-line">Анализирую... <span class="loading-dot"></span></p>`;
+        const response = await fetch(`/tailor/session/${SESSION_ID}/run-gap-analysis`, { method: "POST" });
+        const data = await response.json();
+
+        pollTaskStatus([data.task_id], (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                gapState.ready = true;
+                gapState.items = task.result.items;
+                gapState.resumeItems = task.result.resume_items || [];
+                if (!gapState.items.length) {
+                    paneGaps.innerHTML = `<p class="gap-error-line">Анализ вернул 0 элементов. Модель могла не уложиться в формат — попробуй ещё раз.</p>`;
+                    const retryBtn = document.createElement("button");
+                    retryBtn.type = "button";
+                    retryBtn.className = "btn gap-run-btn";
+                    retryBtn.style.marginTop = "8px";
+                    retryBtn.textContent = "Повторить";
+                    retryBtn.addEventListener("click", runGapAnalysis);
+                    paneGaps.appendChild(retryBtn);
+                    return;
+                }
+                renderGapPanel();
+                fetchGapMeta();
+                fetchTitleSuggestions();
+            } else if (task.status === "failed") {
+                paneGaps.innerHTML = `<p class="gap-error-line">Ошибка: ${task.error}</p>`;
+            }
+        });
+    }
+
+    async function fetchGapMeta() {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items`);
+        const data = await response.json();
+        gapState.blockOrder = data.block_order || [];
+        renderSchemaPane();
+    }
+
+    async function loadGapState() {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items`);
+        const data = await response.json();
+        gapState.ready = data.ready;
+        gapState.items = data.items;
+        gapState.blockComments = data.block_comments || {};
+        gapState.blockOrder = data.block_order || [];
+        gapState.resumeItems = data.resume_items || [];
+        renderGapPanel();
+        renderSchemaPane();
+    }
+
+    async function fetchTitleSuggestions() {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/suggest-titles`, { method: "POST" });
+        const data = await response.json();
+        pollTaskStatus([data.task_id], (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                titleSuggestions = task.result.suggestions.filter((s) => s.suggested !== s.current);
+                renderSchemaPane();
+            }
+        });
+    }
+
+    async function applyTitleSuggestion(suggestion) {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/apply-title`, {
+            method: "POST",
+            body: new URLSearchParams({
+                current_text: suggestion.current,
+                new_text: suggestion.suggested,
+                kind: suggestion.kind,
+                company: suggestion.company || "",
+            }),
+        });
+        if (!response.ok) {
+            showToast("Не удалось применить — текст не найден в резюме", "danger");
+            return;
+        }
+        const data = await response.json();
+        setResumeHtml(data.html, { persist: false });
+        titleSuggestions = titleSuggestions.filter((s) => s !== suggestion);
+        renderSchemaPane();
+        showToast("Тайтл обновлён", "success");
+    }
+
+    // ---- Schema panel ----
+    function itemsForBlock(fieldPath) {
+        return gapState.items.filter(
+            (i) => (i.status === "match" || i.status === "can_add") && (i.assigned_field_paths || []).includes(fieldPath)
+        );
+    }
+
+    function originalTextsForBlock(fieldPath) {
+        return gapState.resumeItems
+            .filter((i) => i.field_path === fieldPath)
+            .map((i) => i.text)
+            .filter((text, index, arr) => arr.indexOf(text) === index);
+    }
+
+    function unplacedGapTexts() {
+        return gapState.items
+            .filter((i) => (i.status === "can_add" || i.status === "miss") && !(i.assigned_field_paths || []).length)
+            .map((i) => i.text);
+    }
+
+    function renderSchemaBlock(fieldPath) {
+        const block = document.createElement("div");
+        block.className = "schema-block";
+        block.dataset.fieldPath = fieldPath;
+
+        const items = itemsForBlock(fieldPath);
+        const alreadyHere = items.filter((i) => i.original_field_path === fieldPath);
+        const toAdd = items.filter((i) => i.original_field_path !== fieldPath);
+
+        const knownTexts = new Set([...alreadyHere, ...toAdd].map((i) => i.text.toLowerCase()));
+        const originalOnly = originalTextsForBlock(fieldPath).filter((t) => !knownTexts.has(t.toLowerCase()));
+
+        function activeChipsHtml(list, variant) {
+            return list
+                .map(
+                    (i) => `<span class="schema-block-item-chip ${variant}" draggable="true" data-gap-item-id="${i.id}">${i.text}<span class="schema-block-item-remove" data-gap-item-id="${i.id}">&times;</span></span>`
+                )
+                .join("");
+        }
+
+        const originalChipsHtml = originalOnly.map((text) => `<span class="schema-block-item-chip is-plain">${text}</span>`).join("");
+        const activeCount = alreadyHere.length + toAdd.length;
+        const totalCount = activeCount + originalOnly.length;
+
+        block.innerHTML = `
+            <div class="schema-block-header">
+                <span class="schema-block-title">${fieldPathLabel(fieldPath)}</span>
+                <button type="button" class="schema-block-gen-btn" data-field-path="${fieldPath}">Сгенерировать</button>
+            </div>
+            ${activeCount ? `<div class="schema-block-items">${activeChipsHtml(alreadyHere, "is-kept")}${activeChipsHtml(toAdd, "is-new")}</div>` : ""}
+            ${!totalCount ? `<div class="schema-block-items"><span class="gap-empty-hint">пусто</span></div>` : ""}
+            ${originalOnly.length ? `
+            <button type="button" class="schema-original-toggle collapsed" data-field-path="${fieldPath}">
+                <svg class="schema-original-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                В оригинале (${originalOnly.length})
+            </button>
+            <div class="schema-original-body collapsed"><div class="schema-block-items">${originalChipsHtml}</div></div>
+            ` : ""}
+            <div class="schema-block-add-wrap">
+                <div class="schema-block-add-row">
+                    <input type="text" class="schema-block-add-input" autocomplete="off" placeholder="Добавить скилл..." data-field-path="${fieldPath}">
+                    <button type="button" class="schema-block-add-btn" data-field-path="${fieldPath}">+</button>
+                </div>
+            </div>
+            <textarea class="schema-block-comment" data-field-path="${fieldPath}" placeholder="Комментарий к блоку...">${gapState.blockComments[fieldPath] || ""}</textarea>
+        `;
+
+        block.addEventListener("mouseenter", () => {
+            if (hoverSourceLock) return;
+            hoverSourceLock = "schema";
+            setBlockHot(fieldPath, true, { scrollResume: true });
+        });
+        block.addEventListener("mouseleave", () => { setBlockHot(fieldPath, false, {}); hoverSourceLock = null; });
+
+        block.addEventListener("dragover", (e) => { e.preventDefault(); block.classList.add("drag-over"); });
+        block.addEventListener("dragleave", () => block.classList.remove("drag-over"));
+        block.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            block.classList.remove("drag-over");
+            const gapItemId = e.dataTransfer.getData("text/gap-item-id");
+            if (!gapItemId) return;
+            const item = gapState.items.find((i) => String(i.id) === gapItemId);
+            if (!item) return;
+            if (!(item.assigned_field_paths || []).includes(fieldPath)) {
+                await toggleGapItemLocation(item, fieldPath);
+            }
+        });
+
+        return block;
+    }
+
+    function renderSchemaPane() {
+        paneSchema.innerHTML = "";
+
+        if (!gapState.ready) {
+            paneSchema.innerHTML = `<p class="schema-empty-hint">Сначала запусти gap-анализ во вкладке ГЕПЫ.</p>`;
+            return;
+        }
+
+        if (titleSuggestions && titleSuggestions.length) {
+            const titleBlock = document.createElement("div");
+            titleBlock.className = "title-block";
+            titleBlock.innerHTML = `<div class="title-block-heading">Тайтлы</div>`;
+            titleSuggestions.forEach((s) => {
+                const row = document.createElement("div");
+                row.className = "title-suggestion-row";
+                row.innerHTML = `
+                    ${s.kind === "experience" ? `<div class="title-suggestion-company">${s.company}</div>` : ""}
+                    <div class="title-suggestion-current">${s.current}</div>
+                    <div class="title-suggestion-new">${s.suggested}</div>
+                    <div class="title-suggestion-buttons">
+                        <button type="button" class="btn apply-title-btn">Применить</button>
+                        <button type="button" class="btn-ghost btn dismiss-title-btn">Пропустить</button>
+                    </div>
+                `;
+                row.querySelector(".apply-title-btn").addEventListener("click", () => applyTitleSuggestion(s));
+                row.querySelector(".dismiss-title-btn").addEventListener("click", () => {
+                    titleSuggestions = titleSuggestions.filter((x) => x !== s);
+                    renderSchemaPane();
+                });
+                titleBlock.appendChild(row);
+            });
+            paneSchema.appendChild(titleBlock);
+        }
+
+        const order = gapState.blockOrder.length ? gapState.blockOrder : ["summary", "skills", ...experienceCompanyOptions().map((o) => o.value), ...genericSectionOptions().map((o) => o.value)];
+        order.forEach((path) => paneSchema.appendChild(renderSchemaBlock(path)));
+    }
+
+    const schemaAddSuggestions = document.createElement("div");
+    schemaAddSuggestions.className = "schema-add-suggestions";
+    document.body.appendChild(schemaAddSuggestions);
+    let activeAddInput = null;
+
+    function renderAddSuggestions(inputEl) {
+        const query = inputEl.value.trim().toLowerCase();
+        const matches = unplacedGapTexts().filter((t) => !query || t.toLowerCase().includes(query));
+
+        if (!matches.length) { schemaAddSuggestions.classList.remove("open"); return; }
+
+        schemaAddSuggestions.innerHTML = "";
+        matches.slice(0, 20).forEach((text) => {
+            const item = document.createElement("div");
+            item.className = "schema-add-suggestion-item";
+            item.textContent = text;
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                inputEl.value = text;
+                schemaAddSuggestions.classList.remove("open");
+                inputEl.closest(".schema-block-add-row").querySelector(".schema-block-add-btn").click();
+            });
+            schemaAddSuggestions.appendChild(item);
+        });
+
+        positionFloatingPanel(schemaAddSuggestions, inputEl.getBoundingClientRect());
+    }
+
+    paneSchema.addEventListener("focusin", (e) => {
+        if (!e.target.classList.contains("schema-block-add-input")) return;
+        activeAddInput = e.target;
+        renderAddSuggestions(e.target);
+    });
+
+    paneSchema.addEventListener("input", (e) => {
+        if (e.target.classList.contains("schema-block-add-input")) renderAddSuggestions(e.target);
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!schemaAddSuggestions.contains(e.target) && e.target !== activeAddInput) schemaAddSuggestions.classList.remove("open");
+    });
+    document.addEventListener("scroll", () => schemaAddSuggestions.classList.remove("open"), true);
+
+    paneSchema.addEventListener("click", async (e) => {
+        if (e.target.classList.contains("schema-block-gen-btn")) {
+            const fieldPath = e.target.dataset.fieldPath;
+            await flushPendingSave();
+            e.target.classList.add("generating");
+            e.target.textContent = "...";
+
+            const response = await fetch(`/tailor/session/${SESSION_ID}/generate-block`, {
+                method: "POST",
+                body: new URLSearchParams({ field_path: fieldPath }),
+            });
+            const data = await response.json();
+
+            pollTaskStatus([data.task_id], (tasks) => {
+                const task = tasks[0];
+                e.target.classList.remove("generating");
+                e.target.textContent = "Сгенерировать";
+                if (task.status === "done") {
+                    setResumeHtml(task.result.html, { persist: false });
+                    showToast("Готово", "success");
+                } else if (task.status === "failed") {
+                    showToast(`Ошибка: ${task.error}`, "danger");
+                }
+            });
+            return;
+        }
+
+        if (e.target.classList.contains("schema-block-add-btn")) {
+            const fieldPath = e.target.dataset.fieldPath;
+            const input = paneSchema.querySelector(`.schema-block-add-input[data-field-path="${cssEscape(fieldPath)}"]`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items/custom`, {
+                method: "POST",
+                body: new URLSearchParams({ text, field_path: fieldPath }),
+            });
+            const data = await response.json();
+            const existingIndex = gapState.items.findIndex((i) => i.id === data.item.id);
+            if (existingIndex >= 0) gapState.items[existingIndex] = data.item;
+            else gapState.items.push(data.item);
+
+            input.value = "";
+            renderGapPanel();
+            renderSchemaPane();
+            return;
+        }
+
+        if (e.target.classList.contains("schema-block-item-remove")) {
+            const gapItemId = e.target.dataset.gapItemId;
+            const item = gapState.items.find((i) => String(i.id) === gapItemId);
+            if (!item) return;
+            const fieldPath = e.target.closest(".schema-block").dataset.fieldPath;
+            await toggleGapItemLocation(item, fieldPath);
+            return;
+        }
+
+        if (e.target.closest(".schema-original-toggle")) {
+            const btn = e.target.closest(".schema-original-toggle");
+            const fieldPath = btn.dataset.fieldPath;
+            const body = btn.nextElementSibling;
+            btn.classList.toggle("collapsed");
+            body.classList.toggle("collapsed");
+        }
+    });
+
+    paneSchema.addEventListener("dragstart", (e) => {
+        if (!e.target.classList.contains("schema-block-item-chip")) return;
+        e.dataTransfer.setData("text/gap-item-id", e.target.dataset.gapItemId);
+    });
+
+    let commentSaveTimeout = null;
+    paneSchema.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("schema-block-comment")) return;
+        const fieldPath = e.target.dataset.fieldPath;
+        const value = e.target.value;
+        clearTimeout(commentSaveTimeout);
+        commentSaveTimeout = setTimeout(async () => {
+            gapState.blockComments[fieldPath] = value;
+            await fetch(`/tailor/session/${SESSION_ID}/block-comment`, {
+                method: "POST",
+                body: new URLSearchParams({ block_path: fieldPath, comment: value }),
+            });
+        }, 700);
+    });
+
+    // ---- init ----
+    decorateBlocks();
+    bindMarkHoverHandlers();
+    bindBlockHoverSync();
+    pushHistorySnapshot();
+    updateHistoryButtons();
+    updateWordCount();
+    loadGapState();
 })();
 </script>
 {% endblock %}

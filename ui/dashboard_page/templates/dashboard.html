@@ -181,6 +181,9 @@
         <div class="job-card-bottom">
             <div class="job-card-company">{{ card.company }}</div>
             <div class="job-card-role">{{ card.role }}</div>
+            {% if card.created_at %}
+            <div class="job-card-posted-time" data-created-at="{{ card.created_at }}"></div>
+            {% endif %}
         </div>
 
         {% if card.activity_label %}
@@ -588,6 +591,15 @@ function renderCardInPlace(cardEl, card) {
     cardEl.querySelector(".job-card-company").textContent = card.company;
     cardEl.querySelector(".job-card-role").textContent = card.role;
 
+    let postedTimeEl = cardEl.querySelector(".job-card-posted-time");
+    if (card.created_at && !postedTimeEl) {
+        postedTimeEl = document.createElement("div");
+        postedTimeEl.className = "job-card-posted-time";
+        postedTimeEl.dataset.createdAt = card.created_at;
+        postedTimeEl.textContent = formatRelativeTime(card.created_at);
+        cardEl.querySelector(".job-card-bottom").appendChild(postedTimeEl);
+    }
+
     let activityEl = cardEl.querySelector(".job-card-activity");
     if (card.activity_label) {
         if (!activityEl) {
@@ -600,6 +612,29 @@ function renderCardInPlace(cardEl, card) {
         activityEl.remove();
     }
 }
+
+function formatRelativeTime(isoString) {
+    const then = new Date(isoString);
+    const diffMs = Date.now() - then.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+
+    if (diffMin < 1) return "just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays}d ago`;
+    return then.toLocaleDateString();
+}
+
+function renderPostedTimes() {
+    document.querySelectorAll(".job-card-posted-time[data-created-at]").forEach((el) => {
+        el.textContent = formatRelativeTime(el.dataset.createdAt);
+    });
+}
+
+renderPostedTimes();
+setInterval(renderPostedTimes, 60000);
 
 function pollPendingCards() {
     const pendingCards = document.querySelectorAll('.job-card[data-pending="true"]');

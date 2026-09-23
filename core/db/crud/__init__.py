@@ -1,4 +1,5 @@
 from core.db.crud.app_settings import *
+from core.db.crud.gap_items import *
 from core.db.crud.resumes import *
 from core.db.crud.jobs import *
 from core.db.crud.evaluations import *

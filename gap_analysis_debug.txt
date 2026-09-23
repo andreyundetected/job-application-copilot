@@ -1,0 +1,594 @@
+JOB POSTING ID: 59
+RESUME VERSION ID: 11
+
+====================================================================================================
+CALL: extract_job_requirements (prompt was 9297 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (1898 chars):
+
+<requirement priority="required" category="title">Forward Deployed Engineer</requirement>
+<requirement priority="required" category="domain">Forward Deployed Engineering</requirement>
+<requirement priority="required" category="skill">customer discovery</requirement>
+<requirement priority="required" category="skill">scoping</requirement>
+<requirement priority="required" category="skill">stakeholder management</requirement>
+<requirement priority="required" category="skill">LLM</requirement>
+<requirement priority="required" category="skill">agent systems</requirement>
+<requirement priority="required" category="skill">prompt engineering</requirement>
+<requirement priority="required" category="skill">function calling</requirement>
+<requirement priority="required" category="tool">LangGraph</requirement>
+<requirement priority="required" category="tool">LangChain</requirement>
+<requirement priority="required" category="tool">CrewAI</requirement>
+<requirement priority="required" category="skill">guardrails</requirement>
+<requirement priority="required" category="skill">evals</requirement>
+<requirement priority="required" category="skill">RAG</requirement>
+<requirement priority="required" category="skill">APIs</requirement>
+<requirement priority="required" category="skill">integrations</requirement>
+<requirement priority="required" category="tool">REST</requirement>
+<requirement priority="required" category="tool">webhooks</requirement>
+<requirement priority="required" category="tool">JSON</requirement>
+<requirement priority="required" category="tool">GraphQL</requirement>
+<requirement priority="required" category="tool">Python</requirement>
+<requirement priority="required" category="skill">deployment</requirement>
+<requirement priority="required" category="skill">technical communication</requirement>
+<requirement priority="required" category="skill">English C1+</requirement>
+
+====================================================================================================
+CALL: extract_resume_items (prompt was 17592 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (7812 chars):
+
+<item category="title" field_path="summary" source="resume">AI/LLM Engineer</item>
+<item category="title" field_path="experience: NeuroMentor" source="resume">Founder and AI Engineer</item>
+<item category="title" field_path="experience: We Are Volt" source="resume">AI Engineer</item>
+<item category="title" field_path="experience: Coinis" source="resume">AI Engineer and Backend Developer</item>
+<item category="title" source="linkedin">Founder & CEO | AI/LLM Engineer</item>
+<item category="title" source="linkedin">AI/LLM Engineer & Backend Developer</item>
+<item category="skill" field_path="skills" source="resume">Python</item>
+<item category="skill" field_path="skills" source="resume">Flask</item>
+<item category="skill" field_path="skills" source="resume">FastAPI</item>
+<item category="skill" field_path="skills" source="resume">LangChain</item>
+<item category="skill" field_path="skills" source="resume">LangGraph</item>
+<item category="skill" field_path="skills" source="resume">PyTorch</item>
+<item category="skill" field_path="skills" source="resume">Pandas</item>
+<item category="skill" field_path="skills" source="resume">PostgreSQL</item>
+<item category="skill" field_path="skills" source="resume">SQLAlchemy</item>
+<item category="skill" field_path="skills" source="resume">pgVector</item>
+<item category="skill" field_path="skills" source="resume">Asyncio</item>
+<item category="skill" field_path="skills" source="resume">multiprocessing</item>
+<item category="skill" field_path="skills" source="resume">RAG</item>
+<item category="skill" field_path="skills" source="resume">multi-agent orchestration</item>
+<item category="skill" field_path="skills" source="resume">prompt engineering</item>
+<item category="skill" field_path="skills" source="resume">real-time voice AI</item>
+<item category="skill" field_path="skills" source="resume">function calling</item>
+<item category="skill" field_path="skills" source="resume">structured output</item>
+<item category="skill" field_path="skills" source="resume">agentic workflows</item>
+<item category="skill" field_path="experience: NeuroMentor" source="resume">Quart</item>
+<item category="skill" field_path="experience: NeuroMentor" source="resume">Tortoise ORM</item>
+<item category="skill" field_path="experience: NeuroMentor" source="resume">JavaScript</item>
+<item category="skill" field_path="experience: NeuroMentor" source="resume">HTML/CSS</item>
+<item category="skill" field_path="experience: NeuroMentor" source="resume">Docker</item>
+<item category="skill" field_path="experience: We Are Volt" source="resume">LangFuse</item>
+<item category="skill" field_path="experience: We Are Volt" source="resume">Meilisearch</item>
+<item category="skill" field_path="experience: We Are Volt" source="resume">Threads</item>
+<item category="skill" field_path="experience: We Are Volt" source="resume">Pytest</item>
+<item category="skill" field_path="experience: Coinis" source="resume">OpenCV</item>
+<item category="skill" field_path="experience: Coinis" source="resume">python-telegram-bot</item>
+<item category="skill" source="linkedin">SQLite</item>
+<item category="skill" source="linkedin">TensorFlow</item>
+<item category="skill" source="linkedin">Keras</item>
+<item category="skill" source="linkedin">Transformers</item>
+<item category="skill" source="linkedin">Git</item>
+<item category="skill" source="linkedin">Google Places API</item>
+<item category="skill" source="linkedin">JavaScript</item>
+<item category="skill" source="linkedin">HTML/CSS</item>
+<item category="skill" source="linkedin">Docker</item>
+<item category="skill" source="linkedin">python-telegram-bot</item>
+<item category="skill" source="linkedin">Quart</item>
+<item category="skill" source="linkedin">Multiprocessing</item>
+<item category="skill" source="linkedin">Tortoise ORM</item>
+<item category="skill" source="linkedin">JavaScript</item>
+<item category="skill" source="linkedin">HTML/CSS</item>
+<item category="skill" source="linkedin">Docker</item>
+<item category="skill" source="linkedin">LangFuse</item>
+<item category="skill" source="linkedin">Meilisearch</item>
+<item category="skill" source="linkedin">Threads</item>
+<item category="skill" source="linkedin">Pytest</item>
+<item category="skill" source="linkedin">OpenCV</item>
+<item category="skill" source="linkedin">python-telegram-bot</item>
+<item category="domain" field_path="experience: NeuroMentor" source="resume">EdTech</item>
+<item category="domain" field_path="experience: We Are Volt" source="resume">fintech</item>
+<item category="methodology" field_path="experience: NeuroMentor" source="resume">Agile</item>
+<item category="methodology" field_path="experience: We Are Volt" source="resume">Agile</item>
+<item category="methodology" field_path="experience: Coinis" source="resume">Agile</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">business plan</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">technical/product roadmap</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">investor negotiations</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">customer development interviews</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">focus group</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">market and competitor analysis</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">marketing plan</item>
+<item category="experience" field_path="experience: NeuroMentor" source="resume">pitch decks</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">investor pitch meetings</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">investor negotiations</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">customer development interviews</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">market and competitor analysis</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">business plan</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">technical/product roadmap</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">marketing plan</item>
+<item category="experience" field_path="experience: We Are Volt" source="resume">pitch decks</item>
+<item category="experience" field_path="experience: Coinis" source="resume">investor negotiations</item>
+<item category="experience" field_path="experience: Coinis" source="resume">customer development interviews</item>
+<item category="experience" field_path="experience: Coinis" source="resume">market and competitor analysis</item>
+<item category="experience" field_path="experience: Coinis" source="resume">business plan</item>
+<item category="experience" field_path="experience: Coinis" source="resume">technical/product roadmap</item>
+<item category="experience" field_path="experience: Coinis" source="resume">marketing plan</item>
+<item category="experience" field_path="experience: Coinis" source="resume">pitch decks</item>
+<item category="experience" source="linkedin">business plan</item>
+<item category="experience" source="linkedin">technical/product roadmap</item>
+<item category="experience" source="linkedin">marketing plan</item>
+<item category="experience" source="linkedin">pitch decks</item>
+<item category="experience" source="linkedin">investor negotiations</item>
+<item category="experience" source="linkedin">customer development interviews</item>
+<item category="experience" source="linkedin">market and competitor analysis</item>
+
+====================================================================================================
+CALL: match_gap_items (batch 1) (prompt was 9744 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (7638 chars):
+
+<g status=miss text="Forward Deployed Engineer" category=title priority=required original=none suggest=summary;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=miss text="Forward Deployed Engineering" category=domain priority=required original=none suggest=summary;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=match text="customer discovery" category=skill priority=required original=experience: NeuroMentor suggest=experience: NeuroMentor;experience: We Are Volt;experience: Coinis keep=none reason="" />
+<g status=match text="scoping" category=skill priority=required original=experience: NeuroMentor suggest=experience: NeuroMentor;experience: We Are Volt;experience: Coinis keep=none reason="" />
+<g status=match text="stakeholder management" category=skill priority=required original=experience: NeuroMentor suggest=experience: NeuroMentor;experience: We Are Volt;experience: Coinis keep=none reason="" />
+<g status=match text="LLM" category=skill priority=required original=summary suggest=skills;summary;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=match text="agent systems" category=skill priority=required original=skills suggest=skills;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=match text="prompt engineering" category=skill priority=required original=skills suggest=skills;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=over text="AI/LLM Engineer" category=title priority=none original=summary suggest=none keep=yes reason="Relevant alternative title" />
+<g status=over text="Founder and AI Engineer" category=title priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Shows seniority and technical depth" />
+<g status=over text="AI Engineer" category=title priority=none original=experience: We Are Volt suggest=none keep=yes reason="Core technical experience" />
+<g status=over text="AI Engineer and Backend Developer" category=title priority=none original=experience: Coinis suggest=none keep=yes reason="Technical breadth" />
+<g status=over text="Python" category=skill priority=none original=skills suggest=none keep=yes reason="Fundamental language" />
+<g status=over text="Flask" category=skill priority=none original=skills suggest=none keep=yes reason="Web framework" />
+<g status=over text="FastAPI" category=skill priority=none original=skills suggest=none keep=yes reason="Modern web framework" />
+<g status=over text="LangChain" category=skill priority=none original=skills suggest=none keep=yes reason="Key LLM framework" />
+<g status=over text="LangGraph" category=skill priority=none original=skills suggest=none keep=yes reason="Key agent framework" />
+<g status=over text="PyTorch" category=skill priority=none original=skills suggest=none keep=yes reason="ML framework" />
+<g status=over text="Pandas" category=skill priority=none original=skills suggest=none keep=yes reason="Data processing" />
+<g status=over text="PostgreSQL" category=skill priority=none original=skills suggest=none keep=yes reason="Database" />
+<g status=over text="SQLAlchemy" category=skill priority=none original=skills suggest=none keep=yes reason="ORM" />
+<g status=over text="pgVector" category=skill priority=none original=skills suggest=none keep=yes reason="Vector database for LLMs" />
+<g status=over text="Asyncio" category=skill priority=none original=skills suggest=none keep=yes reason="Concurreny" />
+<g status=over text="multiprocessing" category=skill priority=none original=skills suggest=none keep=yes reason="Performance" />
+<g status=over text="RAG" category=skill priority=none original=skills suggest=none keep=yes reason="Common LLM pattern" />
+<g status=over text="multi-agent orchestration" category=skill priority=none original=skills suggest=none keep=yes reason="Advanced agent systems" />
+<g status=over text="real-time voice AI" category=skill priority=none original=skills suggest=none keep=yes reason="Specialized AI skill" />
+<g status=over text="function calling" category=skill priority=none original=skills suggest=none keep=yes reason="LLM capability" />
+<g status=over text="structured output" category=skill priority=none original=skills suggest=none keep=yes reason="LLM capability" />
+<g status=over text="agentic workflows" category=skill priority=none original=skills suggest=none keep=yes reason="Advanced agent systems" />
+<g status=over text="Quart" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Asynchronous framework" />
+<g status=over text="Tortoise ORM" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Database tool" />
+<g status=over text="JavaScript" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Frontend/Fullstack" />
+<g status=over text="HTML/CSS" category=skill priority=none original=experience: NeuroMentor suggest=none keep=no reason="Too basic for role" />
+<g status=over text="Docker" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="DevOps/Deployment" />
+<g status=over text="LangFuse" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="LLM observability" />
+<g status=over text="Meilisearch" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Search engine" />
+<g status=over text="Threads" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Concurrency" />
+<g status=over text="Pytest" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Testing" />
+<g status=over text="OpenCV" category=skill priority=none original=experience: Coinis suggest=none keep=yes reason="Computer vision" />
+<g status=over text="python-telegram-bot" category=skill priority=none original=experience: Coinis suggest=none keep=no reason="Irrelevant to role" />
+<g status=over text="EdTech" category=domain priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Domain knowledge" />
+<g status=over text="fintech" category=domain priority=none original=experience: We Are Volt suggest=none keep=yes reason="Domain knowledge" />
+<g status=over text="Agile" category=methodology priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Standard methodology" />
+<g status=over text="business plan" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Demonstrates business acumen" />
+<g status=over text="technical/product roadmap" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Strategic thinking" />
+<g status=over text="investor negotiations" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="High-level stakeholder management" />
+<g status=over text="focus group" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Market validation" />
+<g status=over text="market and competitor analysis" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Strategy" />
+<g status=over text="marketing plan" category=experience priority=none original=experience: NeuroMentor suggest=none keep=no reason="Irrelevant to engineering" />
+<g status=over text="pitch decks" category=experience priority=none original=experience: NeuroMentor suggest=none keep=no reason="Irrelevant to engineering" />
+
+====================================================================================================
+CALL: match_gap_items (batch 2) (prompt was 9668 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (9197 chars):
+
+<g status=match text="function calling" category=skill priority=required original=skills suggest=skills;experience: NeuroMentor;experience: We Are Volt;experience: Coinis keep=none reason="" />
+<g status=match text="LangGraph" category=tool priority=required original=skills suggest=skills;experience: We Are Volt keep=none reason="" />
+<g status=match text="LangChain" category=tool priority=required original=skills suggest=skills;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=can_add text="CrewAI" category=tool priority=required original=not_in_resume suggest=skills;experience: We Are Volt keep=none reason="" />
+<g status=match text="guardrails" category=skill priority=required original=skills suggest=skills;experience: We Are Volt keep=none reason="" />
+<g status=match text="evals" category=skill priority=required original=skills suggest=skills;experience: We Are Volt keep=none reason="" />
+<g status=match text="RAG" category=skill priority=required original=skills suggest=skills;experience: NeuroMentor;experience: We Are Volt keep=none reason="" />
+<g status=match text="APIs" category=skill priority=required original=skills suggest=skills;experience: Coinis keep=none reason="" />
+<g status=over text="Python" category=skill priority=none original=skills suggest=none keep=yes reason="core programming language" />
+<g status=over text="Flask" category=skill priority=none original=skills suggest=none keep=yes reason="web framework" />
+<g status=over text="FastAPI" category=skill priority=none original=skills suggest=none keep=yes reason="web framework" />
+<g status=over text="PyTorch" category=skill priority=none original=skills suggest=none keep=yes reason="machine learning" />
+<g status=over text="Pandas" category=skill priority=none original=skills suggest=none keep=yes reason="data analysis" />
+<g status=over text="PostgreSQL" category=skill priority=none original=skills suggest=none keep=yes reason="database" />
+<g status=over text="SQLAlchemy" category=skill priority=none original=skills suggest=none keep=yes reason="database" />
+<g status=over text="pgVector" category=skill priority=none original=skills suggest=none keep=yes reason="database" />
+<g status=over text="Asyncio" category=skill priority=none original=skills suggest=none keep=yes reason="asynchronous programming" />
+<g status=over text="multiprocessing" category=skill priority=none original=skills suggest=none keep=yes reason="parallel processing" />
+<g status=over text="multi-agent orchestration" category=skill priority=none original=skills suggest=none keep=yes reason="agentic workflows" />
+<g status=over text="prompt engineering" category=skill priority=none original=skills suggest=none keep=yes reason="LLM development" />
+<g status=over text="real-time voice AI" category=skill priority=none original=skills suggest=none keep=yes reason="voice processing" />
+<g status=over text="structured output" category=skill priority=none original=skills suggest=none keep=yes reason="data processing" />
+<g status=over text="agentic workflows" category=skill priority=none original=skills suggest=none keep=yes reason="agentic workflows" />
+<g status=over text="Quart" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="web framework" />
+<g status=over text="Tortoise ORM" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="database" />
+<g status=over text="JavaScript" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="web development" />
+<g status=over text="HTML/CSS" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="web development" />
+<g status=over text="Docker" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="containerization" />
+<g status=over text="LangFuse" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="LLM observability" />
+<g status=over text="Meilisearch" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="search engine" />
+<g status=over text="Threads" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="concurrency" />
+<g status=over text="Pytest" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="testing" />
+<g status=over text="OpenCV" category=skill priority=none original=experience: Coinis suggest=none keep=yes reason="computer vision" />
+<g status=over text="python-telegram-bot" category=skill priority=none original=experience: Coinis suggest=none keep=yes reason="telegram bot" />
+<g status=over text="EdTech" category=domain priority=none original=experience: NeuroMentor suggest=none keep=yes reason="industry knowledge" />
+<g status=over text="fintech" category=domain priority=none original=experience: We Are Volt suggest=none keep=yes reason="industry knowledge" />
+<g status=over text="Agile" category=methodology priority=none original=experience: NeuroMentor suggest=none keep=yes reason="development methodology" />
+<g status=over text="Agile" category=methodology priority=none original=experience: We Are Volt suggest=none keep=yes reason="development methodology" />
+<g status=over text="Agile" category=methodology priority=none original=experience: Coinis suggest=none keep=yes reason="development methodology" />
+<g status=over text="business plan" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="business development" />
+<g status=over text="technical/product roadmap" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="product development" />
+<g status=over text="investor negotiations" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="business development" />
+<g status=over text="customer development interviews" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="customer development" />
+<g status=over text="focus group" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="customer development" />
+<g status=over text="market and competitor analysis" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="market analysis" />
+<g status=over text="marketing plan" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="marketing" />
+<g status=over text="pitch decks" category=experience priority=none original=experience: NeuroMentor suggest=none keep=yes reason="business development" />
+<g status=over text="investor pitch meetings" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="business development" />
+<g status=over text="investor negotiations" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="business development" />
+<g status=over text="customer development interviews" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="customer development" />
+<g status=over text="market and competitor analysis" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="market analysis" />
+<g status=over text="business plan" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="business development" />
+<g status=over text="technical/product roadmap" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="product development" />
+<g status=over text="marketing plan" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="marketing" />
+<g status=over text="pitch decks" category=experience priority=none original=experience: We Are Volt suggest=none keep=yes reason="business development" />
+<g status=over text="investor negotiations" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="business development" />
+<g status=over text="customer development interviews" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="customer development" />
+<g status=over text="market and competitor analysis" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="market analysis" />
+<g status=over text="business plan" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="business development" />
+<g status=over text="technical/product roadmap" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="product development" />
+<g status=over text="marketing plan" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="marketing" />
+<g status=over text="pitch decks" category=experience priority=none original=experience: Coinis suggest=none keep=yes reason="business development" />
+
+====================================================================================================
+CALL: match_gap_items (batch 3) (prompt was 9678 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (7685 chars):
+
+<g status=match text="Python" category=tool priority=required original=skills suggest=skills;experience: NeuroMentor reason="" />
+<g status=miss text="integrations" category=skill priority=required original=none suggest=none reason="" />
+<g status=miss text="REST" category=tool priority=required original=none suggest=none reason="" />
+<g status=miss text="webhooks" category=tool priority=required original=none suggest=none reason="" />
+<g status=miss text="JSON" category=tool priority=required original=none suggest=none reason="" />
+<g status=miss text="GraphQL" category=tool priority=required original=none suggest=none reason="" />
+<g status=miss text="deployment" category=skill priority=required original=none suggest=none reason="" />
+<g status=miss text="technical communication" category=skill priority=required original=none suggest=none reason="" />
+<g status=over text="Flask" category=skill priority=none original=skills suggest=none keep=yes reason="Web framework" />
+<g status=over text="FastAPI" category=skill priority=none original=skills suggest=none keep=yes reason="Web framework" />
+<g status=over text="LangChain" category=skill priority=none original=skills suggest=none keep=yes reason="LLM framework" />
+<g status=over text="LangGraph" category=skill priority=none original=skills suggest=none keep=yes reason="LLM framework" />
+<g status=over text="PyTorch" category=skill priority=none original=skills suggest=none keep=yes reason="ML framework" />
+<g status=over text="Pandas" category=skill priority=none original=skills suggest=none keep=yes reason="Data analysis" />
+<g status=over text="PostgreSQL" category=skill priority=none original=skills suggest=none keep=yes reason="Database" />
+<g status=over text="SQLAlchemy" category=skill priority=none original=skills suggest=none keep=yes reason="ORM" />
+<g status=over text="pgVector" category=skill priority=none original=skills suggest=none keep=yes reason="Vector database" />
+<g status=over text="Asyncio" category=skill priority=none original=skills suggest=none keep=yes reason="Asynchronous programming" />
+<g status=over text="multiprocessing" category=skill priority=none original=skills suggest=none keep=yes reason="Parallel processing" />
+<g status=over text="RAG" category=skill priority=none original=skills suggest=none keep=yes reason="Retrieval-augmented generation" />
+<g status=over text="multi-agent orchestration" category=skill priority=none original=skills suggest=none keep=yes reason="Agent coordination" />
+<g status=over text="prompt engineering" category=skill priority=none original=skills suggest=none keep=yes reason="Prompt design" />
+<g status=over text="real-time voice AI" category=skill priority=none original=skills suggest=none keep=yes reason="Voice processing" />
+<g status=over text="function calling" category=skill priority=none original=skills suggest=none keep=yes reason="Function invocation" />
+<g status=over text="structured output" category=skill priority=none original=skills suggest=none keep=yes reason="Data structuring" />
+<g status=over text="agentic workflows" category=skill priority=none original=skills suggest=none keep=yes reason="Agent workflows" />
+<g status=over text="Quart" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Async web framework" />
+<g status=over text="Tortoise ORM" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="ORM" />
+<g status=over text="JavaScript" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Web development" />
+<g status=over text="HTML/CSS" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Web design" />
+<g status=over text="Docker" category=skill priority=none original=experience: NeuroMentor suggest=none keep=yes reason="Containerization" />
+<g status=over text="LangFuse" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="LLM observability" />
+<g status=over text="Meilisearch" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Search engine" />
+<g status=over text="Threads" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Concurrency" />
+<g status=over text="Pytest" category=skill priority=none original=experience: We Are Volt suggest=none keep=yes reason="Testing" />
+<g status=over text="OpenCV" category=skill priority=none original=experience: Coinis suggest=none keep=yes reason="Computer vision" />
+<g status=over text="python-telegram-bot" category=skill priority=none original=experience: Coinis suggest=none keep=yes reason="Telegram bot framework" />
+<g status=over text="SQLite" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Database" />
+<g status=over text="TensorFlow" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="ML framework" />
+<g status=over text="Keras" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="ML framework" />
+<g status=over text="Transformers" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="NLP library" />
+<g status=over text="Git" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Version control" />
+<g status=over text="Google Places API" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Location data" />
+<g status=over text="JavaScript" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Web development" />
+<g status=over text="HTML/CSS" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Web design" />
+<g status=over text="Docker" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Containerization" />
+<g status=over text="python-telegram-bot" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Telegram bot framework" />
+<g status=over text="Quart" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Async web framework" />
+<g status=over text="Multiprocessing" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Parallel processing" />
+<g status=over text="Tortoise ORM" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="ORM" />
+<g status=over text="JavaScript" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Web development" />
+<g status=over text="HTML/CSS" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Web design" />
+<g status=over text="Docker" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Containerization" />
+<g status=over text="LangFuse" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="LLM observability" />
+<g status=over text="Meilisearch" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Search engine" />
+<g status=over text="Threads" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Concurrency" />
+<g status=over text="Pytest" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Testing" />
+<g status=over text="OpenCV" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Computer vision" />
+<g status=over text="python-telegram-bot" category=skill priority=none original=not_in_resume suggest=none keep=yes reason="Telegram bot framework" />
+
+====================================================================================================
+CALL: match_gap_items (batch 4) (prompt was 9361 chars, omitted)
+====================================================================================================
+
+RAW RESPONSE (8152 chars):
+
+<g status=miss text="English C1+" category=skill priority=required original=none suggest=none keep=none reason="" />
+<g status=over text="Founder and AI Engineer" category=title priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="AI Engineer" category=title priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="AI Engineer and Backend Developer" category=title priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="Python" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="Flask" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="FastAPI" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="LangChain" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="LangGraph" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="PyTorch" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="Pandas" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="PostgreSQL" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="SQLAlchemy" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="pgVector" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="Asyncio" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="multiprocessing" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="RAG" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="multi-agent orchestration" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="prompt engineering" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="real-time voice AI" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="function calling" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="structured output" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="agentic workflows" category=skill priority=none original=skills suggest=none keep=yes reason="" />
+<g status=over text="Quart" category=skill priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="Tortoise ORM" category=skill priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="JavaScript" category=skill priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="HTML/CSS" category=skill priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="Docker" category=skill priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="LangFuse" category=skill priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="Meilisearch" category=skill priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="Threads" category=skill priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="Pytest" category=skill priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="OpenCV" category=skill priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="python-telegram-bot" category=skill priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="EdTech" category=domain priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="fintech" category=domain priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="Agile" category=methodology priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="Agile" category=methodology priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="Agile" category=methodology priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="business plan" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="technical/product roadmap" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="investor negotiations" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="customer development interviews" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="focus group" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="market and competitor analysis" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="marketing plan" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="pitch decks" category=experience priority=none original="experience: NeuroMentor" suggest=none keep=yes reason="" />
+<g status=over text="investor pitch meetings" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="investor negotiations" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="customer development interviews" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="market and competitor analysis" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="business plan" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="technical/product roadmap" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="marketing plan" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="pitch decks" category=experience priority=none original="experience: We Are Volt" suggest=none keep=yes reason="" />
+<g status=over text="investor negotiations" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="customer development interviews" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="market and competitor analysis" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="business plan" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="technical/product roadmap" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="marketing plan" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+<g status=over text="pitch decks" category=experience priority=none original="experience: Coinis" suggest=none keep=yes reason="" />
+
+====================================================================================================
+PARSED SUMMARY
+====================================================================================================
+
+requirements: 25
+  - {'text': 'Forward Deployed Engineer', 'priority': 'required', 'category': 'title'}
+  - {'text': 'Forward Deployed Engineering', 'priority': 'required', 'category': 'domain'}
+  - {'text': 'customer discovery', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'scoping', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'stakeholder management', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'LLM', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'agent systems', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'prompt engineering', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'function calling', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'LangGraph', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'LangChain', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'CrewAI', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'guardrails', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'evals', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'RAG', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'APIs', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'integrations', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'REST', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'webhooks', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'JSON', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'GraphQL', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'Python', 'priority': 'required', 'category': 'tool'}
+  - {'text': 'deployment', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'technical communication', 'priority': 'required', 'category': 'skill'}
+  - {'text': 'English C1+', 'priority': 'required', 'category': 'skill'}
+
+resume_items: 92
+  - {'text': 'AI/LLM Engineer', 'category': 'title', 'field_path': 'summary', 'source': 'resume'}
+  - {'text': 'Founder and AI Engineer', 'category': 'title', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'AI Engineer', 'category': 'title', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'AI Engineer and Backend Developer', 'category': 'title', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'AI/LLM Engineer & Backend Developer', 'category': 'title', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Python', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'Flask', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'FastAPI', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'LangChain', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'LangGraph', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'PyTorch', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'Pandas', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'PostgreSQL', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'SQLAlchemy', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'pgVector', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'Asyncio', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'multiprocessing', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'RAG', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'multi-agent orchestration', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'prompt engineering', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'real-time voice AI', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'function calling', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'structured output', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'agentic workflows', 'category': 'skill', 'field_path': 'skills', 'source': 'resume'}
+  - {'text': 'Quart', 'category': 'skill', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'Tortoise ORM', 'category': 'skill', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'JavaScript', 'category': 'skill', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'HTML/CSS', 'category': 'skill', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'Docker', 'category': 'skill', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'LangFuse', 'category': 'skill', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'Meilisearch', 'category': 'skill', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'Threads', 'category': 'skill', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'Pytest', 'category': 'skill', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'OpenCV', 'category': 'skill', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'python-telegram-bot', 'category': 'skill', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'SQLite', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'TensorFlow', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Keras', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Transformers', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Git', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Google Places API', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'JavaScript', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'HTML/CSS', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Docker', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'python-telegram-bot', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Quart', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Multiprocessing', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Tortoise ORM', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'JavaScript', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'HTML/CSS', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Docker', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'LangFuse', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Meilisearch', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Threads', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'Pytest', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'OpenCV', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'python-telegram-bot', 'category': 'skill', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'EdTech', 'category': 'domain', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'fintech', 'category': 'domain', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'Agile', 'category': 'methodology', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'Agile', 'category': 'methodology', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'Agile', 'category': 'methodology', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'business plan', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'technical/product roadmap', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'investor negotiations', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'customer development interviews', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'focus group', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'market and competitor analysis', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'marketing plan', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'pitch decks', 'category': 'experience', 'field_path': 'experience: NeuroMentor', 'source': 'resume'}
+  - {'text': 'investor pitch meetings', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'investor negotiations', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'customer development interviews', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'market and competitor analysis', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'business plan', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'technical/product roadmap', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'marketing plan', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'pitch decks', 'category': 'experience', 'field_path': 'experience: We Are Volt', 'source': 'resume'}
+  - {'text': 'investor negotiations', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'customer development interviews', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'market and competitor analysis', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'business plan', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'technical/product roadmap', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'marketing plan', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'pitch decks', 'category': 'experience', 'field_path': 'experience: Coinis', 'source': 'resume'}
+  - {'text': 'business plan', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'technical/product roadmap', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'marketing plan', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'pitch decks', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'investor negotiations', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'customer development interviews', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+  - {'text': 'market and competitor analysis', 'category': 'experience', 'field_path': None, 'source': 'linkedin'}
+
+gap_items: 71
+  - {'text': 'Forward Deployed Engineer', 'category': 'title', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': ['summary', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'Forward Deployed Engineering', 'category': 'domain', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': ['summary', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'customer discovery', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': ['experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'scoping', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': ['experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'stakeholder management', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': ['experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'LLM', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'summary', 'suggested_field_paths': ['skills', 'summary', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'agent systems', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'prompt engineering', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'AI/LLM Engineer', 'category': 'title', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'summary', 'suggested_field_paths': [], 'suggested_reason': 'Relevant alternative title', 'recommend_keep': True}
+  - {'text': 'Founder and AI Engineer', 'category': 'title', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Shows seniority and technical depth', 'recommend_keep': True}
+  - {'text': 'AI Engineer', 'category': 'title', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Core technical experience', 'recommend_keep': True}
+  - {'text': 'AI Engineer and Backend Developer', 'category': 'title', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Technical breadth', 'recommend_keep': True}
+  - {'text': 'Python', 'category': 'tool', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'Flask', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Web framework', 'recommend_keep': True}
+  - {'text': 'FastAPI', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Modern web framework', 'recommend_keep': True}
+  - {'text': 'LangChain', 'category': 'tool', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'LangGraph', 'category': 'tool', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'PyTorch', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'ML framework', 'recommend_keep': True}
+  - {'text': 'Pandas', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Data processing', 'recommend_keep': True}
+  - {'text': 'PostgreSQL', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Database', 'recommend_keep': True}
+  - {'text': 'SQLAlchemy', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'ORM', 'recommend_keep': True}
+  - {'text': 'pgVector', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Vector database for LLMs', 'recommend_keep': True}
+  - {'text': 'Asyncio', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Concurreny', 'recommend_keep': True}
+  - {'text': 'multiprocessing', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Performance', 'recommend_keep': True}
+  - {'text': 'RAG', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'multi-agent orchestration', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Advanced agent systems', 'recommend_keep': True}
+  - {'text': 'real-time voice AI', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Specialized AI skill', 'recommend_keep': True}
+  - {'text': 'function calling', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'structured output', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'LLM capability', 'recommend_keep': True}
+  - {'text': 'agentic workflows', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': [], 'suggested_reason': 'Advanced agent systems', 'recommend_keep': True}
+  - {'text': 'Quart', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Asynchronous framework', 'recommend_keep': True}
+  - {'text': 'Tortoise ORM', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Database tool', 'recommend_keep': True}
+  - {'text': 'JavaScript', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Frontend/Fullstack', 'recommend_keep': True}
+  - {'text': 'HTML/CSS', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Too basic for role', 'recommend_keep': False}
+  - {'text': 'Docker', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'DevOps/Deployment', 'recommend_keep': True}
+  - {'text': 'LangFuse', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'LLM observability', 'recommend_keep': True}
+  - {'text': 'Meilisearch', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Search engine', 'recommend_keep': True}
+  - {'text': 'Threads', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Concurrency', 'recommend_keep': True}
+  - {'text': 'Pytest', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Testing', 'recommend_keep': True}
+  - {'text': 'OpenCV', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Computer vision', 'recommend_keep': True}
+  - {'text': 'python-telegram-bot', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Irrelevant to role', 'recommend_keep': False}
+  - {'text': 'EdTech', 'category': 'domain', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Domain knowledge', 'recommend_keep': True}
+  - {'text': 'fintech', 'category': 'domain', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Domain knowledge', 'recommend_keep': True}
+  - {'text': 'Agile', 'category': 'methodology', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Standard methodology', 'recommend_keep': True}
+  - {'text': 'business plan', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Demonstrates business acumen', 'recommend_keep': True}
+  - {'text': 'technical/product roadmap', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Strategic thinking', 'recommend_keep': True}
+  - {'text': 'investor negotiations', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'High-level stakeholder management', 'recommend_keep': True}
+  - {'text': 'focus group', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Market validation', 'recommend_keep': True}
+  - {'text': 'market and competitor analysis', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Strategy', 'recommend_keep': True}
+  - {'text': 'marketing plan', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Irrelevant to engineering', 'recommend_keep': False}
+  - {'text': 'pitch decks', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'Irrelevant to engineering', 'recommend_keep': False}
+  - {'text': 'CrewAI', 'category': 'tool', 'status': 'can_add', 'priority': 'required', 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'guardrails', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'evals', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'APIs', 'category': 'skill', 'status': 'match', 'priority': 'required', 'source': None, 'original_field_path': 'skills', 'suggested_field_paths': ['skills', 'experience:'], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'customer development interviews', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'customer development', 'recommend_keep': True}
+  - {'text': 'investor pitch meetings', 'category': 'experience', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'experience:', 'suggested_field_paths': [], 'suggested_reason': 'business development', 'recommend_keep': True}
+  - {'text': 'integrations', 'category': 'skill', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'REST', 'category': 'tool', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'webhooks', 'category': 'tool', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'JSON', 'category': 'tool', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'GraphQL', 'category': 'tool', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'deployment', 'category': 'skill', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'technical communication', 'category': 'skill', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}
+  - {'text': 'SQLite', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'Database', 'recommend_keep': True}
+  - {'text': 'TensorFlow', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'ML framework', 'recommend_keep': True}
+  - {'text': 'Keras', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'ML framework', 'recommend_keep': True}
+  - {'text': 'Transformers', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'NLP library', 'recommend_keep': True}
+  - {'text': 'Git', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'Version control', 'recommend_keep': True}
+  - {'text': 'Google Places API', 'category': 'skill', 'status': 'over', 'priority': None, 'source': None, 'original_field_path': 'not_in_resume', 'suggested_field_paths': [], 'suggested_reason': 'Location data', 'recommend_keep': True}
+  - {'text': 'English C1+', 'category': 'skill', 'status': 'miss', 'priority': 'required', 'source': None, 'original_field_path': None, 'suggested_field_paths': [], 'suggested_reason': None, 'recommend_keep': None}

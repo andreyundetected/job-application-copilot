@@ -2,7 +2,7 @@ import re
 
 import requests
 
-from core.discovery.ats.base import BaseATSExtractor
+from core.discovery.ats.base import BaseATSExtractor, parse_iso_datetime
 from core.parsing.html_to_text import html_to_text
 
 _URL_RE = re.compile(r"([a-z0-9-]+)\.breezy\.hr/p/([^/?#]+)")
@@ -57,3 +57,25 @@ class BreezyExtractor(BaseATSExtractor):
         description = html_to_text(matching.get("description", ""))
 
         return "\n\n".join(part for part in [title, header_line, description] if part)
+
+    def list_active_postings(self, slug: str) -> list[dict]:
+        list_url = f"https://{slug}.breezy.hr/json"
+        response = requests.get(list_url, params={"verbose": "true"}, timeout=20)
+        if response.status_code != 200:
+            return []
+
+        jobs = response.json()
+        if not isinstance(jobs, list):
+            return []
+
+        results = []
+        for job in jobs:
+            job_id = job.get("id")
+            url = job.get("url", "")
+            if not job_id or not url:
+                continue
+            posted_at = parse_iso_datetime(job.get("published_date") or job.get("created_date"))
+            results.append(
+                {"external_id": str(job_id), "url": url, "title": job.get("name", ""), "posted_at": posted_at}
+            )
+        return results

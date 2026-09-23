@@ -2,7 +2,7 @@ import re
 
 import requests
 
-from core.discovery.ats.base import BaseATSExtractor
+from core.discovery.ats.base import BaseATSExtractor, parse_iso_datetime
 from core.parsing.html_to_text import html_to_text
 
 _URL_RE = re.compile(r"([a-z0-9-]+)\.recruitee\.com/o/([^/?#]+)")
@@ -52,3 +52,25 @@ class RecruiteeExtractor(BaseATSExtractor):
         requirements = html_to_text(offer.get("requirements", ""))
 
         return "\n\n".join(part for part in [title, header_line, description, requirements] if part)
+
+    def list_active_postings(self, slug: str) -> list[dict]:
+        api_url = f"https://{slug}.recruitee.com/api/offers/"
+        response = requests.get(api_url, timeout=20)
+        if response.status_code != 200:
+            return []
+
+        data = response.json()
+        offers = data.get("offers") or []
+
+        results = []
+        for offer in offers:
+            offer_id = offer.get("id")
+            offer_slug = offer.get("slug", "")
+            if not offer_id or not offer_slug:
+                continue
+            url = f"https://{slug}.recruitee.com/o/{offer_slug}"
+            posted_at = parse_iso_datetime(offer.get("created_at") or offer.get("published_at"))
+            results.append(
+                {"external_id": str(offer_id), "url": url, "title": offer.get("title", ""), "posted_at": posted_at}
+            )
+        return results

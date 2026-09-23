@@ -1,5 +1,31 @@
+import datetime as _dt
 import re
 from abc import ABC, abstractmethod
+
+from core.discovery.wayback import fetch_cdx_urls
+
+
+def parse_iso_datetime(value) -> "_dt.datetime | None":
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            if value > 10**12:
+                value = value / 1000
+            return _dt.datetime.utcfromtimestamp(value)
+        except (OverflowError, OSError, ValueError):
+            return None
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        if text.isdigit():
+            return parse_iso_datetime(int(text))
+        try:
+            return _dt.datetime.fromisoformat(text.replace("Z", "+00:00")).replace(tzinfo=None)
+        except ValueError:
+            return None
+    return None
 
 
 class BaseATSExtractor(ABC):
@@ -29,4 +55,24 @@ class BaseATSExtractor(ABC):
         if the posting is gone/unreachable. Never raises for expected failure
         modes (404, empty board) - only lets real bugs (bad JSON shape) bubble
         up as ValueError/KeyError/TypeError, which the caller logs and swallows."""
+        raise NotImplementedError
+
+    def _slug_from_match(self, match: re.Match) -> str:
+        return match.group(1)
+
+    def list_wayback_slugs(self) -> list[str]:
+        slugs: set[str] = set()
+        for domain in self.site_filter_domains:
+            for url in fetch_cdx_urls(domain):
+                match = self.url_pattern.search(url)
+                if match:
+                    slugs.add(self._slug_from_match(match))
+        return sorted(slugs)
+
+    @abstractmethod
+    def list_active_postings(self, slug: str) -> list[dict]:
+        """Every currently-live posting for this company slug, as
+        {"external_id": str, "url": str, "title": str, "posted_at": datetime|None}.
+        Never raises for expected failure modes (404, deactivated board) -
+        returns [] and lets the caller log; only unexpected errors bubble."""
         raise NotImplementedError

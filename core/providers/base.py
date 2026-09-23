@@ -5,7 +5,13 @@ class BaseLLMProvider(ABC):
     last_usage: dict | None = None
 
     @abstractmethod
-    def call(self, system_prompt: str, user_prompt: str) -> str:
+    def call(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        max_tokens: int | None = None,
+        reasoning_effort: str | None = None,
+    ) -> str:
         raise NotImplementedError
 
     def _extract_usage(self, response) -> dict:

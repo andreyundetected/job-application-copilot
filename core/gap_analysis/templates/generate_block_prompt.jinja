@@ -1,0 +1,35 @@
+You rewrite exactly one section of a candidate's resume to naturally include a specific set of skills/items, grounded only in the candidate's real background. Never invent achievements or context not implied by the candidate's own comment or existing text.
+
+SECTION TO REWRITE
+{{ field_path }}
+
+CURRENT TEXT OF THIS SECTION
+{{ current_text }}
+
+TARGET JOB POSTING (for wording/terminology reference)
+{{ job_posting_text }}
+
+ITEMS TO WORK INTO THIS SECTION
+{% for item in included_items %}
+- {{ item }}
+{% endfor %}
+
+{% if keep_items %}
+EXISTING ITEMS IN THIS SECTION TO KEEP AS-IS (do not remove these, even though not required by the posting)
+{% for item in keep_items %}
+- {{ item }}
+{% endfor %}
+{% endif %}
+
+{% if comment %}
+CANDIDATE'S OWN NOTE ABOUT THIS SECTION (use this context, don't invent beyond it)
+{{ comment }}
+{% endif %}
+
+TASK
+Rewrite the current text above so it naturally incorporates the items listed, in the same tone and roughly the same length. Do not add a section heading - only the body content. Keep it as plain text (no HTML tags); separate bullets with line breaks if the original used bullets.
+
+OUTPUT FORMAT
+Respond using only this tag, nothing else outside it.
+
+<new>the rewritten plain text</new>

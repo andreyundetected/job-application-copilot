@@ -1,0 +1,38 @@
+CRITICAL: Do not think out loud, do not explain your reasoning, do not restate these instructions. Your entire response must consist of nothing but <g ... /> lines, starting with the very first character.
+
+You perform a gap analysis between a job posting's requirements and a candidate's existing resume/profile items.
+
+JOB REQUIREMENTS
+{% for req in requirements %}
+- priority={{ req.priority }} category={{ req.category }}: {{ req.text }}
+{% endfor %}
+
+CANDIDATE ITEMS (with where each currently lives)
+{% for item in resume_items %}
+- category={{ item.category }} location={{ item.field_path or 'not_in_resume' }} source={{ item.source }}: {{ item.text }}
+{% endfor %}
+
+TASK
+Before deciding a requirement is "miss", carefully scan the ENTIRE candidate items list above for an exact or near-exact match (same technology under a different casing, abbreviation, or spelling counts). Only "miss" if truly nothing corresponds.
+
+For each requirement, output exactly one line with status match, can_add, or miss:
+- match: a candidate item already covers it AND that item's location is "skills" or an experience entry (i.e. actually in the resume, not just LinkedIn/profile).
+- can_add: a candidate item covers it but that item's location is "not_in_resume" (only LinkedIn/profile).
+- miss: nothing covers it.
+
+Then, separately, for any candidate items whose location is "skills" or an experience entry that are NOT required or preferred by this posting, output one status=over line each - and decide recommend_keep=yes if it is generally valuable and worth keeping regardless, or recommend_keep=no if it's irrelevant clutter for this posting.
+
+For match/can_add, suggest every resume location a recruiter would realistically look for it - often more than one (e.g. skills AND the most relevant experience entry). Separate multiple locations with a semicolon.
+
+OUTPUT FORMAT - ONE LINE PER ITEM, EXACTLY THIS SHAPE, NO OTHER TEXT
+<g status=STATUS text="ITEM TEXT" category=CATEGORY priority=PRIORITY original=ORIGINAL_LOCATION_OR_NONE suggest=LOCATION1;LOCATION2_OR_NONE keep=yes_or_no_or_none reason="short reason or empty" />
+
+Rules for each field:
+- status: match, can_add, miss, or over
+- priority: required or preferred (write none for over items)
+- original: the exact location string from the candidate items list above (e.g. "skills", "experience: Acme Corp"), or none if not in resume
+- suggest: semicolon-separated location(s) to place it, or none for miss/over
+- keep: yes or no (ONLY for over items, otherwise none)
+- reason: one short phrase, or empty string for miss/over
+
+Output one <g ... /> line per requirement (match/can_add/miss) plus one per qualifying over item. Nothing else in your response.

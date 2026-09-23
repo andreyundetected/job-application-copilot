@@ -2,7 +2,7 @@ import re
 
 import requests
 
-from core.discovery.ats.base import BaseATSExtractor
+from core.discovery.ats.base import BaseATSExtractor, parse_iso_datetime
 from core.parsing.html_to_text import html_to_text
 
 _URL_RE = re.compile(r"([a-z0-9-]+)\.teamtailor\.com/jobs/(\d+)-([^/?#]+)")
@@ -44,3 +44,25 @@ class TeamtailorExtractor(BaseATSExtractor):
         description = html_to_text(body)
 
         return "\n\n".join(part for part in [title, header_line, description] if part)
+
+    def list_active_postings(self, slug: str) -> list[dict]:
+        api_url = f"https://{slug}.teamtailor.com/api/v1/jobs"
+        response = requests.get(api_url, headers={"Accept": "application/vnd.api+json"}, timeout=20)
+        if response.status_code != 200:
+            return []
+
+        data = response.json()
+        jobs = data.get("data") or []
+
+        results = []
+        for job in jobs:
+            job_id = job.get("id")
+            attributes = job.get("attributes") or {}
+            if not job_id:
+                continue
+            title = attributes.get("title", "")
+            title_slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or "role"
+            url = f"https://{slug}.teamtailor.com/jobs/{job_id}-{title_slug}"
+            posted_at = parse_iso_datetime(attributes.get("created-at") or attributes.get("start-date"))
+            results.append({"external_id": str(job_id), "url": url, "title": title, "posted_at": posted_at})
+        return results

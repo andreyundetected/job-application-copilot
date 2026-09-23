@@ -15,6 +15,11 @@ def upsert_app_settings(
     manual_assist_min_score: int | None = None,
     preferred_currency: str | None = None,
     preferred_salary_period: str | None = None,
+    telegram_bot_token: str | None = None,
+    telegram_chat_id: str | None = None,
+    telegram_notify_enabled: bool | None = None,
+    telegram_notify_only_successful: bool | None = None,
+    telegram_notify_min_score: int | None = None,
 ) -> AppSettings:
     settings_row = session.query(AppSettings).first()
 
@@ -28,6 +33,13 @@ def upsert_app_settings(
             manual_assist_min_score=manual_assist_min_score if manual_assist_min_score is not None else 7,
             preferred_currency=preferred_currency if preferred_currency is not None else "USD",
             preferred_salary_period=preferred_salary_period if preferred_salary_period is not None else "year",
+            telegram_bot_token=telegram_bot_token,
+            telegram_chat_id=telegram_chat_id,
+            telegram_notify_enabled=telegram_notify_enabled if telegram_notify_enabled is not None else False,
+            telegram_notify_only_successful=(
+                telegram_notify_only_successful if telegram_notify_only_successful is not None else True
+            ),
+            telegram_notify_min_score=telegram_notify_min_score,
         )
         session.add(settings_row)
     else:
@@ -43,6 +55,16 @@ def upsert_app_settings(
             settings_row.preferred_currency = preferred_currency
         if preferred_salary_period is not None:
             settings_row.preferred_salary_period = preferred_salary_period
+        if telegram_bot_token is not None:
+            settings_row.telegram_bot_token = telegram_bot_token
+        if telegram_chat_id is not None:
+            settings_row.telegram_chat_id = telegram_chat_id
+        if telegram_notify_enabled is not None:
+            settings_row.telegram_notify_enabled = telegram_notify_enabled
+        if telegram_notify_only_successful is not None:
+            settings_row.telegram_notify_only_successful = telegram_notify_only_successful
+        if telegram_notify_min_score is not None:
+            settings_row.telegram_notify_min_score = telegram_notify_min_score
 
     session.commit()
     session.refresh(settings_row)

@@ -10,6 +10,7 @@ def create_job_posting(
     title: str | None = None,
     source_url: str | None = None,
     source: str = "manual",
+    discovery_key: str | None = None,
 ) -> JobPosting:
     job = JobPosting(
         raw_text=raw_text,
@@ -17,11 +18,16 @@ def create_job_posting(
         title=title,
         source_url=source_url,
         source=source,
+        discovery_key=discovery_key,
     )
     session.add(job)
     session.commit()
     session.refresh(job)
     return job
+
+
+def get_job_posting_by_discovery_key(session: Session, discovery_key: str) -> JobPosting | None:
+    return session.query(JobPosting).filter(JobPosting.discovery_key == discovery_key).first()
 
 
 def update_job_pipeline_stage(

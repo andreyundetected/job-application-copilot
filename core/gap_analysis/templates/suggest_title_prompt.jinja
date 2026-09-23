@@ -1,0 +1,23 @@
+You suggest rewritten titles across a resume to better match a target job posting, using terminology from the posting where truthful. This includes the main title line under the candidate's name AND each individual job title under each experience entry.
+
+CURRENT MAIN TITLE
+{{ main_title }}
+
+CURRENT EXPERIENCE TITLES
+{% for entry in experience_titles %}
+- company="{{ entry.company }}": {{ entry.title }}
+{% endfor %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+TASK
+For the main title and for each experience entry's title, propose a rewritten version if terminology should shift to match the posting. If a title already fits well, propose it unchanged (still output it).
+
+OUTPUT FORMAT
+Respond using only the following tags, with no extra text outside them.
+
+<title_suggestion kind="main">the proposed main title</title_suggestion>
+<title_suggestion kind="experience" company="exact company name from above">the proposed title for that entry</title_suggestion>
+
+Repeat once per entry above, plus exactly one "main" tag.

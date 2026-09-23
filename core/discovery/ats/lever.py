@@ -2,7 +2,7 @@ import re
 
 import requests
 
-from core.discovery.ats.base import BaseATSExtractor
+from core.discovery.ats.base import BaseATSExtractor, parse_iso_datetime
 from core.parsing.html_to_text import html_to_text
 
 _URL_RE = re.compile(r"jobs\.lever\.co/([^/]+)/([^/?#]+)")
@@ -51,3 +51,25 @@ class LeverExtractor(BaseATSExtractor):
 
         parts = [title, header_line, description, *lists_text, additional]
         return "\n\n".join(part for part in parts if part)
+
+    def list_active_postings(self, slug: str) -> list[dict]:
+        api_url = f"https://api.lever.co/v0/postings/{slug}"
+        response = requests.get(api_url, params={"mode": "json"}, timeout=20)
+        if response.status_code != 200:
+            return []
+
+        postings = response.json()
+        if not isinstance(postings, list):
+            return []
+
+        results = []
+        for posting in postings:
+            posting_id = posting.get("id")
+            url = posting.get("hostedUrl", "")
+            if not posting_id or not url:
+                continue
+            posted_at = parse_iso_datetime(posting.get("createdAt"))
+            results.append(
+                {"external_id": str(posting_id), "url": url, "title": posting.get("text", ""), "posted_at": posted_at}
+            )
+        return results

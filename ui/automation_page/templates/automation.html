@@ -6,7 +6,6 @@
 <style>
 h1 { display: flex; align-items: center; gap: 10px; }
 
-/* ---- intro banner ---- */
 .intro-banner {
     display: flex;
     align-items: flex-start;
@@ -35,8 +34,6 @@ h1 { display: flex; align-items: center; gap: 10px; }
 }
 .intro-banner-close:hover { color: var(--text-primary); background: var(--bg-input); }
 
-/* ---- custom tooltip (native title only shows a help cursor + delayed OS
-   tooltip that's easy to miss - this shows instantly on hover) ---- */
 .info-icon {
     position: relative;
     display: inline-flex;
@@ -86,7 +83,6 @@ h1 { display: flex; align-items: center; gap: 10px; }
 .info-icon:hover .tooltip-bubble,
 .info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ---- pipeline steps ---- */
 .pipeline { position: relative; }
 .pipeline-step { display: grid; grid-template-columns: 32px 1fr; gap: 16px; position: relative; }
 .pipeline-step:not(:last-child) { padding-bottom: 18px; }
@@ -105,35 +101,8 @@ h1 { display: flex; align-items: center; gap: 10px; }
     font-size: 13px;
     font-weight: 600;
     flex-shrink: 0;
-    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-@keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0.5); }
-    70% { box-shadow: 0 0 0 9px rgba(91, 141, 239, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0); }
-}
-.pipeline-marker-circle.step-active {
-    background-color: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--accent);
-    animation: pulse-ring 1.5s infinite;
-}
-.pipeline-marker-circle.step-complete {
-    background-color: var(--score-high);
-    border-color: var(--score-high);
-    color: #08170e;
-}
-.pipeline-marker-circle.step-skipped {
-    background-color: var(--bg-input);
-    border-color: var(--border);
-    color: var(--text-tertiary);
-    opacity: 0.55;
-}
-
-/* indeterminate "teleport" loader on the connecting line - a segment travels
-   from top to bottom then jumps back to the top and repeats, like a classic
-   linear progress indicator, rather than a background stretching/shrinking */
 .pipeline-marker-line {
     position: relative;
     flex: 1;
@@ -143,22 +112,6 @@ h1 { display: flex; align-items: center; gap: 10px; }
     min-height: 24px;
     border-radius: 2px;
     overflow: hidden;
-    transition: background-color 0.25s ease;
-}
-.pipeline-marker-line.step-done { background-color: var(--score-high); }
-.pipeline-marker-line.step-flowing::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 35%;
-    border-radius: 2px;
-    background-color: var(--accent);
-    animation: line-loader 1s linear infinite;
-}
-@keyframes line-loader {
-    0% { top: -35%; }
-    100% { top: 100%; }
 }
 
 .pipeline-card {
@@ -167,10 +120,7 @@ h1 { display: flex; align-items: center; gap: 10px; }
     border-radius: var(--radius);
     padding: 16px 20px 20px;
     margin-bottom: 2px;
-    transition: opacity 0.2s ease, filter 0.2s ease;
 }
-.pipeline-card.locked,
-#advanced-details.locked { opacity: 0.45; filter: saturate(0.6); pointer-events: none; }
 
 .pipeline-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pipeline-card-header h3 {
@@ -186,9 +136,6 @@ h1 { display: flex; align-items: center; gap: 10px; }
 
 .pipeline-hint { font-size: 12px; color: var(--text-tertiary); margin: 2px 0 16px; }
 
-/* level status: a fixed label + a colored dot, so toggling never changes the
-   element's width/text and nothing jumps around - only the dot's color and
-   glow transition smoothly */
 .level-status-group { display: flex; gap: 12px; }
 .level-status-item {
     display: flex;
@@ -238,13 +185,12 @@ h1 { display: flex; align-items: center; gap: 10px; }
 }
 .toggle-switch input:checked + .toggle-slider { background-color: var(--accent); border-color: var(--accent); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background-color: white; }
-.toggle-switch input:disabled + .toggle-slider { cursor: not-allowed; }
 .toggle-label { font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 5px; }
 
 .inline-fields { display: flex; gap: 20px; flex-wrap: wrap; }
 .inline-field { display: flex; flex-direction: column; gap: 4px; }
 .inline-field label { margin: 0; display: flex; align-items: center; gap: 5px; }
-.inline-field input[type="text"] { max-width: 90px; }
+.inline-field input[type="text"] { max-width: 180px; }
 
 .matrix-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
 .matrix-table td { padding: 6px 8px 6px 0; font-size: 13px; border-top: 1px solid var(--border); }
@@ -268,184 +214,64 @@ h1 { display: flex; align-items: center; gap: 10px; }
 .add-row input[type="text"] { flex: 1; }
 .add-row .btn, .add-row .btn-ghost { margin-top: 0; white-space: nowrap; }
 
-</parameter>
-
-/* clickable, highlightable site chips */
-.site-chip-row { display: block; line-height: 2.6; margin: 8px 0 18px; }
-
-.manual-query-toggle-wrap { margin: 18px 0 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
-.manual-query-optional-tag {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-tertiary);
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 6px;
-    margin-bottom: 8px;
-}
-.manual-query-toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 12px;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text-secondary);
-    font-size: 12.5px;
-    font-weight: 500;
-    cursor: pointer;
-    text-align: left;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-}
-.manual-query-toggle-btn:hover { border-color: var(--border-hover); color: var(--text-primary); background-color: var(--bg-elevated); }
-.manual-query-panel-inner {
-    position: relative;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px;
-}
-.manual-query-panel.muted .manual-query-panel-inner::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-color: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    border-radius: var(--radius);
-    cursor: not-allowed;
-    z-index: 5;
-}
-.manual-query-panel.muted .manual-query-panel-inner { pointer-events: none; }
-.manual-query-panel.muted .manual-query-panel-inner::after { pointer-events: auto; }
-.manual-query-toggle-btn svg.mq-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.7; }
-.manual-query-toggle-btn .mq-label { flex: 1; }
-.manual-query-toggle-btn .mq-sub { display: block; font-size: 10.5px; font-weight: 400; color: var(--text-tertiary); margin-top: 1px; }
-.manual-query-toggle-btn .mq-count {
-    font-size: 10.5px;
-    font-weight: 700;
-    background-color: var(--bg-elevated);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 2px 8px;
-    flex-shrink: 0;
-}
-.manual-query-toggle-btn svg.mq-chevron { width: 13px; height: 13px; flex-shrink: 0; color: var(--text-tertiary); transition: transform 0.2s ease; }
-.manual-query-toggle-btn.expanded svg.mq-chevron { transform: rotate(180deg); }
-.manual-query-panel {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
-}
-.manual-query-panel.expanded { max-height: 2000px; opacity: 1; margin-top: 12px; }
-.manual-query-disabled-hint { font-size: 11px; color: var(--text-tertiary); margin: 6px 0 0; }
+.site-chip-row { display: block; line-height: 2.6; margin: 8px 0 4px; }
 .site-chip {
     display: inline-block;
     font-size: 12.5px;
     padding: 6px 13px;
     margin: 0 8px 8px 0;
     border-radius: 999px;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    text-decoration: none;
-    cursor: default;
-    white-space: nowrap;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-.site-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
-.site-chip.used {
     background-color: var(--accent-soft);
-    border-color: var(--accent);
+    border: 1px solid var(--accent);
     color: var(--accent);
-    box-shadow: 0 0 8px rgba(91, 141, 239, 0.4);
+    white-space: nowrap;
 }
-.site-chip.planned { color: var(--text-tertiary); border-style: dashed; cursor: default; pointer-events: none; }
 
-details.advanced-details {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 20px;
-    margin: 14px 0 16px;
-    transition: opacity 0.2s ease, filter 0.2s ease;
+.run-card {
+    background: linear-gradient(160deg, var(--bg-card), rgba(91, 141, 239, 0.07));
+    border: 1px solid var(--accent);
 }
-details.advanced-details summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-secondary); list-style: none; }
-details.advanced-details summary::-webkit-details-marker { display: none; }
-details.advanced-details summary::before { content: "▸ "; color: var(--text-tertiary); }
-details.advanced-details[open] summary::before { content: "▾ "; }
-details.advanced-details .advanced-body { margin-top: 14px; }
-
-.range-toggle { display: flex; gap: 6px; margin-top: 6px; }
-.range-toggle button {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background-color: var(--bg-input);
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-.range-toggle button.active { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.range-toggle button:disabled { cursor: not-allowed; opacity: 0.6; }
-
-/* ---- start step ---- */
-.start-marker { background: linear-gradient(135deg, var(--accent), #8b5cf6); border: none !important; color: white !important; font-size: 15px; animation: none !important; }
-.start-card { background: linear-gradient(160deg, var(--bg-card), rgba(91, 141, 239, 0.07)); border-color: var(--accent); }
-.start-summary { font-size: 12.5px; color: var(--text-secondary); margin: 2px 0 14px; }
-.start-btn {
-    width: 100%;
+.run-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.run-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 160px;
     background: linear-gradient(135deg, var(--accent), #8b5cf6);
     border: none;
     color: white;
     font-size: 14px;
     font-weight: 600;
-    padding: 12px;
+    padding: 12px 22px;
     border-radius: var(--radius);
     box-shadow: 0 4px 18px rgba(91, 141, 239, 0.35);
     cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+    margin-top: 0;
 }
-.start-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(91, 141, 239, 0.45); }
-.start-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.spinner {
-    display: inline-block;
-    width: 13px;
-    height: 13px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-top-color: white;
+.run-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(91, 141, 239, 0.45); }
+.run-btn.is-listening {
+    background: linear-gradient(135deg, var(--score-high), #22c55e);
+    box-shadow: 0 4px 18px rgba(74, 222, 128, 0.35);
+    animation: run-pulse 2s ease-in-out infinite;
+}
+@keyframes run-pulse {
+    0%, 100% { box-shadow: 0 4px 18px rgba(74, 222, 128, 0.35); }
+    50% { box-shadow: 0 4px 26px rgba(74, 222, 128, 0.6); }
+}
+.run-status-text { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.run-status-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
+    background-color: var(--text-tertiary);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.run-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    margin-bottom: 10px;
+.run-status-dot.on {
+    background-color: var(--score-high);
+    box-shadow: 0 0 6px var(--score-high);
 }
-.run-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.run-status-badge { font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 500; }
-.run-status-pending, .run-status-running { background-color: var(--score-mid-soft); color: var(--score-mid); }
-.run-status-done { background-color: var(--score-high-soft); color: var(--score-high); }
-.run-status-failed { background-color: var(--score-low-soft); color: var(--score-low); }
-.run-counters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
 </style>
 
 <h1>{{ t.page_title }}</h1>
@@ -460,116 +286,99 @@ details.advanced-details .advanced-body { margin-top: 14px; }
 </div>
 
 <div class="pipeline">
-    <!-- Step 1: Search -->
     <div class="pipeline-step" data-step="1">
         <div class="pipeline-marker">
-            <div class="pipeline-marker-circle" id="marker-1">1</div>
-            <div class="pipeline-marker-line" id="line-1"></div>
+            <div class="pipeline-marker-circle">1</div>
+            <div class="pipeline-marker-line"></div>
         </div>
-        <div class="pipeline-card" data-pipeline-card>
+        <div class="pipeline-card run-card">
             <div class="pipeline-card-header">
-                <h3>
-                    {{ t.step1_title }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.site_pool_tooltip | safe }}</span></span>
-                </h3>
+                <h3>{{ t.step1_title }}</h3>
             </div>
             <p class="pipeline-hint">{{ t.step1_hint }}</p>
 
-            <label style="margin-top:0;">{{ t.sites_in_use_label }}</label>
-            <div class="site-chip-row" id="site-chip-row">
-                {% for site in target_sites %}
-                <span class="site-chip {% if settings.catch_all_enabled %}used{% endif %}" data-site="{{ site }}">{{ site }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="toggle-row" style="margin-top:14px;">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="catch_all_enabled" {% if settings.catch_all_enabled %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">
-                    {{ t.catch_all_label }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.catch_all_tooltip }}</span></span>
+            <div class="run-row">
+                <button type="button" class="run-btn {% if discovery_enabled %}is-listening{% endif %}" id="btn-run-discovery">
+                    <span id="run-btn-spinner" class="spinner" style="display:none;"></span>
+                    <span id="run-btn-label">{{ t.pause_button if discovery_enabled else t.run_button }}</span>
+                </button>
+                <span class="run-status-text">
+                    <span class="run-status-dot {% if discovery_enabled %}on{% endif %}" id="run-status-dot"></span>
+                    <span id="run-status-text">{{ t.status_listening if discovery_enabled else t.status_paused }}</span>
                 </span>
             </div>
-            <p class="pipeline-hint" style="font-family:monospace;font-size:11px;word-break:break-all;">{{ catch_all_query_preview }}</p>
 
-            <div class="manual-query-toggle-wrap">
-                <span class="manual-query-optional-tag">{{ t.optional_label }}</span>
-                <button type="button" class="manual-query-toggle-btn" id="manual-query-toggle-btn">
-                    <svg class="mq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"></path><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span class="mq-label">
-                        {{ t.custom_queries_toggle }}
-                        <span class="mq-sub">{{ t.custom_queries_toggle_sub }}</span>
-                    </span>
-                    <span class="mq-count" id="manual-query-count" style="{% if not settings.saved_queries %}display:none;{% endif %}">{{ settings.saved_queries | length }}</span>
-                    <svg class="mq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </button>
-                <p class="manual-query-disabled-hint" id="manual-query-disabled-hint" style="{% if not settings.catch_all_enabled %}display:none;{% endif %}">{{ t.custom_queries_disabled_hint }}</p>
-                <div class="manual-query-panel" id="custom-query-section">
-                <div class="manual-query-panel-inner">
-
-            <textarea id="query-input" placeholder="{{ t.query_input_placeholder }}" style="min-height:60px;"></textarea>
-            <p class="salary-line">
-                <span id="query-word-count"></span>
-                <span id="query-limit-hint" style="display:none;color:var(--score-low);"> — {{ t.query_limit_reached_hint }}</span>
-            </p>
-            <div class="add-row" style="max-width:340px;">
-                <button type="button" class="btn" id="btn-add-query">{{ t.add_query_button }}</button>
-                <button type="button" class="btn-ghost btn" id="btn-suggest-queries">✨ {{ t.suggest_queries_button }}</button>
+            <div class="inline-fields" style="margin-top:16px;">
+                <div class="inline-field">
+                    <label for="wayback_interval_hours">{{ t.wayback_interval_label }}</label>
+                    <input type="text" inputmode="numeric" id="wayback_interval_hours" value="{{ discovery_wayback_interval_hours }}">
+                </div>
+                <div class="inline-field">
+                    <label for="initial_backlog_hours">
+                        {{ t.backlog_hours_label }}
+                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.backlog_hours_tooltip }}</span></span>
+                    </label>
+                    <input type="text" inputmode="numeric" id="initial_backlog_hours" value="{{ discovery_initial_backlog_hours }}">
+                </div>
             </div>
 
-            <h3 style="margin:18px 0 4px;">{{ t.saved_queries_title }} (<span id="pool-count">{{ settings.saved_queries | length }}</span>)</h3>
-            <div id="saved-queries-list">
-                {% for query in settings.saved_queries or [] %}
-                <div class="preset-row" data-index="{{ loop.index0 }}">
-                    <span style="font-family:monospace;font-size:12px;">{{ query }}</span>
-                    <button type="button" class="btn-ghost btn delete-query-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
-                </div>
+            <label style="margin-top:16px;">{{ t.sites_in_use_label }}</label>
+            <div class="site-chip-row">
+                {% for site in target_sites %}
+                <span class="site-chip">{{ site }}</span>
                 {% endfor %}
             </div>
-            <p class="salary-line" id="no-saved-queries-hint" style="{% if settings.saved_queries %}display:none;{% endif %}">{{ t.no_saved_queries }}</p>
-
-                </div>
-                </div>
-            </div>
-
-            <h3 style="margin:18px 0 4px;">{{ t.time_range_label }}</h3>
-            <input type="hidden" id="run_time_range" value="{{ settings.default_time_range }}">
-            <div class="range-toggle" id="run-range-toggle">
-                <button type="button" data-range="d1">{{ t.range_day }}</button>
-                <button type="button" data-range="w1">{{ t.range_week }}</button>
-                <button type="button" data-range="m1">{{ t.range_month }}</button>
-            </div>
         </div>
     </div>
 
-    <!-- Step 2: Quick filter -->
     <div class="pipeline-step" data-step="2">
         <div class="pipeline-marker">
-            <div class="pipeline-marker-circle" id="marker-2">2</div>
-            <div class="pipeline-marker-line" id="line-2"></div>
+            <div class="pipeline-marker-circle">2</div>
+            <div class="pipeline-marker-line"></div>
         </div>
-        <div class="pipeline-card" data-pipeline-card>
+        <div class="pipeline-card">
             <h3>{{ t.step2_title }}</h3>
             <p class="pipeline-hint">{{ t.step2_hint }}</p>
+
+            <div class="inline-fields">
+                <div class="inline-field">
+                    <label for="telegram_bot_token">{{ t.telegram_bot_token_label }}</label>
+                    <input type="text" id="telegram_bot_token" value="{{ telegram_bot_token }}" style="max-width:260px;">
+                </div>
+                <div class="inline-field">
+                    <label for="telegram_chat_id">{{ t.telegram_chat_id_label }}</label>
+                    <input type="text" id="telegram_chat_id" value="{{ telegram_chat_id }}">
+                </div>
+                <div class="inline-field">
+                    <label for="telegram_notify_min_score">{{ t.notifications_min_score_label }}</label>
+                    <input type="text" inputmode="numeric" id="telegram_notify_min_score" value="{{ telegram_notify_min_score or '' }}" style="max-width:90px;">
+                </div>
+            </div>
+
             <div class="toggle-row">
                 <label class="toggle-switch">
-                    <input type="checkbox" id="quick_filter_enabled" {% if settings.quick_filter_enabled %}checked{% endif %}>
+                    <input type="checkbox" id="telegram_notify_only_successful" {% if telegram_notify_only_successful %}checked{% endif %}>
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="toggle-label">{{ t.quick_filter_label }}</span>
+                <span class="toggle-label">{{ t.notifications_only_successful_label }}</span>
+            </div>
+
+            <div class="toggle-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="telegram_notify_enabled" {% if telegram_notify_enabled %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ t.notifications_enabled_label }}</span>
             </div>
         </div>
     </div>
 
-    <!-- Step 3: Evaluation -->
     <div class="pipeline-step" data-step="3">
         <div class="pipeline-marker">
-            <div class="pipeline-marker-circle" id="marker-3">3</div>
-            <div class="pipeline-marker-line" id="line-3"></div>
+            <div class="pipeline-marker-circle">3</div>
+            <div class="pipeline-marker-line"></div>
         </div>
-        <div class="pipeline-card" data-pipeline-card>
+        <div class="pipeline-card">
             <h3>{{ t.step3_title }}</h3>
             <div class="inline-fields">
                 <div class="inline-field">
@@ -577,14 +386,14 @@ details.advanced-details .advanced-body { margin-top: 14px; }
                         {{ t.min_score_label }}
                         <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span>
                     </label>
-                    <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}">
+                    <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}" style="max-width:90px;">
                 </div>
                 <div class="inline-field">
                     <label for="max_score_to_archive">
                         {{ t.max_score_label }}
                         <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span>
                     </label>
-                    <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}">
+                    <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}" style="max-width:90px;">
                 </div>
             </div>
             <div class="toggle-row">
@@ -600,13 +409,12 @@ details.advanced-details .advanced-body { margin-top: 14px; }
         </div>
     </div>
 
-    <!-- Step 4: Tailoring -->
     <div class="pipeline-step" data-step="4">
         <div class="pipeline-marker">
-            <div class="pipeline-marker-circle" id="marker-4">4</div>
-            <div class="pipeline-marker-line" id="line-4"></div>
+            <div class="pipeline-marker-circle">4</div>
+            <div class="pipeline-marker-line"></div>
         </div>
-        <div class="pipeline-card" data-pipeline-card>
+        <div class="pipeline-card">
             <div class="pipeline-card-header">
                 <h3>{{ t.step4_title }}</h3>
                 <div class="level-status-group">
@@ -644,13 +452,11 @@ details.advanced-details .advanced-body { margin-top: 14px; }
         </div>
     </div>
 
-    <!-- Step 5: Base questions -->
     <div class="pipeline-step" data-step="5">
         <div class="pipeline-marker">
-            <div class="pipeline-marker-circle" id="marker-5">5</div>
-            <div class="pipeline-marker-line" id="line-5"></div>
+            <div class="pipeline-marker-circle">5</div>
         </div>
-        <div class="pipeline-card" data-pipeline-card>
+        <div class="pipeline-card">
             <div class="pipeline-card-header">
                 <h3>
                     {{ t.step5_title }}
@@ -681,96 +487,12 @@ details.advanced-details .advanced-body { margin-top: 14px; }
             </div>
         </div>
     </div>
-
-    <!-- Step 6: Start -->
-    <div class="pipeline-step" data-step="start">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle start-marker" id="marker-start">🚀</div>
-        </div>
-        <div class="pipeline-card start-card" id="start-card">
-            <h3>{{ t.start_title }}</h3>
-            <p class="start-summary" id="start-summary"></p>
-            <button type="button" class="start-btn" id="btn-start-run">
-                <span id="start-btn-spinner" class="spinner" style="display:none;"></span>
-                <span id="start-btn-label">{{ t.start_run_button }}</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<details class="advanced-details" id="advanced-details">
-    <summary>{{ t.advanced_settings_title }}</summary>
-    <div class="advanced-body">
-        <div class="inline-fields">
-            <div class="inline-field">
-                <label for="serpent_num_per_query">
-                    {{ t.num_per_query_label }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.num_per_query_tooltip }}</span></span>
-                </label>
-                <input type="text" inputmode="numeric" id="serpent_num_per_query" value="{{ settings.serpent_num_per_query }}">
-            </div>
-            <div class="inline-field">
-                <label for="max_pages_per_query">
-                    {{ t.max_pages_label }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_pages_tooltip }}</span></span>
-                </label>
-                <input type="text" inputmode="numeric" id="max_pages_per_query" value="{{ settings.max_pages_per_query }}">
-            </div>
-            <div class="inline-field">
-                <label for="max_results_override">{{ t.results_cap_label }}</label>
-                <input type="text" inputmode="numeric" id="max_results_override" placeholder="{{ t.results_cap_placeholder }}">
-            </div>
-            <div class="inline-field">
-                <label for="max_queries_override">{{ t.queries_cap_label }}</label>
-                <input type="text" inputmode="numeric" id="max_queries_override" placeholder="{{ t.queries_cap_placeholder }}">
-            </div>
-        </div>
-    </div>
-</details>
-
-<div class="card">
-    <h3 style="margin:0 0 4px;">{{ t.history_title }}</h3>
-    <div id="runs-list">
-        {% if not runs %}
-        <p class="salary-line" id="no-runs-hint">{{ t.no_runs }}</p>
-        {% endif %}
-        {% for run in runs %}
-        <div class="run-card" data-run-id="{{ run.id }}" data-status="{{ run.status }}">
-            <div class="run-card-top">
-                <span>#{{ run.id }} · {{ run.created_at }}</span>
-                <span class="run-status-badge run-status-{{ run.status }}">{{ t["status_" + run.status] }}</span>
-            </div>
-            <div class="run-counters">
-                <span>{{ t.found_label }}: {{ run.found_count }}</span>
-                <span>{{ t.scraped_label }}: {{ run.scraped_count }}</span>
-                <span>{{ t.evaluated_label }}: {{ run.evaluated_count }}</span>
-                <span>{{ t.passed_label }}: {{ run.passed_count }}</span>
-                <span>{{ t.archived_label }}: {{ run.archived_count }}</span>
-                {% set usage = usage_by_run.get(run.id) %}
-                {% if usage %}
-                <span>{{ t.tokens_label }}: {{ usage.total_tokens }}</span>
-                {% if usage.estimated_cost %}
-                <span>{{ t.cost_label }}: {{ "%.4f"|format(usage.estimated_cost) }}</span>
-                {% endif %}
-                {% endif %}
-            </div>
-            {% if run.error %}
-            <p class="salary-line" style="color:var(--score-low);white-space:pre-wrap;margin-top:8px;">{{ run.error }}</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
 </div>
 
 <script>
 const I18N = {{ t | tojson }};
-const SETTINGS = {
-    max_query_words: {{ max_query_words }},
-    saved_queries: {{ settings.saved_queries | tojson }} || [],
-};
 const COVER_LETTER_QUESTION_TEXT = {{ t.cover_letter_question_text | tojson }};
 
-/* ---------- intro banner ---------- */
 (function () {
     const banner = document.getElementById("intro-banner");
     const KEY = "automation_intro_dismissed";
@@ -781,11 +503,10 @@ const COVER_LETTER_QUESTION_TEXT = {{ t.cover_letter_question_text | tojson }};
     });
 })();
 
-/* ---------- settings autosave ---------- */
-function autoSaveSetting(name, value) {
+function autoSaveSetting(url, name, value) {
     const formData = new FormData();
     formData.append(name, value);
-    return fetch("/automation/settings", { method: "POST", body: formData }).then((response) => {
+    return fetch(url, { method: "POST", body: formData }).then((response) => {
         if (!response.ok) {
             response.json().then((data) => showToast(data.detail || "Error", "danger")).catch(() => {});
         }
@@ -793,57 +514,95 @@ function autoSaveSetting(name, value) {
     });
 }
 
-function bindAutoSaveNumber(id, name) {
+function bindAutoSaveNumber(id, url, name) {
     const el = document.getElementById(id);
     let timeout = null;
     el.addEventListener("input", () => {
         clearTimeout(timeout);
-        timeout = setTimeout(() => autoSaveSetting(name, el.value), 500);
+        timeout = setTimeout(() => autoSaveSetting(url, name, el.value), 500);
     });
     el.addEventListener("blur", () => {
         clearTimeout(timeout);
-        autoSaveSetting(name, el.value);
+        autoSaveSetting(url, name, el.value);
     });
 }
 
-function bindAutoSaveToggle(id, name) {
+function bindAutoSaveToggle(id, url, name) {
     const el = document.getElementById(id);
-    el.addEventListener("change", () => autoSaveSetting(name, el.checked ? "true" : ""));
+    el.addEventListener("change", () => autoSaveSetting(url, name, el.checked ? "true" : ""));
 }
 
-bindAutoSaveNumber("min_score_to_proceed", "min_score_to_proceed");
-bindAutoSaveNumber("max_score_to_archive", "max_score_to_archive");
-bindAutoSaveNumber("serpent_num_per_query", "serpent_num_per_query");
-bindAutoSaveNumber("max_pages_per_query", "max_pages_per_query");
-bindAutoSaveToggle("quick_filter_enabled", "quick_filter_enabled");
-bindAutoSaveToggle("auto_archive_enabled", "auto_archive_enabled");
+bindAutoSaveNumber("min_score_to_proceed", "/automation/settings", "min_score_to_proceed");
+bindAutoSaveNumber("max_score_to_archive", "/automation/settings", "max_score_to_archive");
+bindAutoSaveToggle("auto_archive_enabled", "/automation/settings", "auto_archive_enabled");
 
-const catchAllCheckbox = document.getElementById("catch_all_enabled");
-const manualQueryToggleBtn = document.getElementById("manual-query-toggle-btn");
-const manualQueryPanel = document.getElementById("custom-query-section");
-const manualQueryDisabledHint = document.getElementById("manual-query-disabled-hint");
+bindAutoSaveNumber("wayback_interval_hours", "/automation/discovery/settings", "wayback_interval_hours");
+bindAutoSaveNumber("initial_backlog_hours", "/automation/discovery/settings", "initial_backlog_hours");
 
-function applyCatchAllUI() {
-    if (catchAllCheckbox.checked) {
-        document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => chip.classList.add("used"));
-        manualQueryPanel.classList.add("muted");
-        manualQueryDisabledHint.style.display = "block";
-    } else {
-        updateSiteChipHighlights();
-        manualQueryPanel.classList.remove("muted");
-        manualQueryDisabledHint.style.display = "none";
+const runBtn = document.getElementById("btn-run-discovery");
+const runBtnLabel = document.getElementById("run-btn-label");
+const runBtnSpinner = document.getElementById("run-btn-spinner");
+const runStatusDot = document.getElementById("run-status-dot");
+const runStatusText = document.getElementById("run-status-text");
+let discoveryListening = runBtn.classList.contains("is-listening");
+
+runBtn.addEventListener("click", async () => {
+    runBtn.disabled = true;
+    runBtnSpinner.style.display = "inline-block";
+
+    const url = discoveryListening ? "/automation/discovery/stop" : "/automation/discovery/start";
+    const response = await fetch(url, { method: "POST" });
+    runBtn.disabled = false;
+    runBtnSpinner.style.display = "none";
+
+    if (!response.ok) {
+        showToast(I18N.telegram_missing_key_toast, "danger");
+        return;
     }
-}
 
-catchAllCheckbox.addEventListener("change", () => {
-    autoSaveSetting("catch_all_enabled", catchAllCheckbox.checked ? "true" : "");
-    applyCatchAllUI();
-    updateStartSummary();
+    const data = await response.json();
+    discoveryListening = data.enabled;
+    runBtn.classList.toggle("is-listening", discoveryListening);
+    runBtnLabel.textContent = discoveryListening ? I18N.pause_button : I18N.run_button;
+    runStatusDot.classList.toggle("on", discoveryListening);
+    runStatusText.textContent = discoveryListening ? I18N.status_listening : I18N.status_paused;
 });
 
-manualQueryToggleBtn.addEventListener("click", () => {
-    manualQueryToggleBtn.classList.toggle("expanded");
-    manualQueryPanel.classList.toggle("expanded");
+function saveNotifications() {
+    const formData = new FormData();
+    formData.append("telegram_bot_token", document.getElementById("telegram_bot_token").value);
+    formData.append("telegram_chat_id", document.getElementById("telegram_chat_id").value);
+    formData.append("telegram_notify_only_successful", document.getElementById("telegram_notify_only_successful").checked ? "true" : "");
+    formData.append("telegram_notify_min_score", document.getElementById("telegram_notify_min_score").value);
+    return fetch("/automation/notifications", { method: "POST", body: formData });
+}
+
+["telegram_bot_token", "telegram_chat_id", "telegram_notify_min_score"].forEach((id) => {
+    const el = document.getElementById(id);
+    let timeout = null;
+    el.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(saveNotifications, 500);
+    });
+    el.addEventListener("blur", () => { clearTimeout(timeout); saveNotifications(); });
+});
+
+document.getElementById("telegram_notify_only_successful").addEventListener("change", saveNotifications);
+
+document.getElementById("telegram_notify_enabled").addEventListener("change", async (event) => {
+    const formData = new FormData();
+    formData.append("telegram_bot_token", document.getElementById("telegram_bot_token").value);
+    formData.append("telegram_chat_id", document.getElementById("telegram_chat_id").value);
+    formData.append("telegram_notify_enabled", event.target.checked ? "true" : "");
+    formData.append("telegram_notify_only_successful", document.getElementById("telegram_notify_only_successful").checked ? "true" : "");
+    formData.append("telegram_notify_min_score", document.getElementById("telegram_notify_min_score").value);
+
+    const response = await fetch("/automation/notifications", { method: "POST", body: formData });
+    if (!response.ok) {
+        event.target.checked = false;
+        const data = await response.json().catch(() => ({}));
+        showToast(data.detail || I18N.telegram_missing_key_toast, "danger");
+    }
 });
 
 function setLevelStatus(el, active) {
@@ -862,10 +621,8 @@ document.getElementById("tailoring-matrix").addEventListener("change", async (ev
 
     setLevelStatus(document.getElementById("soft-status-pill"), data.soft_active);
     setLevelStatus(document.getElementById("medium-status-pill"), data.medium_active);
-    updateStartSummary();
 });
 
-/* ---------- base questions ---------- */
 function syncCoverLetterToggle() {
     const rows = [...document.querySelectorAll("#base-question-list .preset-row")];
     const found = rows.some((row) => row.querySelector("span").textContent === COVER_LETTER_QUESTION_TEXT);
@@ -902,7 +659,6 @@ document.getElementById("btn-add-base-question").addEventListener("click", async
     addBaseQuestionRow(data.id, data.question_text);
     input.value = "";
     syncCoverLetterToggle();
-    updateStartSummary();
 });
 
 document.getElementById("base_question_input").addEventListener("keydown", (event) => {
@@ -919,7 +675,6 @@ document.getElementById("base-question-list").addEventListener("click", async (e
     if (response.ok) {
         event.target.closest(".preset-row").remove();
         syncCoverLetterToggle();
-        updateStartSummary();
     }
 });
 
@@ -939,374 +694,8 @@ document.getElementById("cover_letter_toggle").addEventListener("change", async 
             match.remove();
         }
     }
-    updateStartSummary();
 });
 
 syncCoverLetterToggle();
-
-/* ---------- search queries ---------- */
-function countWords(text) {
-    return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-const queryInput = document.getElementById("query-input");
-let lastValidQueryValue = "";
-
-function updateQueryWordCount() {
-    const words = countWords(queryInput.value);
-    document.getElementById("query-word-count").textContent = `${words} / ${SETTINGS.max_query_words}`;
-    document.getElementById("query-limit-hint").style.display = words >= SETTINGS.max_query_words ? "inline" : "none";
-}
-
-function updateSiteChipHighlights() {
-    if (catchAllCheckbox.checked) {
-        document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => chip.classList.add("used"));
-        return;
-    }
-    const haystack = (SETTINGS.saved_queries.join(" ") + " " + queryInput.value).toLowerCase();
-    document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => {
-        const site = chip.dataset.site.toLowerCase();
-        chip.classList.toggle("used", haystack.includes(`site:${site}`));
-    });
-}
-
-queryInput.addEventListener("input", () => {
-    if (countWords(queryInput.value) > SETTINGS.max_query_words) {
-        queryInput.value = lastValidQueryValue;
-    } else {
-        lastValidQueryValue = queryInput.value;
-    }
-    updateQueryWordCount();
-    updateSiteChipHighlights();
-});
-
-queryInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        document.getElementById("btn-add-query").click();
-    }
-});
-
-updateQueryWordCount();
-
-function renderSavedQueries() {
-    const list = document.getElementById("saved-queries-list");
-    const hint = document.getElementById("no-saved-queries-hint");
-
-    list.innerHTML = SETTINGS.saved_queries
-        .map(
-            (query, index) => `
-        <div class="preset-row" data-index="${index}">
-            <span style="font-family:monospace;font-size:12px;">${query.replace(/</g, "&lt;")}</span>
-            <button type="button" class="btn-ghost btn delete-query-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">${I18N.btn_remove}</button>
-        </div>
-    `
-        )
-        .join("");
-
-    hint.style.display = SETTINGS.saved_queries.length === 0 ? "block" : "none";
-    document.getElementById("pool-count").textContent = SETTINGS.saved_queries.length;
-    const countBadge = document.getElementById("manual-query-count");
-    countBadge.textContent = SETTINGS.saved_queries.length;
-    countBadge.style.display = SETTINGS.saved_queries.length > 0 ? "inline-block" : "none";
-    updateSiteChipHighlights();
-    updateStartSummary();
-}
-
-document.getElementById("btn-add-query").addEventListener("click", async () => {
-    const query = queryInput.value.trim();
-    if (!query) return;
-
-    const formData = new FormData();
-    formData.append("query_text", query);
-
-    const response = await fetch("/automation/saved-queries", { method: "POST", body: formData });
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        showToast(data.detail || "Error", "danger");
-        return;
-    }
-    const data = await response.json();
-    SETTINGS.saved_queries = data.saved_queries;
-    queryInput.value = "";
-    lastValidQueryValue = "";
-    updateQueryWordCount();
-    renderSavedQueries();
-});
-
-document.getElementById("saved-queries-list").addEventListener("click", async (event) => {
-    if (!event.target.classList.contains("delete-query-btn")) return;
-    const index = event.target.closest(".preset-row").dataset.index;
-    const response = await fetch(`/automation/saved-queries/${index}/delete`, { method: "POST" });
-    if (!response.ok) return;
-    const data = await response.json();
-    SETTINGS.saved_queries = data.saved_queries;
-    renderSavedQueries();
-});
-
-document.getElementById("btn-suggest-queries").addEventListener("click", async () => {
-    const btn = document.getElementById("btn-suggest-queries");
-    btn.disabled = true;
-    btn.textContent = I18N.suggesting_queries;
-
-    const response = await fetch("/automation/suggest-queries", { method: "POST" });
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        showToast(data.detail || "Error", "danger");
-        btn.disabled = false;
-        btn.textContent = `✨ ${I18N.suggest_queries_button}`;
-        return;
-    }
-    const data = await response.json();
-
-    pollTaskStatus([data.task_id], (tasks) => {
-        const task = tasks[0];
-        btn.disabled = false;
-        btn.textContent = `✨ ${I18N.suggest_queries_button}`;
-        if (task.status === "done") {
-            SETTINGS.saved_queries = task.result.saved_queries;
-            renderSavedQueries();
-            showToast(`${I18N.queries_added_toast} (${task.result.added.length})`, "success");
-            if (task.result.dropped > 0) {
-                showToast(`${I18N.queries_dropped_toast}: ${task.result.dropped}`, "danger");
-            }
-        } else if (task.status === "failed") {
-            showToast(task.error, "danger");
-        }
-    });
-});
-
-function initRangeToggle(containerId, hiddenInputId) {
-    const container = document.getElementById(containerId);
-    const hiddenInput = document.getElementById(hiddenInputId);
-    container.querySelectorAll("button").forEach((btn) => {
-        if (btn.dataset.range === hiddenInput.value) btn.classList.add("active");
-        btn.addEventListener("click", () => {
-            container.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-            hiddenInput.value = btn.dataset.range;
-        });
-    });
-}
-initRangeToggle("run-range-toggle", "run_time_range");
-
-/* ---------- start step summary ---------- */
-function updateStartSummary() {
-    const queriesCount = SETTINGS.saved_queries.length;
-    const sitesCount = {{ target_sites | length }};
-    const questionsCount = document.querySelectorAll("#base-question-list .preset-row").length;
-    const softOn = document.getElementById("soft-status-pill").classList.contains("on");
-    const mediumOn = document.getElementById("medium-status-pill").classList.contains("on");
-    const catchAllOn = document.getElementById("catch_all_enabled").checked;
-
-    const queryPart = catchAllOn
-        ? `${I18N.catch_all_summary_word} (${sitesCount} ${I18N.summary_sites_word})`
-        : `${queriesCount} ${I18N.summary_queries_word} · ${sitesCount} ${I18N.summary_sites_word}`;
-
-    document.getElementById("start-summary").textContent =
-        `${queryPart} · ` +
-        `${I18N.level_soft}: ${softOn ? I18N.status_on : I18N.status_off} · ` +
-        `${I18N.level_medium}: ${mediumOn ? I18N.status_on : I18N.status_off} · ` +
-        `${questionsCount} ${I18N.summary_questions_word}`;
-}
-updateStartSummary();
-
-/* ---------- run progress + locking ---------- */
-const STEP_ORDER = ["1", "2", "3", "4", "5"];
-let runConfig = null;
-
-function captureRunConfig() {
-    return {
-        quickFilterOn: document.getElementById("quick_filter_enabled").checked,
-        softOn: document.getElementById("soft-status-pill").classList.contains("on"),
-        mediumOn: document.getElementById("medium-status-pill").classList.contains("on"),
-        baseQuestionsCount: document.querySelectorAll("#base-question-list .preset-row").length,
-    };
-}
-
-function setStepState(step, state) {
-    const marker = document.getElementById(`marker-${step}`);
-    const line = document.getElementById(`line-${step}`);
-    marker.classList.remove("step-active", "step-complete", "step-skipped");
-    if (line) line.classList.remove("step-done", "step-flowing");
-
-    if (state === "active") {
-        marker.classList.add("step-active");
-        marker.textContent = step;
-        if (line) line.classList.add("step-flowing");
-    } else if (state === "complete") {
-        marker.classList.add("step-complete");
-        marker.textContent = "✓";
-        if (line) line.classList.add("step-done");
-    } else if (state === "skipped") {
-        marker.classList.add("step-skipped");
-        marker.textContent = "–";
-        if (line) line.classList.add("step-done");
-    } else {
-        marker.textContent = step;
-    }
-}
-
-function resetStepStates() {
-    STEP_ORDER.forEach((step) => setStepState(step, "idle"));
-}
-
-function applyRunProgress(run) {
-    if (!runConfig) runConfig = captureRunConfig();
-
-    const finished = run.status === "done" || run.status === "failed";
-
-    if (run.found_count > 0 || finished) {
-        setStepState("1", "complete");
-    } else {
-        setStepState("1", "active");
-    }
-
-    if (!runConfig.quickFilterOn) {
-        setStepState("2", "skipped");
-    } else if (run.quick_filtered_count > 0 || finished) {
-        setStepState("2", run.found_count > 0 || finished ? "complete" : "idle");
-    } else if (run.found_count > 0) {
-        setStepState("2", "active");
-    }
-
-    if (run.evaluated_count > 0 || finished) {
-        setStepState("3", "complete");
-    } else if (run.scraped_count > 0 || run.quick_filtered_count > 0) {
-        setStepState("3", "active");
-    }
-
-    if (!runConfig.softOn && !runConfig.mediumOn) {
-        setStepState("4", "skipped");
-    } else if (run.passed_count > 0 || finished) {
-        setStepState("4", "complete");
-    } else if (run.evaluated_count > 0) {
-        setStepState("4", "active");
-    }
-
-    if (runConfig.baseQuestionsCount === 0) {
-        setStepState("5", "skipped");
-    } else if (finished) {
-        setStepState("5", "complete");
-    } else if (run.passed_count > 0) {
-        setStepState("5", "active");
-    }
-
-    if (finished) {
-        setPipelineLocked(false);
-        runConfig = null;
-    }
-}
-
-function setPipelineLocked(locked) {
-    document.querySelectorAll("[data-pipeline-card], #advanced-details").forEach((el) => {
-        el.classList.toggle("locked", locked);
-    });
-    document
-        .querySelectorAll(
-            "[data-pipeline-card] input, [data-pipeline-card] textarea, [data-pipeline-card] button, #advanced-details input"
-        )
-        .forEach((el) => { el.disabled = locked; });
-
-    const startBtn = document.getElementById("btn-start-run");
-    const spinner = document.getElementById("start-btn-spinner");
-    const label = document.getElementById("start-btn-label");
-    startBtn.disabled = locked;
-    spinner.style.display = locked ? "inline-block" : "none";
-    label.textContent = locked ? I18N.run_in_progress_label : I18N.start_run_button;
-
-    if (!locked) resetStepStates();
-}
-
-function renderRunCard(run) {
-    const usageParts = [];
-    if (run.usage) {
-        if (run.usage.total_tokens) usageParts.push(`${I18N.tokens_label}: ${run.usage.total_tokens}`);
-        if (run.usage.estimated_cost) usageParts.push(`${I18N.cost_label}: ${run.usage.estimated_cost.toFixed(4)}`);
-    }
-    const errorHtml = run.error
-        ? `<p class="salary-line" style="color:var(--score-low);white-space:pre-wrap;margin-top:8px;">${run.error.replace(/</g, "&lt;")}</p>`
-        : "";
-    return `
-        <div class="run-card" data-run-id="${run.id}" data-status="${run.status}">
-            <div class="run-card-top">
-                <span>#${run.id} · ${run.created_at || ""}</span>
-                <span class="run-status-badge run-status-${run.status}">${I18N["status_" + run.status]}</span>
-            </div>
-            <div class="run-counters">
-                <span>${I18N.found_label}: ${run.found_count}</span>
-                <span>${I18N.scraped_label}: ${run.scraped_count}</span>
-                <span>${I18N.evaluated_label}: ${run.evaluated_count}</span>
-                <span>${I18N.passed_label}: ${run.passed_count}</span>
-                <span>${I18N.archived_label}: ${run.archived_count}</span>
-                ${usageParts.map((p) => `<span>${p}</span>`).join("")}
-            </div>
-            ${errorHtml}
-        </div>
-    `;
-}
-
-function pollRun(runId) {
-    const poll = async () => {
-        const response = await fetch(`/automation/runs/${runId}`);
-        if (!response.ok) return;
-        const run = await response.json();
-
-        const existing = document.querySelector(`.run-card[data-run-id="${runId}"]`);
-        const html = renderRunCard(run);
-        if (existing) {
-            existing.outerHTML = html;
-        } else {
-            const hint = document.getElementById("no-runs-hint");
-            if (hint) hint.remove();
-            document.getElementById("runs-list").insertAdjacentHTML("afterbegin", html);
-        }
-
-        applyRunProgress(run);
-
-        if (run.status === "pending" || run.status === "running") {
-            setTimeout(poll, 1500);
-        } else if (run.status === "failed") {
-            showToast(I18N.run_failed_toast, "danger");
-        }
-    };
-    poll();
-}
-
-document.querySelectorAll('.run-card[data-status="running"], .run-card[data-status="pending"]').forEach((card) => {
-    setPipelineLocked(true);
-    pollRun(parseInt(card.dataset.runId, 10));
-});
-
-document.getElementById("btn-start-run").addEventListener("click", async () => {
-    const formData = new FormData();
-    formData.append("time_range", document.getElementById("run_time_range").value);
-    formData.append("max_results_override", document.getElementById("max_results_override").value);
-    formData.append("max_queries_override", document.getElementById("max_queries_override").value);
-
-    const label = document.getElementById("start-btn-label");
-    const startBtn = document.getElementById("btn-start-run");
-    startBtn.disabled = true;
-    label.textContent = I18N.starting_run;
-
-    const response = await fetch("/automation/runs", { method: "POST", body: formData });
-
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        showToast(data.detail || "Error", "danger");
-        startBtn.disabled = false;
-        label.textContent = I18N.start_run_button;
-        return;
-    }
-
-    const data = await response.json();
-    showToast(I18N.run_started_toast, "success");
-    runConfig = captureRunConfig();
-    setPipelineLocked(true);
-    pollRun(data.run_id);
-});
-
-renderSavedQueries();
-applyCatchAllUI();
 </script>
 {% endblock %}

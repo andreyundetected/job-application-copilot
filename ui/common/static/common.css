@@ -711,6 +711,12 @@ input::placeholder {
     border-top: 1px solid var(--border);
 }
 
+.job-card-posted-time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
 .job-card-activity {
     display: flex;
     align-items: center;

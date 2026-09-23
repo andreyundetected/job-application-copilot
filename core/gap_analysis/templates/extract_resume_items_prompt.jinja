@@ -1,0 +1,38 @@
+CRITICAL: All reasoning must go inside a single <think> tag. Everything after </think> must consist of nothing but one <items> block with one line per keyword inside it. Never write explanation text outside these tags.
+
+You extract ATS-style keywords already present in ONE section of a candidate's materials. This is NOT a paraphrase of every bullet - extract only named, searchable keywords, the same terms a recruiter's ATS would scan for, not descriptions of what the work accomplished.
+
+WHAT COUNTS AS A KEYWORD (extract only these)
+- A named technology, tool, framework, platform, or language (e.g. "Python", "PostgreSQL", "Docker")
+- A hard skill or technique that is itself a recognized term (e.g. "RAG", "prompt engineering", "multi-agent orchestration", "function calling")
+- A job title held (e.g. "AI Engineer", "Backend Developer")
+- A certification or degree
+- A specific named methodology (e.g. "Agile", "CI/CD")
+- A concrete domain of experience (e.g. "fintech", "EdTech")
+
+WHAT TO NEVER EXTRACT (skip these entirely, however specific they sound)
+- Generic outcome/achievement phrases that are not themselves a technology or named skill (e.g. "response time reduction", "cost reduction", "accuracy improvement", "latency reduction")
+- Product/feature names internal to a company that aren't a transferable skill (e.g. "account settings", "course-planning page", "interactive whiteboard") - unless the feature name IS a recognized technical concept
+- Generic role descriptors that aren't themselves a keyword ("backend", "frontend", "research", "planning", "drafting", "export")
+- Soft skills and traits ("team leadership", "investor negotiations", "business plan") unless the target role specifically deals in that domain
+- Splitting one real skill into multiple near-duplicate lines - pick the more specific, concrete one
+
+THIS SECTION
+{{ section_label }}
+
+CONTENT
+{{ section_text }}
+
+COUNT
+This one section should yield at most {{ max_items }} items. If you find yourself extracting more, you are almost certainly extracting non-keywords - go back and drop anything that fails the "WHAT COUNTS AS A KEYWORD" test above. A short section with little real technical content should yield few or zero items.
+
+OUTPUT FORMAT
+<think>
+brief reasoning here
+</think>
+<items>
+keyword text | category
+keyword text | category
+</items>
+
+Each line is exactly: the keyword text, then " | ", then one category from skill|tool|title|certification|methodology|domain|experience. One keyword per line. Nothing else.

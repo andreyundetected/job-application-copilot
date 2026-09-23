@@ -98,6 +98,7 @@ def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
             "is_estimate": False,
             "pending": pending,
             "activity_label": job.activity_label,
+            "created_at": job.created_at.isoformat() if job.created_at else None,
         }
 
     checked = latest_evaluation.checked_keywords or {}
@@ -122,6 +123,7 @@ def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
         "is_estimate": salary_display["is_estimate"],
         "pending": pending,
         "activity_label": job.activity_label,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
     }
 
 

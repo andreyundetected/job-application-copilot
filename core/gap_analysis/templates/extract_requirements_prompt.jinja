@@ -1,0 +1,56 @@
+CRITICAL: All reasoning must go inside a single <think> tag. Everything after </think> must consist of nothing but <items_N> blocks, one line per keyword inside them. Never write explanation text outside these tags.
+
+You extract ATS-style resume keywords from a job posting - the specific terms a recruiter or applicant tracking system searches for. This is NOT a summary of the posting's responsibilities or a paraphrase of every sentence - it is a short, high-signal list, the same way a human tailoring their resume would pick out the 10-20 terms actually worth matching.
+
+WHAT COUNTS AS A KEYWORD (extract only these)
+- A named technology, tool, framework, platform, or language (e.g. "Python", "LangGraph", "AWS", "GraphQL")
+- A hard skill or technique that is itself a recognized term (e.g. "RAG", "prompt engineering", "function calling", "stakeholder management")
+- A job title or seniority level explicitly named (e.g. "Senior Engineer", "Solutions Architect")
+- A certification or degree explicitly named
+- A specific methodology or named process (e.g. "Agile", "incident response")
+- A concrete, named domain of experience the posting requires (e.g. "enterprise SaaS", "fintech")
+
+WHAT TO NEVER EXTRACT (these are not keywords - skip them entirely)
+- Generic soft skills or traits ("communication", "ownership", "attention to detail", "autonomy")
+- Vague paraphrases of a sentence in the posting that aren't a named term on their own (e.g. do NOT extract "ability to explain architecture decisions" or "comfortable leading a live session" - these are not searchable keywords)
+- Company perks, benefits, schedule/logistics details, or team culture descriptions
+- Tools the posting mentions only as part of describing THEIR OWN internal workflow or office setup ("we use Notion/Slack/Zoom to collaborate") - only skip a tool if it's clearly the company's own internal tooling described this way, not a tool listed under requirements/qualifications
+- Restating the same concept twice in different words (e.g. a title like "Forward Deployed Engineer" and a near-identical domain phrase like "Forward Deployed Engineering") - keep only the single clearest phrasing, prefer the title form when both a title and a domain phrase describe the same thing
+- Anything not actually present in the posting text - never add a requirement just because it's commonly expected for this type of role if the posting itself doesn't say it
+
+MERGING RULE
+If the posting lists several tools as alternatives or examples of one category (e.g. "orchestration frameworks such as LangGraph/LangChain/CrewAI"), extract each named tool as its own separate line (one per tool) - never merge them into one combined line, and never invent a generic umbrella line like "orchestration frameworks" in addition to the named ones.
+
+COUNT
+Extract between 10 and 20 keywords total across all tiers combined, no more. If the posting mentions many candidate terms, keep only the ones most central to the role and drop the rest. Never pad the list to look thorough.
+
+JOB POSTING
+{{ job_posting_text }}
+
+OUTPUT FORMAT
+Use <think> once for your reasoning about which terms matter most, then output the keywords grouped into up to 4 priority tiers. Skip a tier entirely if it has nothing in it.
+
+<think>
+brief reasoning here
+</think>
+<items_1>
+keyword text | category
+keyword text | category
+</items_1>
+<items_2>
+keyword text | category
+</items_2>
+<items_3>
+keyword text | category
+</items_3>
+<items_4>
+keyword text | category
+</items_4>
+
+Tier meaning:
+- items_1: required, explicitly stated, and emphasized or mentioned more than once
+- items_2: required, explicitly stated, mentioned once
+- items_3: clearly implied as necessary for the role but not phrased as a formal requirement
+- items_4: preferred / nice-to-have
+
+Each line inside an items block is exactly: the keyword text, then " | ", then one category from skill|tool|title|certification|methodology|domain|experience. One keyword per line. Nothing else.

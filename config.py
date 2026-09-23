@@ -19,6 +19,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'app.db'}")
+DISCOVERY_DATABASE_URL = os.getenv(
+    "DISCOVERY_DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'discovery.db'}"
+)
 
 OUTPUT_DIR = BASE_DIR / "output"
 DATA_DIR = BASE_DIR / "data"
@@ -41,3 +44,9 @@ SERPER_BASE_URL = os.getenv("SERPER_BASE_URL", "https://google.serper.dev/search
 SEARCH_PROVIDER_ORDER = os.getenv("SEARCH_PROVIDER_ORDER", "serper,serpent")
 
 AUTOMATION_MAX_WORKERS = int(os.getenv("AUTOMATION_MAX_WORKERS", "10"))
+DISCOVERY_POLL_MAX_WORKERS = int(os.getenv("DISCOVERY_POLL_MAX_WORKERS", "8"))
+DISCOVERY_WAYBACK_MAX_WORKERS = int(os.getenv("DISCOVERY_WAYBACK_MAX_WORKERS", "2"))
+DISCOVERY_POLL_TICK_SECONDS = int(os.getenv("DISCOVERY_POLL_TICK_SECONDS", "60"))
+DISCOVERY_POLL_BATCH_SIZE = int(os.getenv("DISCOVERY_POLL_BATCH_SIZE", "32"))
+DISCOVERY_RATE_LIMIT_PER_SEC = float(os.getenv("DISCOVERY_RATE_LIMIT_PER_SEC", "2"))
+DISCOVERY_EVAL_MAX_WORKERS = int(os.getenv("DISCOVERY_EVAL_MAX_WORKERS", "3"))
