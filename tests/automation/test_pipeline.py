@@ -18,6 +18,9 @@ _SAMPLE_EVAL_RESULT = {
     "company": "Acme",
     "role": "Engineer",
     "location": "Remote",
+    "location_country": "United States",
+    "location_state": None,
+    "location_city": None,
     "work_mode": "remote",
     "salary": {},
     "matched_factors": [],
@@ -104,7 +107,7 @@ def test_run_single_query_creates_search_results_and_logs_usage(monkeypatch, db_
         def __init__(self):
             pass
 
-        def search(self, query, num=None, date=None):
+        def search(self, query, num=None, date=None, page=1):
             return fake_response
 
     monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
@@ -136,7 +139,7 @@ def test_run_single_query_handles_search_error_gracefully(monkeypatch, db_sessio
         def __init__(self):
             pass
 
-        def search(self, query, num=None, date=None):
+        def search(self, query, num=None, date=None, page=1):
             raise pipeline.SerpentSearchError("boom")
 
     monkeypatch.setattr(pipeline, "get_search_provider", lambda: _FakeProvider())
@@ -470,7 +473,9 @@ def test_run_automation_pipeline_stops_early_at_results_cap(monkeypatch, db_sess
             search_call_count["count"] += 1
             self._index = search_call_count["count"]
 
-        def search(self, query, num=None, date=None):
+        def search(self, query, num=None, date=None, page=1):
+            if page > 1:
+                return {"results": [], "requested_num": 30, "returned_count": 0, "raw_response": {}}
             return {
                 "results": [
                     {
@@ -517,7 +522,9 @@ def test_run_automation_pipeline_processes_multiple_results_when_uncapped(monkey
         def __init__(self):
             pass
 
-        def search(self, query, num=None, date=None):
+        def search(self, query, num=None, date=None, page=1):
+            if page > 1:
+                return {"results": [], "requested_num": 30, "returned_count": 0, "raw_response": {}}
             return {
                 "results": [
                     {"title": "Job A", "url": "https://boards.greenhouse.io/a/jobs/1", "snippet": "S"},

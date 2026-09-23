@@ -42,5 +42,9 @@
     "send_button": "Send",
     "apply_button": "Apply",
     "skip_button": "Skip",
-    "proposed_change_label": "Proposed change"
+    "proposed_change_label": "Proposed change",
+    "manual_category_auto": "Auto-detect",
+    "writing_prefs_toggle": "Writing preferences",
+    "add_questions_modal_title": "Add questions",
+    "generate_answers_button": "Generate answers"
 }

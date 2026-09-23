@@ -39,16 +39,26 @@
         </div>
 
         <div class="topnav-right">
-            <a href="https://github.com/sponsors/YOUR_GITHUB_USERNAME" target="_blank" rel="noopener noreferrer" class="sponsor-link" title="{{ t.sponsor_label }}">
+            <a href="https://buymeabitcoffee.vercel.app/btc/bc1qa4sp2mexjp4zmx2qc5g0etpt9fxk93fqfs0nul?identifier=andrey+undetected" target="_blank" rel="noopener noreferrer" class="sponsor-link" title="{{ t.sponsor_label }}">
                 <svg class="sponsor-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.9-4.35-9.5-8.15C.7 9.95 1.4 6.35 4.3 4.75c2.3-1.25 4.9-.55 6.4 1.35L12 7.6l1.3-1.5c1.5-1.9 4.1-2.6 6.4-1.35 2.9 1.6 3.6 5.2 1.8 8.1C18.9 16.65 12 21 12 21z"></path></svg>
                 <span>{{ t.sponsor_label }}</span>
             </a>
-            <form id="lang-form" class="lang-switcher">
-                <select name="lang" id="lang-select">
-                    <option value="en" {% if lang == "en" %}selected{% endif %}>EN</option>
-                    <option value="ru" {% if lang == "ru" %}selected{% endif %}>RU</option>
-                </select>
-            </form>
+            <div class="custom-select" id="lang-select">
+                <button type="button" class="custom-select-trigger">
+                    <span data-select-label>{{ "EN" if lang == "en" else "RU" }}</span>
+                    <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="custom-select-menu">
+                    <button type="button" class="custom-select-option {% if lang == 'en' %}selected{% endif %}" data-value="en" data-label="EN">
+                        <span>English</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button type="button" class="custom-select-option {% if lang == 'ru' %}selected{% endif %}" data-value="ru" data-label="RU">
+                        <span>Русский</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </nav>
     <main>
@@ -56,9 +66,9 @@
     </main>
 
     <script>
-    document.getElementById("lang-select").addEventListener("change", async (event) => {
+    initCustomSelect(document.getElementById("lang-select"), async (value) => {
         const formData = new FormData();
-        formData.append("lang", event.target.value);
+        formData.append("lang", value);
         await fetch("/set-language", { method: "POST", body: formData });
         window.location.reload();
     });

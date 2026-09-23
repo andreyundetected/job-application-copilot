@@ -13,14 +13,8 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-# Pulled live from every registered core/discovery/ats/*.py extractor - no
-# point surfacing a search result we can't scrape and evaluate, and adding a
-# new ATS file adds its domain(s) here automatically, no edit needed.
 DEFAULT_TARGET_SITES = default_target_sites()
 
-# Roadmap: ATS platforms whose public boards don't return a full description in
-# one call (Gem, Rippling) or don't expose one without a customer key (JazzHR,
-# iCIMS) - not worth a parser until that changes.
 PLANNED_TARGET_SITES = [
     "jobs.gem.com",
     "ats.rippling.com",
@@ -53,15 +47,16 @@ def validate_query_length(query: str, max_words: int = DEFAULT_MAX_QUERY_WORDS) 
 def fit_query_to_word_limit(
     terms: list[str], sites: list[str] | None = None, max_words: int = DEFAULT_MAX_QUERY_WORDS
 ) -> str | None:
-    """Drops trailing terms (least-important-first, since the LLM lists them in
-    priority order) until the combined query fits max_words - a last-resort
-    fallback for LLM-suggested queries that come back too long, so one oversized
-    group gets trimmed instead of silently dropped."""
     for count in range(len(terms), 0, -1):
         candidate = build_query_string(terms[:count], sites)
         if validate_query_length(candidate, max_words):
             return candidate
     return None
+
+
+def build_catch_all_queries(sites: list[str] | None = None) -> list[str]:
+    sites = sites or DEFAULT_TARGET_SITES
+    return [f"site:{site}" for site in sites]
 
 
 def suggest_search_queries(

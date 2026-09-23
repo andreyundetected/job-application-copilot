@@ -42,5 +42,9 @@
     "send_button": "Отправить",
     "apply_button": "Применить",
     "skip_button": "Пропустить",
-    "proposed_change_label": "Предложенная правка"
+    "proposed_change_label": "Предложенная правка",
+    "manual_category_auto": "Определить автоматически",
+    "writing_prefs_toggle": "Правила написания",
+    "add_questions_modal_title": "Добавить вопросы",
+    "generate_answers_button": "Сгенерировать ответы"
 }

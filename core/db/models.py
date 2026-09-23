@@ -65,6 +65,7 @@ class CandidateProfile(Base):
     linkedin_url: Mapped[str] = mapped_column(String(512), nullable=True)
     extra_links: Mapped[list] = mapped_column(JSON, nullable=True)
     extra_info: Mapped[str] = mapped_column(Text, nullable=True)
+    writing_preferences: Mapped[str] = mapped_column(Text, nullable=True)
 
 
 class AppSettings(Base):
@@ -92,6 +93,9 @@ class JobPosting(Base):
     source_url: Mapped[str] = mapped_column(String(1024), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
     location: Mapped[str] = mapped_column(String(255), nullable=True)
+    location_country: Mapped[str] = mapped_column(String(255), nullable=True)
+    location_state: Mapped[str] = mapped_column(String(255), nullable=True)
+    location_city: Mapped[str] = mapped_column(String(255), nullable=True)
     work_mode: Mapped[str] = mapped_column(String(32), nullable=True)
     employment_type: Mapped[str] = mapped_column(String(64), nullable=True)
     tags: Mapped[list] = mapped_column(JSON, nullable=True)
@@ -416,6 +420,8 @@ class AutomationSettings(Base):
     default_time_range: Mapped[str] = mapped_column(String(8), default="w1")
     saved_queries: Mapped[list] = mapped_column(JSON, nullable=True)
     serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
+    catch_all_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    max_pages_per_query: Mapped[int] = mapped_column(Integer, default=10)
 
 
 class ManualAssistTailoringPermission(Base):

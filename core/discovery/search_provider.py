@@ -25,7 +25,7 @@ _SERPER_DATE_MAP = {
 class BaseSearchProvider:
     name = "base"
 
-    def search(self, query: str, num: int = 50, date: str | None = None) -> dict:
+    def search(self, query: str, num: int = 50, date: str | None = None, page: int = 1) -> dict:
         raise NotImplementedError
 
 
@@ -36,14 +36,16 @@ class SerpentSearchProvider(BaseSearchProvider):
         self.api_key = api_key if api_key is not None else config.SERPENT_API_KEY
         self.base_url = base_url if base_url is not None else config.SERPENT_BASE_URL
 
-    def search(self, query: str, num: int = 50, date: str | None = None) -> dict:
+    def search(self, query: str, num: int = 50, date: str | None = None, page: int = 1) -> dict:
         num = max(1, min(num, 100))
 
         params = {"engine": "google", "q": query, "num": num}
         if date:
             params["date"] = date
+        if page and page > 1:
+            params["page"] = page
 
-        logger.info("Serpent request: q=%r num=%s date=%s", query, num, date)
+        logger.info("Serpent request: q=%r num=%s date=%s page=%s", query, num, date, page)
 
         response = requests.get(
             self.base_url,
@@ -114,15 +116,17 @@ class SerperSearchProvider(BaseSearchProvider):
         self.api_key = api_key if api_key is not None else config.SERPER_API_KEY
         self.base_url = base_url if base_url is not None else config.SERPER_BASE_URL
 
-    def search(self, query: str, num: int = 50, date: str | None = None) -> dict:
+    def search(self, query: str, num: int = 50, date: str | None = None, page: int = 1) -> dict:
         num = max(1, min(num, 100))
 
         payload = {"q": query, "num": num}
         tbs = _SERPER_DATE_MAP.get(date)
         if tbs:
             payload["tbs"] = tbs
+        if page and page > 1:
+            payload["page"] = page
 
-        logger.info("Serper request: q=%r num=%s date=%s (tbs=%s)", query, num, date, tbs)
+        logger.info("Serper request: q=%r num=%s date=%s page=%s (tbs=%s)", query, num, date, page, tbs)
 
         response = requests.post(
             self.base_url,
@@ -208,7 +212,7 @@ class MultiSearchProvider(BaseSearchProvider):
     def __init__(self, providers: list[BaseSearchProvider]):
         self.providers = providers
 
-    def search(self, query: str, num: int = 50, date: str | None = None) -> dict:
+    def search(self, query: str, num: int = 50, date: str | None = None, page: int = 1) -> dict:
         if not self.providers:
             raise SerpentSearchError(
                 "No search provider configured - set SERPENT_API_KEY and/or SERPER_API_KEY"
@@ -217,7 +221,7 @@ class MultiSearchProvider(BaseSearchProvider):
         last_error: Exception | None = None
         for provider in self.providers:
             try:
-                return provider.search(query, num=num, date=date)
+                return provider.search(query, num=num, date=date, page=page)
             except SerpentSearchError as error:
                 logger.warning(
                     "Search provider %r failed (%s), trying next configured provider", provider.name, error

@@ -32,6 +32,19 @@ def upsert_candidate_profile(
     return profile
 
 
+def update_writing_preferences(session: Session, writing_preferences: str) -> CandidateProfile:
+    profile = session.query(CandidateProfile).first()
+    if profile is None:
+        profile = CandidateProfile()
+        session.add(profile)
+
+    profile.writing_preferences = writing_preferences or None
+
+    session.commit()
+    session.refresh(profile)
+    return profile
+
+
 def add_extra_link(session: Session, link: str) -> CandidateProfile:
     profile = session.query(CandidateProfile).first()
     if profile is None:

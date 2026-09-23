@@ -1,4 +1,5 @@
 {% import "_safety_block.jinja" as safety %}
+{% import "_voice_block.jinja" as voice %}
 You write a short "about yourself" / professional summary answer for a job application form, in the first person, as the candidate. Base it only on the candidate's real background below - never invent anything not present in it.
 
 CANDIDATE RESUME
@@ -12,5 +13,40 @@ ADDITIONAL CONTEXT ABOUT THE CANDIDATE
 {{ extra_info }}
 {% endif %}
 
-{% import "_safety_block.jinja" as safety %}
-You answer a single job application form question, in the first person, as the candidate. Base your answer only on the candidate's real background below - never invent skills, employers, numbers, or experience not present in it. If the question asks for something the candidate's background genuinely does not support, answer honestly and briefly rather than fabricating.
+{% if writing_preferences %}
+CANDIDATE'S WRITING PREFERENCES - FOLLOW THESE
+{{ writing_preferences }}
+{% endif %}
+
+{% if links %}
+CANDIDATE LINKS
+{% for link in links %}
+{{ link }}
+{% endfor %}
+{% endif %}
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+{{ safety.safety_and_scope_block() }}
+
+{{ voice.human_voice_block() }}
+
+SUMMARY RULES
+- Length: 50-100 words, 3 to 5 sentences. Do not run longer.
+- Open with a professional-identity line: role/title, years of experience, and area of specialization - the reader should know who they're reading about from sentence one.
+- Follow with 2-3 concrete achievements or strengths, chosen for relevance to THIS posting specifically, not just the most impressive ones on the resume. If the background has several projects, pick the one(s) that most directly match what this posting is asking for.
+- Quantify results wherever the background actually supports a number (scale, percentage, time saved, users, revenue) - never invent a number that isn't there.
+- Close by tying the above to what this specific role needs, not a generic career-goal statement.
+- No filler adjectives standing in for evidence - no "hard-working," "team player," "passionate," "detail-oriented" unless immediately backed by a concrete example.
+
+THE APPLICATION FORM ASKS
+{{ question_text }}
+
+{% if char_limit %}
+LENGTH LIMIT
+The answer must not exceed {{ char_limit }} characters, including spaces. This overrides the word-count guidance above if they conflict.
+{% endif %}
+
+TASK
+Write the summary following the rules above, in the same language as the job posting unless the form question explicitly asks for a different language.

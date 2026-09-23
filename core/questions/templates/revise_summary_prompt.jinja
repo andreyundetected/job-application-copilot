@@ -1,4 +1,5 @@
 {% import "_safety_block.jinja" as safety %}
+{% import "_voice_block.jinja" as voice %}
 You are revising the candidate's "about yourself" / professional summary answer based on their feedback, in the first person, as the candidate. Base it only on the candidate's real background below - never invent anything not present in it.
 
 CANDIDATE RESUME
@@ -16,6 +17,12 @@ TARGET JOB POSTING
 {{ job_posting_text }}
 
 {{ safety.safety_and_scope_block() }}
+
+{{ voice.human_voice_block() }}
+
+SUMMARY RULES (still apply on revision)
+- Keep it 50-100 words, 3 to 5 sentences, unless the candidate's feedback explicitly asks for a different length.
+- Still lead with the professional-identity line, still pick achievements for relevance to this posting, still quantify only what the background actually supports.
 
 THE APPLICATION FORM ASKS
 {{ question_text }}

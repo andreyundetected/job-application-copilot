@@ -42,6 +42,9 @@ def update_job_quick_meta(
     company: str | None = None,
     title: str | None = None,
     location: str | None = None,
+    location_country: str | None = None,
+    location_state: str | None = None,
+    location_city: str | None = None,
     work_mode: str | None = None,
     employment_type: str | None = None,
     tags: list | None = None,
@@ -55,6 +58,12 @@ def update_job_quick_meta(
         job.title = title
     if location is not None:
         job.location = location
+    if location_country is not None:
+        job.location_country = location_country
+    if location_state is not None:
+        job.location_state = location_state
+    if location_city is not None:
+        job.location_city = location_city
     if work_mode is not None:
         job.work_mode = work_mode
     if employment_type is not None:

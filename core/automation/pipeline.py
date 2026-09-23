@@ -80,7 +80,7 @@ def _run_search_and_process(session: Session, run, settings) -> None:
         if is_capped and crud.count_promoted_for_run(session, run.id) >= run.max_results_override:
             break
 
-        candidate_results = _run_single_query(session, run, query_text, settings)
+        candidate_results = _run_single_query(session, run, query_text, settings, is_capped, run.max_results_override)
 
         if settings.quick_filter_enabled and candidate_results:
             candidate_results = _apply_quick_filter(
@@ -107,65 +107,87 @@ def _run_search_and_process(session: Session, run, settings) -> None:
             )
 
 
-def _run_single_query(session: Session, run, query_text: str, settings) -> list[dict]:
+def _run_single_query(
+    session: Session,
+    run,
+    query_text: str,
+    settings,
+    is_capped: bool = False,
+    max_results_override: int | None = None,
+) -> list[dict]:
     provider = get_search_provider()
+    max_pages = max(1, settings.max_pages_per_query or 1)
 
-    logger.info("[run %s] searching: %r", run.id, query_text)
+    all_created = []
 
-    try:
-        search_response = provider.search(
-            query_text, num=settings.serpent_num_per_query, date=settings.default_time_range
-        )
-    except SerpentSearchError as error:
-        logger.error("[run %s] search failed for %r: %s", run.id, query_text, error)
-        crud.append_run_warning(session, run.id, f"Search failed for '{query_text}': {error}")
-        return []
+    for page in range(1, max_pages + 1):
+        logger.info("[run %s] searching: %r (page %s)", run.id, query_text, page)
 
-    crud.create_usage_log(
-        session,
-        provider="serpent",
-        operation="search_query",
-        automation_run_id=run.id,
-        requested_num=search_response["requested_num"],
-        returned_count=search_response["returned_count"],
-        raw_usage=search_response["raw_response"],
-    )
+        try:
+            search_response = provider.search(
+                query_text, num=settings.serpent_num_per_query, date=settings.default_time_range, page=page
+            )
+        except SerpentSearchError as error:
+            logger.error("[run %s] search failed for %r (page %s): %s", run.id, query_text, page, error)
+            crud.append_run_warning(session, run.id, f"Search failed for '{query_text}' (page {page}): {error}")
+            break
 
-    if search_response["returned_count"] == 0:
-        logger.warning("[run %s] 0 results for query: %r", run.id, query_text)
-        crud.append_run_warning(session, run.id, f"0 search results for query: '{query_text}'")
-
-    payload = [
-        {
-            "query_text": query_text,
-            "url": item["url"],
-            "url_normalized": normalize_url(item["url"]),
-            "source_platform": detect_platform(item["url"]),
-            "title": item.get("title"),
-            "snippet": item.get("snippet"),
-        }
-        for item in search_response["results"]
-    ]
-
-    created, dedup_stats = crud.bulk_create_search_results(session, run.id, payload)
-    logger.info(
-        "[run %s] query %r: %s parsed / %s created / %s already-known-from-past-runs / %s intra-batch-dupes",
-        run.id,
-        query_text,
-        len(search_response["results"]),
-        len(created),
-        dedup_stats["skipped_already_known"],
-        dedup_stats["skipped_intra_batch"],
-    )
-    if dedup_stats["skipped_already_known"] > 0 and not created:
-        crud.append_run_warning(
+        crud.create_usage_log(
             session,
-            run.id,
-            f"All {dedup_stats['skipped_already_known']} results for '{query_text}' were already scraped in a previous run",
+            provider="serpent",
+            operation="search_query",
+            automation_run_id=run.id,
+            requested_num=search_response["requested_num"],
+            returned_count=search_response["returned_count"],
+            raw_usage=search_response["raw_response"],
         )
-    crud.increment_run_counters(session, run.id, found_count=len(created))
 
-    return [{"id": row.id, "title": row.title, "snippet": row.snippet, "url": row.url} for row in created]
+        if search_response["returned_count"] == 0:
+            if page == 1:
+                logger.warning("[run %s] 0 results for query: %r", run.id, query_text)
+                crud.append_run_warning(session, run.id, f"0 search results for query: '{query_text}'")
+            break
+
+        payload = [
+            {
+                "query_text": query_text,
+                "url": item["url"],
+                "url_normalized": normalize_url(item["url"]),
+                "source_platform": detect_platform(item["url"]),
+                "title": item.get("title"),
+                "snippet": item.get("snippet"),
+            }
+            for item in search_response["results"]
+        ]
+
+        created, dedup_stats = crud.bulk_create_search_results(session, run.id, payload)
+        logger.info(
+            "[run %s] query %r page %s: %s parsed / %s created / %s already-known-from-past-runs / %s intra-batch-dupes",
+            run.id,
+            query_text,
+            page,
+            len(search_response["results"]),
+            len(created),
+            dedup_stats["skipped_already_known"],
+            dedup_stats["skipped_intra_batch"],
+        )
+        if dedup_stats["skipped_already_known"] > 0 and not created and page == 1:
+            crud.append_run_warning(
+                session,
+                run.id,
+                f"All {dedup_stats['skipped_already_known']} results for '{query_text}' were already scraped in a previous run",
+            )
+        crud.increment_run_counters(session, run.id, found_count=len(created))
+
+        all_created.extend(created)
+
+        if search_response["returned_count"] < settings.serpent_num_per_query:
+            break
+
+        if is_capped and max_results_override is not None and crud.count_promoted_for_run(session, run.id) >= max_results_override:
+            break
+
+    return [{"id": row.id, "title": row.title, "snippet": row.snippet, "url": row.url} for row in all_created]
 
 
 def _apply_quick_filter(
@@ -284,6 +306,9 @@ def _process_search_result(
             company=result["company"],
             title=result["role"],
             location=result["location"],
+            location_country=result["location_country"],
+            location_state=result["location_state"],
+            location_city=result["location_city"],
             work_mode=result["work_mode"],
         )
 

@@ -3,12 +3,17 @@ You extract only the following surface-level facts from a job posting. Do not ev
 JOB POSTING
 {{ job_posting_text }}
 
+LOCATION FORMAT
+Always answer in English, using each place's one standard full name - never an abbreviation or local-language spelling ("United States" not "US"/"USA"/"America"; "United Kingdom" not "UK"/"England"; "Russia" not "Russian Federation"/"РФ"; "California" not "CA"). Translate non-English place names to their standard English form. This exact-name consistency is what lets postings from different companies be grouped by location later.
+
 OUTPUT FORMAT
 Respond using only the following tags, with no extra text outside them.
 
 <company>Company name, or "N/A" if not stated</company>
 <role>Job title as stated in the posting</role>
-<location>City, country, or region as stated in the posting. If not stated, write "N/A"</location>
+<location_country>The country, in its standard English name per LOCATION FORMAT above. Write "N/A" only if genuinely unknowable.</location_country>
+<location_state>The state/province/region, if named. Omit this tag entirely if none is given.</location_state>
+<location_city>The city, if named. Omit this tag entirely if none is given.</location_city>
 <work_mode>Exactly one of: remote, hybrid, onsite, unclear</work_mode>
 <employment_type>Exactly one of: full_time, part_time, contract, internship, unclear</employment_type>
-<tag>A short keyword tag relevant to this role (e.g. a core technology, seniority level, or domain). Repeat this tag once per tag, up to 6 tags total.</tag>
+<tag>A short keyword tag that adds information beyond the job title itself - a specific technology, tool, framework, niche domain, or a notable non-obvious condition (equity, on-call rotation, visa sponsorship, 4-day week). Never tag the role's own profession or broad domain when it is already obvious from the title (don't tag "AI" on an "AI Engineer" posting, or "Sales" on a "Sales Manager" posting) - anyone opening this posting already knows that. Repeat once per tag, up to 6 total. Omit entirely if nothing beyond the title is worth tagging.</tag>

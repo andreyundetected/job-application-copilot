@@ -20,7 +20,8 @@ _SAMPLE_RESPONSE = """
 <company>Example Corp</company>
 <role>Backend Engineer</role>
 <score>8</score>
-<location>Berlin, Germany</location>
+<location_country>Germany</location_country>
+<location_city>Berlin</location_city>
 <work_mode>remote</work_mode>
 <salary_min>120000</salary_min>
 <salary_max>120000</salary_max>
@@ -58,7 +59,9 @@ def test_evaluate_job_posting_parses_all_fields():
     assert result["company"] == "Example Corp"
     assert result["role"] == "Backend Engineer"
     assert result["score"] == 8
-    assert result["location"] == "Berlin, Germany"
+    assert result["location"] == "Germany, Berlin"
+    assert result["location_country"] == "Germany"
+    assert result["location_city"] == "Berlin"
     assert result["work_mode"] == "remote"
     assert result["salary"]["min"] == 120000
     assert result["salary"]["max"] == 120000
@@ -215,7 +218,8 @@ def test_evaluate_job_posting_marks_estimated_salary():
 _SAMPLE_QUICK_RESPONSE = """
 <company>Example Corp</company>
 <role>Backend Engineer</role>
-<location>Berlin, Germany</location>
+<location_country>Germany</location_country>
+<location_city>Berlin</location_city>
 <work_mode>remote</work_mode>
 <employment_type>full_time</employment_type>
 <tag>Python</tag>
@@ -232,7 +236,9 @@ def test_quick_extract_job_posting_parses_all_fields():
 
     assert result["company"] == "Example Corp"
     assert result["role"] == "Backend Engineer"
-    assert result["location"] == "Berlin, Germany"
+    assert result["location"] == "Germany, Berlin"
+    assert result["location_country"] == "Germany"
+    assert result["location_city"] == "Berlin"
     assert result["work_mode"] == "remote"
     assert result["employment_type"] == "full_time"
     assert result["tags"] == ["Python", "FastAPI", "Senior"]

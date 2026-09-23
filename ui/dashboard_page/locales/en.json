@@ -38,5 +38,10 @@
     "loading_card": "Loading details...",
     "job_added_toast": "Job added to the dashboard.",
     "filter_salary_label": "Minimum salary",
-    "filter_salary_include_estimated_label": "Include AI-estimated salaries"
+    "filter_salary_include_estimated_label": "Include AI-estimated salaries",
+    "filter_region_label": "Region",
+    "salary_estimated_label": "AI-estimated",
+    "work_mode_remote": "Remote",
+    "work_mode_hybrid": "Hybrid",
+    "work_mode_onsite": "On-site"
 }

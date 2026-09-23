@@ -11,6 +11,7 @@ from core.discovery.query_builder import (
     DEFAULT_MAX_QUERY_WORDS,
     DEFAULT_TARGET_SITES,
     PLANNED_TARGET_SITES,
+    build_catch_all_queries,
     build_query_string,
     count_words,
     fit_query_to_word_limit,
@@ -112,6 +113,7 @@ def automation_page(
             "target_sites": DEFAULT_TARGET_SITES,
             "planned_sites": PLANNED_TARGET_SITES,
             "max_query_words": DEFAULT_MAX_QUERY_WORDS,
+            "catch_all_query_preview": " / ".join(build_catch_all_queries()),
             "lang": lang,
             "t": load_page_strings("ui/automation_page", lang),
         },
@@ -142,6 +144,8 @@ def update_settings(
     auto_archive_enabled: str | None = Form(None),
     default_time_range: str | None = Form(None),
     serpent_num_per_query: int | None = Form(None),
+    catch_all_enabled: str | None = Form(None),
+    max_pages_per_query: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
     """Autosave endpoint - the client posts only the field(s) that just changed,
@@ -171,6 +175,10 @@ def update_settings(
         kwargs["default_time_range"] = default_time_range
     if serpent_num_per_query is not None:
         kwargs["serpent_num_per_query"] = max(1, min(serpent_num_per_query, 100))
+    if catch_all_enabled is not None:
+        kwargs["catch_all_enabled"] = catch_all_enabled == "true"
+    if max_pages_per_query is not None:
+        kwargs["max_pages_per_query"] = max(1, min(max_pages_per_query, 50))
 
     crud.upsert_automation_settings(session, **kwargs)
     return JSONResponse({"status": "ok"})
@@ -295,9 +303,13 @@ def start_run(
         raise HTTPException(status_code=400, detail="Invalid time range")
 
     settings = _get_or_create_settings(session)
-    queries = list(settings.saved_queries or [])
-    if not queries:
-        raise HTTPException(status_code=400, detail="No saved queries - add at least one first")
+
+    if settings.catch_all_enabled:
+        queries = build_catch_all_queries()
+    else:
+        queries = list(settings.saved_queries or [])
+        if not queries:
+            raise HTTPException(status_code=400, detail="No saved queries - add at least one first")
 
     results_cap = int(max_results_override) if max_results_override.strip().isdigit() else None
     queries_cap = int(max_queries_override) if max_queries_override.strip().isdigit() else None

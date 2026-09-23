@@ -3,6 +3,79 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<style>
+.salary-estimate-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 2px;
+}
+.mini-toggle-switch { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+.mini-toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.mini-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.mini-toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    left: 2px;
+    top: 2px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.mini-toggle-switch input:checked + .mini-toggle-slider { background-color: var(--accent); border-color: var(--accent); }
+.mini-toggle-switch input:checked + .mini-toggle-slider::before { transform: translateX(15px); background-color: white; }
+.mini-toggle-switch input:focus-visible + .mini-toggle-slider { box-shadow: 0 0 0 3px var(--accent-soft); }
+.salary-estimate-toggle-label { font-size: 12.5px; color: var(--text-secondary); transition: color 0.15s ease; }
+.salary-estimate-toggle:hover .salary-estimate-toggle-label { color: var(--text-primary); }
+
+#salary-min-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--slider-fill, 0%), var(--bg-input) var(--slider-fill, 0%), var(--bg-input) 100%);
+    outline: none;
+    cursor: pointer;
+}
+#salary-min-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid var(--accent);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+}
+#salary-min-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+#salary-min-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid var(--accent);
+    cursor: pointer;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+}
+#salary-min-slider::-moz-range-track {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--bg-input);
+}
+</style>
 <div class="dashboard-header">
     <h1 style="margin:0;">{{ t.page_title }}</h1>
     <div class="dashboard-header-actions">
@@ -46,15 +119,22 @@
 
 <div class="filters-panel-wrap" id="filters-panel-wrap">
     <div class="filters-panel">
+        <div class="filter-section" id="filter-region-section" style="display:none;">
+            <span class="filter-section-label">{{ t.filter_region_label }}</span>
+            <div class="filter-chip-row" id="filter-region-chips"></div>
+        </div>
         <div class="filter-section" id="filter-salary-section" style="display:none;">
             <span class="filter-section-label">{{ t.filter_salary_label }}</span>
             <div style="display:flex;align-items:center;gap:10px;">
                 <input type="range" id="salary-min-slider" min="0" max="0" value="0" step="1" style="flex:1;">
                 <span id="salary-min-display" style="font-size:12.5px;color:var(--text-secondary);min-width:70px;text-align:right;"></span>
             </div>
-            <label class="filter-pill" id="include-estimated-pill" style="cursor:pointer;">
-                <svg class="filter-pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>{{ t.filter_salary_include_estimated_label }}</span>
+            <label class="salary-estimate-toggle" id="include-estimated-pill">
+                <span class="mini-toggle-switch">
+                    <input type="checkbox" id="include-estimated-checkbox">
+                    <span class="mini-toggle-slider"></span>
+                </span>
+                <span class="salary-estimate-toggle-label">{{ t.filter_salary_include_estimated_label }}</span>
             </label>
         </div>
         <div id="filter-groups"></div>
@@ -63,7 +143,7 @@
 
 <div class="job-grid" id="job-grid">
     {% for card in cards %}
-    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-tags="{{ (card.tags or []) | join(',') }}" data-salary-max="{{ card.salary_max_converted if card.salary_max_converted is not none else '' }}" data-is-estimate="{{ 'true' if card.is_estimate else 'false' }}">
+    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-state="{{ card.state or '' }}" data-city="{{ card.city or '' }}" data-tags="{{ (card.tags or []) | join(',') }}" data-salary-max="{{ card.salary_max_converted if card.salary_max_converted is not none else '' }}" data-is-estimate="{{ 'true' if card.is_estimate else 'false' }}">
         <div class="job-card-top">
             {% if card.pending and card.score is none %}
             <div class="job-card-score-loading"><span class="loading-dot"></span></div>
@@ -80,21 +160,22 @@
             <span class="badge">{{ card.location }}</span>
             {% endif %}
             {% if card.work_mode %}
-            <span class="badge badge-work-mode">{{ card.work_mode }}</span>
+            <span class="badge badge-work-mode">{{ t["work_mode_" + card.work_mode] if ("work_mode_" + card.work_mode) in t else card.work_mode }}</span>
             {% endif %}
             {% if card.employment_type %}
             <span class="badge">{{ t["employment_" + card.employment_type] if ("employment_" + card.employment_type) in t else card.employment_type }}</span>
             {% endif %}
+        </div>
+        {% if card.tags %}
+        <div class="job-card-tags">
             {% for tag in card.tags %}
             <span class="badge badge-tag">{{ tag }}</span>
             {% endfor %}
-            {% if card.is_estimate %}
-            <span class="badge badge-estimate">Est.</span>
-            {% endif %}
         </div>
+        {% endif %}
 
         {% if card.salary_text %}
-        <p class="job-card-salary">{{ card.salary_text }}</p>
+        <p class="job-card-salary">{{ card.salary_text }}{% if card.is_estimate %} <span class="salary-estimate-tag">{{ t.salary_estimated_label }}</span>{% endif %}</p>
         {% endif %}
 
         <div class="job-card-bottom">
@@ -119,11 +200,18 @@ const I18N = {{ t | tojson }};
 
 const CHECK_SVG = `<svg class="filter-pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
+// Fixed, canonical lists matching the evaluator prompt's own enums exactly -
+// always shown so the person can filter for a category even before any job
+// happens to have it, instead of these appearing/disappearing based on data.
+const EMPLOYMENT_TYPES = ["full_time", "part_time", "contract", "internship"];
+const WORK_MODES = ["remote", "hybrid", "onsite"];
+
 const filterState = {
     search: "",
     employmentTypes: new Set(),
     workModes: new Set(),
     countries: new Set(),
+    regions: new Set(),
     tags: new Set(),
     salaryMin: 0,
     includeEstimated: false,
@@ -134,9 +222,57 @@ function countActiveFilters() {
         filterState.employmentTypes.size +
         filterState.workModes.size +
         filterState.countries.size +
+        filterState.regions.size +
         filterState.tags.size +
         (filterState.salaryMin > 0 ? 1 : 0)
     );
+}
+
+function regionKey(card) {
+    return card.dataset.state || card.dataset.city || "";
+}
+
+function updateRegionDrilldown() {
+    const section = document.getElementById("filter-region-section");
+    const container = document.getElementById("filter-region-chips");
+
+    if (filterState.countries.size !== 1) {
+        section.style.display = "none";
+        container.innerHTML = "";
+        return;
+    }
+
+    const country = [...filterState.countries][0];
+    const cards = [...document.querySelectorAll(".job-card")].filter((c) => c.dataset.country === country);
+    const regions = new Set(cards.map(regionKey).filter(Boolean));
+
+    if (regions.size === 0) {
+        section.style.display = "none";
+        container.innerHTML = "";
+        return;
+    }
+
+    section.style.display = "flex";
+    container.innerHTML = "";
+    [...regions].sort().forEach((region) => {
+        const pill = document.createElement("button");
+        pill.type = "button";
+        pill.className = "filter-pill";
+        if (filterState.regions.has(region)) pill.classList.add("active");
+        pill.innerHTML = `${CHECK_SVG}<span>${region}</span>`;
+        pill.addEventListener("click", () => {
+            if (filterState.regions.has(region)) {
+                filterState.regions.delete(region);
+                pill.classList.remove("active");
+            } else {
+                filterState.regions.add(region);
+                pill.classList.add("active");
+            }
+            updateFiltersToggleBadge();
+            applyFilters();
+        });
+        container.appendChild(pill);
+    });
 }
 
 function buildSalarySection() {
@@ -159,8 +295,14 @@ function buildSalarySection() {
     slider.max = roundedMax;
     slider.step = Math.max(1, Math.round(roundedMax / 100));
 
+    function updateSliderFill() {
+        const percent = slider.max > 0 ? (parseFloat(slider.value) / parseFloat(slider.max)) * 100 : 0;
+        slider.style.setProperty("--slider-fill", `${percent}%`);
+    }
+
     function renderDisplay() {
         display.textContent = filterState.salaryMin > 0 ? filterState.salaryMin.toLocaleString() : "any";
+        updateSliderFill();
     }
     renderDisplay();
 
@@ -171,10 +313,9 @@ function buildSalarySection() {
         applyFilters();
     });
 
-    const includePill = document.getElementById("include-estimated-pill");
-    includePill.addEventListener("click", () => {
-        filterState.includeEstimated = !filterState.includeEstimated;
-        includePill.classList.toggle("active", filterState.includeEstimated);
+    const includeEstimatedCheckbox = document.getElementById("include-estimated-checkbox");
+    includeEstimatedCheckbox.addEventListener("change", () => {
+        filterState.includeEstimated = includeEstimatedCheckbox.checked;
         applyFilters();
     });
 
@@ -190,14 +331,10 @@ function updateFiltersToggleBadge() {
 
 function buildFilterGroups() {
     const cards = [...document.querySelectorAll(".job-card")];
-    const employmentTypes = new Set();
-    const workModes = new Set();
     const countries = new Set();
     const tags = new Set();
 
     cards.forEach((card) => {
-        if (card.dataset.employmentType) employmentTypes.add(card.dataset.employmentType);
-        if (card.dataset.workMode) workModes.add(card.dataset.workMode);
         if (card.dataset.country) countries.add(card.dataset.country);
         (card.dataset.tags || "").split(",").filter(Boolean).forEach((tag) => tags.add(tag));
     });
@@ -208,7 +345,7 @@ function buildFilterGroups() {
 
     const hasSalary = buildSalarySection();
 
-    if (employmentTypes.size === 0 && workModes.size === 0 && countries.size === 0 && tags.size === 0 && !hasSalary) {
+    if (cards.length === 0) {
         toggleWrap.style.display = "none";
         return;
     }
@@ -221,10 +358,10 @@ function buildFilterGroups() {
         tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.41 20.59a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><circle cx="6.5" cy="6.5" r="1" fill="currentColor" stroke="none"></circle></svg>`,
     };
 
-    function renderSection(icon, label, values, stateSet, translate) {
+    function renderSection(icon, label, values, stateSet, translate, onToggle) {
         if (values.size === 0) return;
         const section = document.createElement("div");
-        section.className = "filter-section";
+        section.className = icon === "tag" ? "filter-section filter-section-tags" : "filter-section";
         section.innerHTML = `<span class="filter-section-label">${sectionIcons[icon]}${label}</span>`;
 
         const row = document.createElement("div");
@@ -246,6 +383,7 @@ function buildFilterGroups() {
                 updateFiltersToggleBadge();
                 applyFilters();
                 syncPanelHeight();
+                if (onToggle) onToggle();
             });
             row.appendChild(pill);
         });
@@ -254,10 +392,16 @@ function buildFilterGroups() {
         container.appendChild(section);
     }
 
-    renderSection("employment", I18N.filter_employment_label, employmentTypes, filterState.employmentTypes, "employment_");
-    renderSection("workMode", I18N.filter_work_mode_label, workModes, filterState.workModes, null);
-    renderSection("location", I18N.filter_location_label, countries, filterState.countries, null);
+    renderSection("employment", I18N.filter_employment_label, new Set(EMPLOYMENT_TYPES), filterState.employmentTypes, "employment_");
+    renderSection("workMode", I18N.filter_work_mode_label, new Set(WORK_MODES), filterState.workModes, "work_mode_");
+    renderSection("location", I18N.filter_location_label, countries, filterState.countries, null, () => {
+        filterState.regions.clear();
+        updateRegionDrilldown();
+        applyFilters();
+    });
     renderSection("tag", I18N.filter_tags_label, tags, filterState.tags, null);
+
+    updateRegionDrilldown();
 
     const footer = document.createElement("div");
     footer.className = "filters-panel-footer";
@@ -269,14 +413,19 @@ function buildFilterGroups() {
         filterState.employmentTypes.clear();
         filterState.workModes.clear();
         filterState.countries.clear();
+        filterState.regions.clear();
         filterState.tags.clear();
         filterState.salaryMin = 0;
         filterState.includeEstimated = false;
         container.querySelectorAll(".filter-pill.active").forEach((el) => el.classList.remove("active"));
+        updateRegionDrilldown();
         const slider = document.getElementById("salary-min-slider");
-        if (slider) slider.value = 0;
-        const includePill = document.getElementById("include-estimated-pill");
-        if (includePill) includePill.classList.remove("active");
+        if (slider) {
+            slider.value = 0;
+            slider.style.setProperty("--slider-fill", "0%");
+        }
+        const includeCheckbox = document.getElementById("include-estimated-checkbox");
+        if (includeCheckbox) includeCheckbox.checked = false;
         const display = document.getElementById("salary-min-display");
         if (display) display.textContent = "any";
         updateFiltersToggleBadge();
@@ -307,6 +456,9 @@ function applyFilters() {
         const matchesTags =
             filterState.tags.size === 0 || cardTags.some((tag) => filterState.tags.has(tag));
 
+        const matchesRegion =
+            filterState.regions.size === 0 || filterState.regions.has(regionKey(card));
+
         let matchesSalary = true;
         if (filterState.salaryMin > 0) {
             const cardMax = parseFloat(card.dataset.salaryMax);
@@ -316,7 +468,7 @@ function applyFilters() {
             }
         }
 
-        const visible = matchesSearch && matchesEmployment && matchesWorkMode && matchesCountry && matchesTags && matchesSalary;
+        const visible = matchesSearch && matchesEmployment && matchesWorkMode && matchesCountry && matchesRegion && matchesTags && matchesSalary;
         card.style.display = visible ? "" : "none";
         if (visible) visibleCount += 1;
     });
@@ -389,28 +541,46 @@ function renderCardInPlace(cardEl, card) {
 
     let badgesHtml = "";
     if (card.location) badgesHtml += `<span class="badge">${card.location}</span>`;
-    if (card.work_mode) badgesHtml += `<span class="badge badge-work-mode">${card.work_mode}</span>`;
+    if (card.work_mode) {
+        const workModeLabel = I18N["work_mode_" + card.work_mode] || card.work_mode;
+        badgesHtml += `<span class="badge badge-work-mode">${workModeLabel}</span>`;
+    }
     if (card.employment_type) {
         const label = I18N["employment_" + card.employment_type] || card.employment_type;
         badgesHtml += `<span class="badge">${label}</span>`;
     }
-    (card.tags || []).forEach((tag) => {
-        badgesHtml += `<span class="badge badge-tag">${tag}</span>`;
-    });
-    if (card.is_estimate) badgesHtml += `<span class="badge badge-estimate">Est.</span>`;
     cardEl.querySelector(".job-card-badges").innerHTML = badgesHtml;
     cardEl.dataset.employmentType = card.employment_type || "";
     cardEl.dataset.workMode = card.work_mode || "";
     cardEl.dataset.tags = (card.tags || []).join(",");
+    cardEl.dataset.country = card.country || "";
+    cardEl.dataset.state = card.state || "";
+    cardEl.dataset.city = card.city || "";
+
+    let tagsEl = cardEl.querySelector(".job-card-tags");
+    if (card.tags && card.tags.length > 0) {
+        const tagsHtml = card.tags.map((tag) => `<span class="badge badge-tag">${tag}</span>`).join("");
+        if (!tagsEl) {
+            tagsEl = document.createElement("div");
+            tagsEl.className = "job-card-tags";
+            cardEl.querySelector(".job-card-badges").insertAdjacentElement("afterend", tagsEl);
+        }
+        tagsEl.innerHTML = tagsHtml;
+    } else if (tagsEl) {
+        tagsEl.remove();
+    }
 
     let salaryEl = cardEl.querySelector(".job-card-salary");
     if (card.salary_text) {
         if (!salaryEl) {
             salaryEl = document.createElement("p");
             salaryEl.className = "job-card-salary";
-            cardEl.querySelector(".job-card-badges").insertAdjacentElement("afterend", salaryEl);
+            const anchor = cardEl.querySelector(".job-card-tags") || cardEl.querySelector(".job-card-badges");
+            anchor.insertAdjacentElement("afterend", salaryEl);
         }
-        salaryEl.textContent = card.salary_text;
+        salaryEl.innerHTML = card.is_estimate
+            ? `${card.salary_text} <span class="salary-estimate-tag">${I18N.salary_estimated_label}</span>`
+            : card.salary_text;
     } else if (salaryEl) {
         salaryEl.remove();
     }

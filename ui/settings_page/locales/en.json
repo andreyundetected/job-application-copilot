@@ -22,7 +22,7 @@
     "additional_links_placeholder": "https://...",
     "matching_title": "Blockers",
     "blockers_hint": "Hard dealbreakers. If a posting matches any of these, it's scored 0 automatically — no exceptions. Write them in the first person, e.g. \"I only want fully remote positions\".",
-    "new_blocker_placeholder": "e.g. я ищу только полностью удаленную работу",
+    "new_blocker_placeholder": "e.g. I am looking only for fully remote work",
     "factors_title": "Scoring factors",
     "factors_hint": "Softer signals that push the score up or down, but never to zero. Weight 1 = minor nudge, 3 = major.",
     "new_factor_placeholder": "e.g. salary above $120k",

@@ -38,6 +38,6 @@ SERPER_BASE_URL = os.getenv("SERPER_BASE_URL", "https://google.serper.dev/search
 
 # Order to try configured search providers in; a provider is skipped entirely if its
 # API key is empty. On failure, the next provider in the list is tried automatically.
-SEARCH_PROVIDER_ORDER = os.getenv("SEARCH_PROVIDER_ORDER", "serpent,serper")
+SEARCH_PROVIDER_ORDER = os.getenv("SEARCH_PROVIDER_ORDER", "serper,serpent")
 
 AUTOMATION_MAX_WORKERS = int(os.getenv("AUTOMATION_MAX_WORKERS", "10"))

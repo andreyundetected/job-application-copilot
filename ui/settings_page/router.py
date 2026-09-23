@@ -93,6 +93,12 @@ def update_profile(
     return JSONResponse({"status": "ok"})
 
 
+@router.post("/profile/writing-preferences")
+def update_writing_preferences(writing_preferences: str = Form(""), session: Session = Depends(get_session)):
+    crud.update_writing_preferences(session, writing_preferences)
+    return JSONResponse({"status": "ok"})
+
+
 @router.post("/profile/links")
 def add_profile_link(link: str = Form(...), session: Session = Depends(get_session)):
     text = link.strip()

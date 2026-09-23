@@ -210,6 +210,41 @@ html, body { background-color: var(--bg); }
 
 .raw-text-block { font-size: 12px; color: var(--text-secondary); white-space: pre-wrap; max-height: 260px; overflow-y: auto; line-height: 1.5; }
 
+.extra-info-toggle {
+    display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+    color: var(--accent); font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 4px 0; margin-bottom: 8px;
+}
+.extra-info-toggle svg { width: 13px; height: 13px; transition: transform 0.15s ease; }
+.extra-info-toggle.expanded svg { transform: rotate(45deg); }
+.extra-info-block { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+.extra-info-block.expanded { max-height: 220px; }
+.manual-add-row { display: flex; gap: 8px; margin-top: 10px; align-items: flex-start; }
+.manual-add-row input { margin-top: 0; }
+.manual-add-row .custom-select { flex-shrink: 0; }
+.manual-add-row .custom-select-trigger { padding: 9px 12px 9px 13px; }
+.manual-add-row .custom-select-menu { left: 0; right: auto; min-width: 160px; }
+
+.staged-question-list { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.staged-question-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+}
+.staged-question-text { flex: 1; font-size: 12.5px; color: var(--text-primary); word-break: break-word; }
+.staged-question-meta { display: flex; gap: 6px; flex-shrink: 0; }
+.staged-question-remove {
+    background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+    font-size: 16px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+}
+.staged-question-remove:hover { color: var(--score-low); }
+
+.modal-footer-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
+.modal-footer-hint { font-size: 11.5px; color: var(--text-tertiary); }
+
 .attention-list { list-style: none; padding: 0; margin: 0; }
 .attention-list li { font-size: 12.5px; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text-secondary); }
 .attention-list li:hover { color: var(--text-primary); }
@@ -277,6 +312,17 @@ textarea.answer-body-editable:focus {
             <h3 style="margin:0 0 8px;">{{ t.raw_text_title }}</h3>
             <div class="raw-text-block">{{ job.raw_text }}</div>
         </div>
+
+        <div class="card">
+            <button type="button" class="extra-info-toggle" id="writing-prefs-toggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                {{ t.writing_prefs_toggle }}
+            </button>
+            <div class="extra-info-block" id="writing-prefs-block">
+                <textarea id="writing_preferences" placeholder="{{ t.writing_prefs_placeholder }}" style="min-height:90px;">{{ writing_preferences or '' }}</textarea>
+                <span class="autosave-status" id="writing-prefs-save-status">✓ {{ t.saved_status }}</span>
+            </div>
+        </div>
     </div>
 
     <div class="questions-column">
@@ -317,12 +363,46 @@ textarea.answer-body-editable:focus {
 <div class="modal-overlay" id="attach-modal-overlay">
     <div class="modal-box">
         <div class="modal-header">
-            <h3>{{ t.paste_label }}</h3>
+            <h3>{{ t.add_questions_modal_title }}</h3>
             <button type="button" class="modal-close" id="btn-attach-close">&times;</button>
         </div>
-        <textarea id="raw-questions" placeholder="{{ t.paste_placeholder }}"></textarea>
-        <button type="button" class="btn" id="btn-process">{{ t.process_button }}</button>
-        <p class="salary-line" id="process-status"></p>
+
+        <input type="text" id="manual-question-text" placeholder="{{ t.manual_question_placeholder }}">
+        <div class="manual-add-row">
+            <div class="custom-select" id="manual-question-category">
+                <button type="button" class="custom-select-trigger">
+                    <span data-select-label>{{ t.manual_category_auto }}</span>
+                    <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="custom-select-menu">
+                    <button type="button" class="custom-select-option selected" data-value="" data-label="{{ t.manual_category_auto }}">
+                        <span>{{ t.manual_category_auto }}</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button type="button" class="custom-select-option" data-value="cover_letter" data-label="{{ t.category_cover_letter }}">
+                        <span>{{ t.category_cover_letter }}</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button type="button" class="custom-select-option" data-value="summary" data-label="{{ t.category_summary }}">
+                        <span>{{ t.category_summary }}</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                    <button type="button" class="custom-select-option" data-value="general" data-label="{{ t.category_general }}">
+                        <span>{{ t.category_general }}</span>
+                        <svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+            <input type="text" id="manual-question-char-limit" inputmode="numeric" placeholder="{{ t.manual_char_limit_placeholder }}" style="max-width:140px;">
+            <button type="button" class="btn" id="btn-stage-manual-question" style="margin-top:0;">{{ t.add_question_button }}</button>
+        </div>
+
+        <div class="staged-question-list" id="staged-question-list"></div>
+
+        <div class="modal-footer-row">
+            <span class="modal-footer-hint" id="staged-question-count"></span>
+            <button type="button" class="btn gradient-btn" id="btn-generate-staged-questions" disabled style="margin-top:0;">{{ t.generate_answers_button }}</button>
+        </div>
     </div>
 </div>
 
@@ -687,72 +767,161 @@ textarea.answer-body-editable:focus {
         chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
     });
 
-    document.getElementById("btn-process").addEventListener("click", async () => {
-        const rawText = document.getElementById("raw-questions").value.trim();
-        if (!rawText) return;
+    let stagedCategory = "";
+    let stagedQuestions = [];
 
-        document.getElementById("process-status").textContent = I18N.processing;
-        const response = await fetch(`/questions/application/${APPLICATION_ID}/submit`, {
-            method: "POST",
-            body: new URLSearchParams({ raw_text: rawText }),
-        });
-        const data = await response.json();
-
-        pollTaskStatus([data.task_id], (tasks) => {
-            const task = tasks[0];
-            if (task.status === "done") {
-                document.getElementById("process-status").textContent = "";
-                document.getElementById("raw-questions").value = "";
-                document.getElementById("attach-modal-overlay").classList.remove("open");
-
-                const stubQuestions = task.result.questions;
-                stubQuestions.forEach((q) => state.questions.push(q));
-                renderQuestionsList();
-                renderSelectedBar();
-                updateChatInputState();
-
-                const genTaskIds = [...new Set(stubQuestions.map((q) => q.pending_task_id).filter(Boolean))];
-                if (genTaskIds.length > 0) {
-                    pollTaskStatus(genTaskIds, (genTasks) => {
-                        genTasks.forEach((genTask) => {
-                            if (genTask.status === "done") {
-                                genTask.result.questions.forEach((q) => updateQuestion(q));
-                                renderSelectedBar();
-                                updateChatInputState();
-                            } else if (genTask.status === "failed") {
-                                stubQuestions
-                                    .filter((q) => q.pending_task_id === genTask.id)
-                                    .forEach((q) =>
-                                        updateQuestion({
-                                            ...q,
-                                            pending_task_id: null,
-                                            needs_manual_input: true,
-                                            flag_reason: genTask.error,
-                                        })
-                                    );
-                                renderSelectedBar();
-                                updateChatInputState();
-                            }
-                        });
-                    });
-                }
-            } else if (task.status === "failed") {
-                document.getElementById("process-status").textContent = `${I18N.evaluation_failed || "Failed:"} ${task.error}`;
-            }
-        });
+    initCustomSelect(document.getElementById("manual-question-category"), (value) => {
+        stagedCategory = value;
     });
+
+    function categoryLabel(value) {
+        if (value === "cover_letter") return I18N.category_cover_letter;
+        if (value === "summary") return I18N.category_summary;
+        if (value === "general") return I18N.category_general;
+        return I18N.manual_category_auto;
+    }
+
+    function renderStagedList() {
+        const list = document.getElementById("staged-question-list");
+        list.innerHTML = stagedQuestions
+            .map(
+                (item, index) => `
+            <div class="staged-question-row" data-index="${index}">
+                <span class="staged-question-text">${item.text.replace(/</g, "&lt;")}</span>
+                <span class="staged-question-meta">
+                    <span class="badge badge-tag">${categoryLabel(item.category)}</span>
+                    ${item.charLimit ? `<span class="badge">${item.charLimit}</span>` : ""}
+                </span>
+                <button type="button" class="staged-question-remove" data-index="${index}">&times;</button>
+            </div>
+        `
+            )
+            .join("");
+
+        const count = stagedQuestions.length;
+        document.getElementById("staged-question-count").textContent =
+            count > 0 ? `${I18N.questions_added_prefix} ${count}` : "";
+        document.getElementById("btn-generate-staged-questions").disabled = count === 0;
+    }
+
+    document.getElementById("staged-question-list").addEventListener("click", (e) => {
+        if (!e.target.classList.contains("staged-question-remove")) return;
+        const index = parseInt(e.target.dataset.index, 10);
+        stagedQuestions.splice(index, 1);
+        renderStagedList();
+    });
+
+    function stageCurrentQuestion() {
+        const textInput = document.getElementById("manual-question-text");
+        const text = textInput.value.trim();
+        if (!text) return;
+
+        const charLimitInput = document.getElementById("manual-question-char-limit");
+        stagedQuestions.push({ text, category: stagedCategory, charLimit: charLimitInput.value.trim() });
+        renderStagedList();
+
+        textInput.value = "";
+        charLimitInput.value = "";
+        textInput.focus();
+    }
+
+    document.getElementById("btn-stage-manual-question").addEventListener("click", stageCurrentQuestion);
+
+    document.getElementById("manual-question-text").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            stageCurrentQuestion();
+        }
+    });
+
+    document.getElementById("btn-generate-staged-questions").addEventListener("click", async () => {
+        const generateBtn = document.getElementById("btn-generate-staged-questions");
+        generateBtn.disabled = true;
+
+        const toSubmit = [...stagedQuestions];
+        stagedQuestions = [];
+        renderStagedList();
+        closeAttachModal();
+
+        for (const item of toSubmit) {
+            const response = await fetch(`/questions/application/${APPLICATION_ID}/manual`, {
+                method: "POST",
+                body: new URLSearchParams({
+                    question_text: item.text,
+                    category: item.category,
+                    char_limit: item.charLimit,
+                }),
+            });
+            if (!response.ok) continue;
+            const data = await response.json();
+
+            state.questions.push(data.question);
+            renderQuestionsList();
+            renderSelectedBar();
+            updateChatInputState();
+
+            if (data.task_id) {
+                pollTaskStatus([data.task_id], (tasks) => {
+                    const task = tasks[0];
+                    if (task.status === "done") {
+                        task.result.questions.forEach((q) => updateQuestion(q));
+                        renderSelectedBar();
+                        updateChatInputState();
+                    } else if (task.status === "failed") {
+                        const q = state.questions.find((entry) => entry.id === data.question.id);
+                        if (q) updateQuestion({ ...q, pending_task_id: null, needs_manual_input: true, flag_reason: task.error });
+                        renderSelectedBar();
+                        updateChatInputState();
+                    }
+                });
+            }
+        }
+    });
+
+    const writingPrefsToggle = document.getElementById("writing-prefs-toggle");
+    const writingPrefsBlock = document.getElementById("writing-prefs-block");
+    writingPrefsToggle.addEventListener("click", () => {
+        writingPrefsToggle.classList.toggle("expanded");
+        writingPrefsBlock.classList.toggle("expanded");
+    });
+
+    (function () {
+        const status = document.getElementById("writing-prefs-save-status");
+        const textarea = document.getElementById("writing_preferences");
+        let timeout = null;
+
+        function save() {
+            const formData = new FormData();
+            formData.append("writing_preferences", textarea.value);
+            fetch("/settings/profile/writing-preferences", { method: "POST", body: formData }).then(() => flashSaved(status));
+        }
+
+        textarea.addEventListener("input", () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(save, 800);
+        });
+        textarea.addEventListener("blur", () => {
+            clearTimeout(timeout);
+            save();
+        });
+    })();
 
     const attachModal = document.getElementById("attach-modal-overlay");
     const openAttachBtn = document.getElementById("btn-open-attach");
     const closeAttachBtn = document.getElementById("btn-attach-close");
 
+    attachModal.classList.remove("open");
+
     function openAttachModal() {
         attachModal.classList.add("open");
-        document.getElementById("raw-questions").focus();
+        document.getElementById("manual-question-text").focus();
     }
 
     function closeAttachModal() {
         attachModal.classList.remove("open");
+        stagedQuestions = [];
+        renderStagedList();
+        stagedCategory = "";
     }
 
     openAttachBtn.addEventListener("click", openAttachModal);

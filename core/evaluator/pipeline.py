@@ -44,6 +44,20 @@ def _build_salary(parsed: dict) -> dict:
     }
 
 
+def _build_location(parsed: dict) -> dict:
+    country = _first_or_none(parsed, "location_country")
+    state = _first_or_none(parsed, "location_state")
+    city = _first_or_none(parsed, "location_city")
+
+    if country and country.strip().upper() == "N/A":
+        country = None
+
+    display_parts = [part for part in [country, state, city] if part]
+    display = ", ".join(display_parts) if display_parts else "N/A"
+
+    return {"country": country, "state": state, "city": city, "display": display}
+
+
 def _build_matched_factors(parsed: dict, scoring_factors: list[dict]) -> list[dict]:
     factors_by_id = {str(factor["id"]): factor for factor in scoring_factors}
     matched_raw = parsed.get("matched_factor", [])
@@ -105,13 +119,17 @@ def evaluate_job_posting(
 
     parsed = parse_html_like(raw_response)
     score = _parse_score(_first_or_none(parsed, "score"))
+    location = _build_location(parsed)
 
     return {
         "reasoning": _first_or_none(parsed, "reasoning"),
         "company": _first_or_none(parsed, "company"),
         "role": _first_or_none(parsed, "role"),
         "score": score,
-        "location": _first_or_none(parsed, "location"),
+        "location": location["display"],
+        "location_country": location["country"],
+        "location_state": location["state"],
+        "location_city": location["city"],
         "work_mode": _first_or_none(parsed, "work_mode"),
         "salary": _build_salary(parsed),
         "matched_factors": _build_matched_factors(parsed, scoring_factors),
@@ -132,11 +150,15 @@ def quick_extract_job_posting(provider, job_posting_text: str) -> dict:
     )
 
     parsed = parse_html_like(raw_response)
+    location = _build_location(parsed)
 
     return {
         "company": _first_or_none(parsed, "company"),
         "role": _first_or_none(parsed, "role"),
-        "location": _first_or_none(parsed, "location"),
+        "location": location["display"],
+        "location_country": location["country"],
+        "location_state": location["state"],
+        "location_city": location["city"],
         "work_mode": _first_or_none(parsed, "work_mode"),
         "employment_type": _first_or_none(parsed, "employment_type"),
         "tags": parsed.get("tag", []),

@@ -27,6 +27,12 @@ def _derive_country(location: str | None) -> str | None:
     return segment or None
 
 
+def _resolve_country(job, location: str | None) -> str | None:
+    if job.location_country:
+        return job.location_country
+    return _derive_country(location)
+
+
 def _convert_salary_for_display(salary: dict | None, preferred_currency: str, preferred_period: str) -> dict:
     if not salary or salary.get("min") is None:
         return {"text": None, "min_converted": None, "max_converted": None, "is_estimate": False}
@@ -80,7 +86,9 @@ def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
             "role": job.title or "Unknown role",
             "score": None,
             "location": job.location,
-            "country": _derive_country(job.location),
+            "country": _resolve_country(job, job.location),
+            "state": job.location_state,
+            "city": job.location_city,
             "work_mode": job.work_mode,
             "employment_type": job.employment_type,
             "tags": job.tags or [],
@@ -102,7 +110,9 @@ def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
         "role": job.title or "Unknown role",
         "score": latest_evaluation.fit_score,
         "location": location,
-        "country": _derive_country(location),
+        "country": _resolve_country(job, location),
+        "state": job.location_state,
+        "city": job.location_city,
         "work_mode": checked.get("work_mode") or job.work_mode,
         "employment_type": job.employment_type,
         "tags": job.tags or [],

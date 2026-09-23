@@ -1,6 +1,8 @@
 import pytest
 
 from core.discovery.query_builder import (
+    DEFAULT_TARGET_SITES,
+    build_catch_all_queries,
     build_query_string,
     build_site_filter,
     count_words,
@@ -105,3 +107,27 @@ def test_suggest_search_queries_skips_groups_with_no_valid_terms():
     groups = suggest_search_queries(provider, "context")
 
     assert groups == [["AI Engineer"]]
+
+
+@pytest.mark.discovery
+def test_build_catch_all_queries_one_per_site():
+    queries = build_catch_all_queries(["a.com", "b.com", "c.com"])
+
+    assert queries == ["site:a.com", "site:b.com", "site:c.com"]
+
+
+@pytest.mark.discovery
+def test_build_catch_all_queries_no_or_no_title_filter():
+    queries = build_catch_all_queries(["a.com", "b.com"])
+
+    assert "OR" not in " ".join(queries)
+    assert queries == ["site:a.com", "site:b.com"]
+
+
+@pytest.mark.discovery
+def test_build_catch_all_queries_uses_default_sites_when_none_given():
+    queries = build_catch_all_queries()
+
+    assert len(queries) == len(DEFAULT_TARGET_SITES)
+    for site in DEFAULT_TARGET_SITES:
+        assert f"site:{site}" in queries

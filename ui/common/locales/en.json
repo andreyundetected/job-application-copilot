@@ -9,5 +9,8 @@
     "lang_label": "Language",
     "btn_save": "Save",
     "btn_remove": "Remove",
-    "sponsor_label": "Support the project"
+    "sponsor_label": "Support the project",
+    "writing_prefs_title": "Writing preferences",
+    "writing_prefs_hint": "How you want cover letters, summaries, and question answers written for you - what to always include, what to avoid, tone preferences. Applies everywhere answers are generated.",
+    "writing_prefs_placeholder": "e.g. Never mention my visa status. Keep tone direct, not overly formal. Always mention I'm open to relocation."
 }

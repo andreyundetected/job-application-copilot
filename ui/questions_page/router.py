@@ -13,6 +13,7 @@ from core.db import crud
 from core.db.session import SessionLocal, get_session
 from core.providers.factory import get_llm_provider
 from core.questions.pipeline import (
+    classify_template_category,
     generate_cover_letter_answers,
     generate_general_answers_initial,
     generate_summary_answers,
@@ -104,6 +105,7 @@ def _gather_context(session: Session, application_id: int) -> dict:
         "resume_text": resume.raw_text if resume else "",
         "linkedin_text": linkedin.raw_text if linkedin else "",
         "extra_info": profile.extra_info if profile else None,
+        "writing_preferences": profile.writing_preferences if profile else None,
         "links": links,
     }
 
@@ -199,6 +201,7 @@ def questions_page(
     questions = crud.list_form_questions_for_application(session, application_id)
     chat_messages = crud.list_chat_messages(session, application_id)
     changes = crud.list_changes_for_application(session, application_id)
+    profile = crud.get_candidate_profile(session)
 
     return templates.TemplateResponse(
         "questions.html",
@@ -209,6 +212,7 @@ def questions_page(
             "questions": [_serialize_question(q) for q in questions],
             "chat_messages": [_serialize_chat_message(m) for m in chat_messages],
             "changes": [_serialize_change(c) for c in changes],
+            "writing_preferences": profile.writing_preferences if profile else None,
             **_job_side_info(session, job),
             "lang": lang,
             "t": load_page_strings("ui/questions_page", lang),
@@ -321,6 +325,7 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
                 resume_text=context["resume_text"],
                 linkedin_text=context["linkedin_text"],
                 extra_info=context["extra_info"],
+                writing_preferences=context["writing_preferences"],
                 links=context["links"],
             )
         elif category == "summary":
@@ -331,6 +336,7 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
                 resume_text=context["resume_text"],
                 linkedin_text=context["linkedin_text"],
                 extra_info=context["extra_info"],
+                writing_preferences=context["writing_preferences"],
                 links=context["links"],
             )
         else:
@@ -341,6 +347,7 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
                 resume_text=context["resume_text"],
                 linkedin_text=context["linkedin_text"],
                 extra_info=context["extra_info"],
+                writing_preferences=context["writing_preferences"],
                 links=context["links"],
             )
 
@@ -376,7 +383,7 @@ def _run_generate_category(application_id: int, category: str, question_ids: lis
 def add_manual_question(
     application_id: int,
     question_text: str = Form(...),
-    category: str = Form("general"),
+    category: str = Form(""),
     char_limit: str = Form(""),
     session: Session = Depends(get_session),
 ):
@@ -384,8 +391,14 @@ def add_manual_question(
     if application is None:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    if category not in ("cover_letter", "summary", "general"):
-        category = "general"
+    text = question_text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Question text cannot be empty")
+
+    resolved_category = category.strip()
+    if resolved_category not in ("cover_letter", "summary", "general"):
+        provider = get_llm_provider()
+        resolved_category = classify_template_category(provider, text)
 
     parsed_char_limit = int(char_limit) if char_limit.strip().isdigit() else None
     existing_count = len(crud.list_form_questions_for_application(session, application_id))
@@ -393,14 +406,29 @@ def add_manual_question(
     question = crud.create_form_question(
         session,
         application_id=application_id,
-        question_text=question_text,
+        question_text=text,
         answer_type="document",
-        category=category,
+        category=resolved_category,
         char_limit=parsed_char_limit,
         order=existing_count,
     )
 
-    return JSONResponse({"question": _serialize_question(question)})
+    app_settings = crud.get_app_settings(session)
+    auto_answer_enabled = app_settings.auto_answer_questions_enabled if app_settings else True
+
+    task_id = None
+    if auto_answer_enabled:
+        task_id = run_tracked_task(
+            f"questions_generate_{resolved_category}",
+            _run_generate_category,
+            application_id,
+            resolved_category,
+            [question.id],
+        )
+        crud.set_question_pending_task(session, question.id, task_id)
+        question = crud.get_form_question(session, question.id)
+
+    return JSONResponse({"question": _serialize_question(question), "task_id": task_id})
 
 
 @router.post("/{question_id}/answer")

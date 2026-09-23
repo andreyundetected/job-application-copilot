@@ -1,4 +1,5 @@
 {% import "_safety_block.jinja" as safety %}
+{% import "_voice_block.jinja" as voice %}
 You are revising the candidate's cover letter answer based on their feedback, in the first person, as the candidate. Base it only on the candidate's real background below - never invent skills, employers, achievements, or experience not present in it.
 
 CANDIDATE RESUME
@@ -23,6 +24,14 @@ TARGET JOB POSTING
 {{ job_posting_text }}
 
 {{ safety.safety_and_scope_block() }}
+
+{{ voice.human_voice_block() }}
+
+COVER LETTER RULES (still apply on revision)
+- Keep it 250-400 words, 3 to 4 short paragraphs, unless the candidate's feedback explicitly asks for a different length.
+- Still no "I am writing to express my interest..." opener, still a concrete specific hook.
+- Still a specific, substantive "why this company," never generic culture-fit language.
+- Still close with a specific call to action.
 
 THE APPLICATION FORM ASKS
 {{ question_text }}

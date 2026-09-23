@@ -296,13 +296,13 @@ def test_multi_search_provider_falls_back_to_next_provider_on_error():
     class _FailingProvider:
         name = "failing"
 
-        def search(self, query, num=50, date=None):
+        def search(self, query, num=50, date=None, page=1):
             raise SerpentSearchError("first provider down")
 
     class _WorkingProvider:
         name = "working"
 
-        def search(self, query, num=50, date=None):
+        def search(self, query, num=50, date=None, page=1):
             return {"results": [], "requested_num": num, "returned_count": 0, "raw_response": {}}
 
     multi = MultiSearchProvider([_FailingProvider(), _WorkingProvider()])
@@ -317,7 +317,7 @@ def test_multi_search_provider_raises_when_all_providers_fail():
     class _FailingProvider:
         name = "failing"
 
-        def search(self, query, num=50, date=None):
+        def search(self, query, num=50, date=None, page=1):
             raise SerpentSearchError("down")
 
     multi = MultiSearchProvider([_FailingProvider(), _FailingProvider()])

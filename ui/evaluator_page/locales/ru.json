@@ -66,5 +66,6 @@
     "change_type_summary": "Summary",
     "change_type_summary_tooltip": "Переписывает абзац summary, выводя на первый план опыт, релевантный этой вакансии.",
     "change_type_bullet": "Буллеты",
-    "change_type_bullet_tooltip": "Точечно правит буллеты/абзацы в experience, вплетая ключевые слова вакансии, ничего не выдумывая."
+    "change_type_bullet_tooltip": "Точечно правит буллеты/абзацы в experience, вплетая ключевые слова вакансии, ничего не выдумывая.",
+    "estimated_salary_label": "Зарплата предположена ИИ"
 }

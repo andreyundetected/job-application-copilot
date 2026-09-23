@@ -17,6 +17,8 @@ def upsert_automation_settings(
     default_time_range: str | None = None,
     saved_queries: list | None = None,
     serpent_cost_per_request: float | None = None,
+    catch_all_enabled: bool | None = None,
+    max_pages_per_query: int | None = None,
 ) -> AutomationSettings:
     settings_row = session.query(AutomationSettings).first()
 
@@ -30,6 +32,8 @@ def upsert_automation_settings(
             default_time_range=default_time_range if default_time_range is not None else "w1",
             saved_queries=saved_queries or [],
             serpent_cost_per_request=serpent_cost_per_request,
+            catch_all_enabled=catch_all_enabled if catch_all_enabled is not None else True,
+            max_pages_per_query=max_pages_per_query if max_pages_per_query is not None else 10,
         )
         session.add(settings_row)
     else:
@@ -49,6 +53,10 @@ def upsert_automation_settings(
             settings_row.saved_queries = saved_queries
         if serpent_cost_per_request is not None:
             settings_row.serpent_cost_per_request = serpent_cost_per_request
+        if catch_all_enabled is not None:
+            settings_row.catch_all_enabled = catch_all_enabled
+        if max_pages_per_query is not None:
+            settings_row.max_pages_per_query = max_pages_per_query
 
     session.commit()
     session.refresh(settings_row)

@@ -66,5 +66,6 @@
     "change_type_summary": "Summary",
     "change_type_summary_tooltip": "Rewrites the summary paragraph to foreground experience relevant to this posting.",
     "change_type_bullet": "Bullets",
-    "change_type_bullet_tooltip": "Targeted edits to experience bullets/paragraphs, weaving in the posting's keywords without inventing anything."
+    "change_type_bullet_tooltip": "Targeted edits to experience bullets/paragraphs, weaving in the posting's keywords without inventing anything.",
+    "estimated_salary_label": "Estimated salary"
 }

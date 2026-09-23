@@ -831,6 +831,15 @@
         </div>
     </div>
 
+    <button type="button" class="extra-info-toggle" id="ma-writing-prefs-toggle" style="margin-top:12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        {{ t.writing_prefs_title }}
+    </button>
+    <div class="extra-info-block" id="ma-writing-prefs-block">
+        <textarea id="ma_writing_preferences" placeholder="{{ t.writing_prefs_placeholder }}" style="min-height:80px;">{{ profile.writing_preferences or '' if profile else '' }}</textarea>
+        <span class="autosave-status" id="ma-writing-prefs-save-status">✓ {{ t.saved_status }}</span>
+    </div>
+
     <div class="manual-assist-threshold">
         <label for="ma_min_score">{{ t.manual_assist_min_score_label }}</label>
         <input type="text" inputmode="numeric" id="ma_min_score" value="{{ manual_assist_min_score }}">
@@ -1114,7 +1123,7 @@ function renderResult(result, jobId) {
             <div class="badge-row">
                 ${result.location ? `<span class="badge">${result.location}</span>` : ""}
                 ${result.work_mode ? `<span class="badge badge-work-mode">${result.work_mode}</span>` : ""}
-                ${result.salary.is_estimate ? '<span class="badge badge-estimate">Estimated salary</span>' : ""}
+                ${result.salary.is_estimate ? `<span class="badge badge-estimate">${I18N.estimated_salary_label}</span>` : ""}
             </div>
             <p class="salary-line">${result.salary.original_text || ""}</p>
             ${matchedFactorsHtml}
@@ -1483,5 +1492,31 @@ document.getElementById("ma-base-question-list").addEventListener("click", async
 });
 
 checkContextWarnings();
+
+document.getElementById("ma-writing-prefs-toggle").addEventListener("click", () => {
+    document.getElementById("ma-writing-prefs-toggle").classList.toggle("expanded");
+    document.getElementById("ma-writing-prefs-block").classList.toggle("expanded");
+});
+
+(function () {
+    const status = document.getElementById("ma-writing-prefs-save-status");
+    const textarea = document.getElementById("ma_writing_preferences");
+    let timeout = null;
+
+    function save() {
+        const formData = new FormData();
+        formData.append("writing_preferences", textarea.value);
+        fetch("/settings/profile/writing-preferences", { method: "POST", body: formData }).then(() => flashSaved(status));
+    }
+
+    textarea.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(save, 800);
+    });
+    textarea.addEventListener("blur", () => {
+        clearTimeout(timeout);
+        save();
+    });
+})();
 </script>
 {% endblock %}

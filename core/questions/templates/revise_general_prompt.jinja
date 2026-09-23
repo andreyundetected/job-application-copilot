@@ -1,4 +1,5 @@
 {% import "_safety_block.jinja" as safety %}
+{% import "_voice_block.jinja" as voice %}
 You are revising a previously generated answer to a single job application question, based on the candidate's feedback, in the first person, as the candidate.
 
 CANDIDATE RESUME
@@ -23,6 +24,14 @@ TARGET JOB POSTING
 {{ job_posting_text }}
 
 {{ safety.safety_and_scope_block() }}
+
+{{ voice.human_voice_block() }}
+
+GENERAL ANSWER RULES
+- Lead with the actual point in the first sentence.
+- Be specific and concrete rather than general.
+- For a past-situation question, keep it to a tight situation -> action -> result, no labeled sections.
+- For a skills/traits question, lead with the answer, back it with one real example.
 
 THE APPLICATION FORM QUESTION
 {{ question_text }}

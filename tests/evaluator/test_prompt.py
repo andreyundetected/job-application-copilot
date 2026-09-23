@@ -105,7 +105,9 @@ def test_prompt_contains_output_format_tags():
         "<company>",
         "<role>",
         "<score>",
-        "<location>",
+        "<location_country>",
+        "<location_state>",
+        "<location_city>",
         "<work_mode>",
         "<salary_min>",
         "<salary_max>",
@@ -132,7 +134,7 @@ def test_quick_extract_prompt_includes_job_posting():
 def test_quick_extract_prompt_contains_output_format_tags():
     prompt = render_quick_extract_prompt(job_posting_text="job")
 
-    tags = ["<company>", "<role>", "<location>", "<work_mode>", "<employment_type>", "<tag>"]
+    tags = ["<company>", "<role>", "<location_country>", "<location_state>", "<location_city>", "<work_mode>", "<employment_type>", "<tag>"]
     for tag in tags:
         assert tag in prompt
 

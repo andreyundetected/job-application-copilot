@@ -41,13 +41,46 @@ async function pollTaskStatus(taskIds, onUpdate, intervalMs = 2000) {
     poll();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".modal-overlay, .modal-overlay-centered").forEach((el) => {
-        if (!el.classList.contains("open")) {
-            el.style.display = "none";
-        }
+function initCustomSelect(root, onChange) {
+    const trigger = root.querySelector(".custom-select-trigger");
+    const label = root.querySelector("[data-select-label]");
+    const options = [...root.querySelectorAll(".custom-select-option")];
+
+    function closeAll() {
+        document.querySelectorAll(".custom-select.open").forEach((el) => el.classList.remove("open"));
+    }
+
+    trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const wasOpen = root.classList.contains("open");
+        closeAll();
+        if (!wasOpen) root.classList.add("open");
     });
-});
+
+    options.forEach((option) => {
+        option.addEventListener("click", () => {
+            options.forEach((o) => o.classList.remove("selected"));
+            option.classList.add("selected");
+            if (label) label.textContent = option.dataset.label || option.textContent.trim();
+            root.classList.remove("open");
+            onChange(option.dataset.value, option);
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!root.contains(event.target)) root.classList.remove("open");
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") root.classList.remove("open");
+    });
+}
+
+function flashSaved(el) {
+    el.classList.add("visible");
+    clearTimeout(el._hideTimeout);
+    el._hideTimeout = setTimeout(() => el.classList.remove("visible"), 1600);
+}
 
 const TOAST_CONTAINER_ID = "toast-container";
 const TOAST_MAX_VISIBLE = 3;

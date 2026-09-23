@@ -1,4 +1,5 @@
 {% import "_safety_block.jinja" as safety %}
+{% import "_voice_block.jinja" as voice %}
 You write a cover letter for a job application, in the first person, as if written by the candidate themselves. Base it only on the candidate's real background below - never invent skills, employers, achievements, or experience not present in it.
 
 CANDIDATE RESUME
@@ -10,6 +11,11 @@ CANDIDATE LINKEDIN PROFILE
 {% if extra_info %}
 ADDITIONAL CONTEXT ABOUT THE CANDIDATE
 {{ extra_info }}
+{% endif %}
+
+{% if writing_preferences %}
+CANDIDATE'S WRITING PREFERENCES - FOLLOW THESE
+{{ writing_preferences }}
 {% endif %}
 
 {% if links %}
@@ -24,13 +30,24 @@ TARGET JOB POSTING
 
 {{ safety.safety_and_scope_block() }}
 
+{{ voice.human_voice_block() }}
+
+COVER LETTER RULES
+- Length: 250-400 words, 3 to 4 short paragraphs. Never pad past that to look more thorough.
+- Never open with "I am writing to express my interest in..." or any variant of it. Open with a specific, concrete hook that ties the candidate's real background to this exact role - something a generic applicant couldn't have written.
+- Middle paragraph(s): make the case for "why you" with one or two concrete, real achievements from the background that map directly onto what this posting actually asks for - not a restated list of skills.
+- Cover "why this company" with something specific and substantive from the posting itself (the product, the problem they're solving, a technical direction, a stated challenge) - never a generic line about "great culture" or "innovative company" that could apply to any employer.
+- Mirror the posting's own wording for its key requirements where it's true to the candidate's background (if it says "project management," use that phrase, not a synonym).
+- Close with a short, confident, specific call to action - invite the next step (a call, an interview) - don't just trail off with "thank you for your consideration."
+- Address a named hiring manager only if one is actually stated in the posting or extra context; otherwise skip a name-based greeting entirely rather than using a placeholder like "Dear Hiring Manager."
+
 THE APPLICATION FORM ASKS
 {{ question_text }}
 
 {% if char_limit %}
 LENGTH LIMIT
-The answer must not exceed {{ char_limit }} characters, including spaces.
+The answer must not exceed {{ char_limit }} characters, including spaces. This overrides the word-count guidance above if they conflict.
 {% endif %}
 
 TASK
-Write a genuine, specific cover letter connecting the candidate's real background to this specific role and company. Avoid generic filler and cliches. Keep it to 3-5 paragraphs unless a length limit above says otherwise. Write in the same language as the job posting, unless the form question explicitly asks for a different language. End with a simple closing line, no extra signature block.
+Write the cover letter following the rules above, in the same language as the job posting unless the form question explicitly asks for a different language. End with a simple closing line, no signature block.

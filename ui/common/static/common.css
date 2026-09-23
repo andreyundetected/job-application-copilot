@@ -207,48 +207,99 @@ body {
     50% { transform: scale(1.22); }
 }
 
-.lang-switcher {
-    position: relative;
-    display: flex;
+/* ---- custom dropdown (replaces native <select> - its popup list can't be
+   themed by CSS in any browser, so anywhere it needs to look right in dark
+   mode gets this instead) ---- */
+.custom-select { position: relative; display: inline-flex; }
+
+.custom-select-trigger {
+    display: inline-flex;
     align-items: center;
-}
-
-.lang-switcher::after {
-    content: "";
-    position: absolute;
-    right: 11px;
-    top: 50%;
-    width: 6px;
-    height: 6px;
-    border-right: 1.5px solid var(--text-tertiary);
-    border-bottom: 1.5px solid var(--text-tertiary);
-    transform: translateY(-70%) rotate(45deg);
-    pointer-events: none;
-}
-
-.lang-switcher select {
-    appearance: none;
-    -webkit-appearance: none;
+    gap: 8px;
     background-color: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 999px;
     color: var(--text-primary);
     font-size: 12px;
     font-weight: 600;
-    padding: 7px 26px 7px 14px;
+    padding: 7px 12px 7px 14px;
     cursor: pointer;
+    font-family: inherit;
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
+.custom-select-trigger:hover { border-color: var(--border-hover); background-color: var(--bg-elevated); }
+.custom-select.open .custom-select-trigger { border-color: var(--accent); }
 
-.lang-switcher select:hover {
-    border-color: var(--border-hover);
+.custom-select-chevron {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    transition: transform 0.18s ease;
+}
+.custom-select.open .custom-select-chevron { transform: rotate(180deg); color: var(--accent); }
+
+.custom-select-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 100%;
     background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 80;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+}
+.custom-select-menu::-webkit-scrollbar { width: 6px; }
+.custom-select-menu::-webkit-scrollbar-track { background: transparent; }
+.custom-select-menu::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
+
+.custom-select.open .custom-select-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
-.lang-switcher select:focus {
-    outline: none;
-    border-color: var(--accent);
+.custom-select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background-color 0.12s ease, color 0.12s ease;
 }
+.custom-select-option:hover { background-color: var(--bg-input); color: var(--text-primary); }
+.custom-select-option.selected { color: var(--accent); background-color: var(--accent-soft); font-weight: 600; }
+
+.custom-select-option-check {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    opacity: 0;
+}
+.custom-select-option.selected .custom-select-option-check { opacity: 1; }
 
 @media (max-width: 720px) {
     .topnav { padding: 0 14px; gap: 10px; }
@@ -571,6 +622,7 @@ input::placeholder {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 14px;
+    margin-top: 22px;
 }
 
 .job-card {
@@ -626,10 +678,31 @@ input::placeholder {
     margin-top: 12px;
 }
 
+.job-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 7px;
+}
+
+.job-card-tags .badge-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    font-weight: 400;
+    opacity: 0.85;
+}
+
 .job-card-salary {
     font-size: 12px;
     color: var(--text-secondary);
     margin: 8px 0 0;
+}
+
+.salary-estimate-tag {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--score-mid);
+    font-style: italic;
 }
 
 .job-card-bottom {
@@ -753,6 +826,46 @@ input::placeholder {
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
+}
+
+/* Tags are a different kind of filter from country/type/work-mode - an
+   open-ended, often-long list rather than a fixed small set - so it gets a
+   visually heavier separator to read as its own track, and smaller pills
+   since there can be many of them. */
+.filter-section-tags {
+    margin-top: 4px;
+    padding-top: 18px;
+    position: relative;
+}
+
+.filter-section-tags::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, transparent 40%);
+    opacity: 0.5;
+}
+
+.filter-section-tags .filter-section-label {
+    color: var(--text-secondary);
+}
+
+.filter-section-tags .filter-chip-row {
+    gap: 5px;
+}
+
+.filter-section-tags .filter-pill {
+    font-size: 11px;
+    padding: 4px 9px;
+    gap: 4px;
+}
+
+.filter-section-tags .filter-pill-check {
+    width: 9px;
+    height: 9px;
 }
 
 .filter-section-label {

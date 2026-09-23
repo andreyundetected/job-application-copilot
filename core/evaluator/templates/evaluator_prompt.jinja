@@ -17,10 +17,18 @@ ADDITIONAL CONTEXT ABOUT THE CANDIDATE
 {% endif %}
 
 HARD BLOCKERS
-These are non-negotiable. If the job posting clearly triggers any of these, the score must be 0 regardless of anything else about the role.
+These are non-negotiable. Each one describes something the candidate does not want to encounter in the process for THIS SPECIFIC ROLE. If the posting's own text, read literally and in full, means this candidate would actually run into that thing, the score must be 0 regardless of anything else about the role.
 {% for blocker in blockers %}
 {{ loop.index }}. {{ blocker }}
 {% endfor %}
+
+HOW TO APPLY A BLOCKER - READ THE FULL TEXT, DON'T PATTERN-MATCH ON A KEYWORD
+A blocker is a trigger condition, not a keyword search. Before marking a blocker as triggered, check whether the posting's own words - anywhere in the full text, not just the header/requirements bullet where the keyword first appears - actually mean that condition applies to this candidate. Two categories of reasoning matter here:
+
+1. Alternative/conditional phrasing. If the posting states the requirement as one option among several ("degree OR equivalent experience", "Bachelor's required unless you have 5+ years in a related field"), and the candidate's resume shows they satisfy the other branch, the blocker is NOT triggered - the literal text itself already carves out their case. This is not "finding a loophole": you are reading the sentence the posting actually wrote, not inventing a softer version of a hard requirement.
+2. Contradicting or refining details elsewhere in the text. A posting's header/summary line is often a simplification. If a later paragraph gives a more specific or different picture of the same attribute (e.g. the top says "Hybrid" but the body says "we are also open to fully remote candidates"; the title says "Manager" but the description clarifies it's an individual-contributor role with no direct reports), the later, more specific statement is what the posting actually means - use it, not the header alone.
+
+Neither of these is permission to invent leniency the posting doesn't state. If the text states a requirement plainly, with no alternative, no exception, and nothing elsewhere that qualifies it (e.g. simply "A university degree is required" with no "or experience" anywhere in the posting), that is a triggered blocker - full stop. Do not soften it, do not assume an unstated exception, do not give the candidate credit for a workaround the posting never offered. The rule cuts both ways: follow exactly what the text says, whether that reading helps or hurts the candidate - never what you'd guess a reasonable employer might informally accept.
 
 {% if scoring_factors %}
 SCORING FACTORS
@@ -39,6 +47,9 @@ Use this scale strictly and consistently. Never drift more than 0.5-1 point betw
 - 7-8: strong fit - core stack, seniority, and role scope match well, with minor gaps.
 - 9-10: excellent fit - this is close to exactly the candidate's profile and experience level.
 
+LOCATION FORMAT - READ CAREFULLY
+Answer with up to three separate tags below, always in English, using each place's one standard full English name - never an abbreviation, local-language spelling, or alternate name. Examples of the ONLY acceptable forms: country "United States" (never "US", "USA", "America"), "United Kingdom" (never "UK", "England", "Britain"), "Russia" (never "Russian Federation", "РФ", "Россия"), "United Arab Emirates" (never "UAE"); state/region "California" (never "CA"); city "New York City" (never "NYC", "NY"). If the posting names a place in a non-English language (e.g. "Москва", "München"), translate it to its standard English form ("Moscow", "Munich"). This exact-name consistency matters more than anything else here - it is what lets postings from many different companies get grouped by location later, and a wrong or inconsistent form silently breaks that grouping.
+
 TASK
 Read the job posting below and evaluate it against the candidate's background and the hard blockers.
 
@@ -52,8 +63,10 @@ Respond using only the following tags, in this exact order, with no extra text o
 <company>Company name, or "N/A" if not stated</company>
 <role>Job title as stated in the posting</role>
 <score>A single integer from 0 to 10, following the scoring scale above</score>
-<location>City, country, or region as stated in the posting. If not stated, write "N/A"</location>
-<work_mode>Exactly one of: remote, hybrid, onsite, unclear</work_mode>
+<location_country>The country as stated or clearly implied in the posting, in its standard English name (see LOCATION FORMAT above). Write "N/A" only if genuinely unknowable from the posting.</location_country>
+<location_state>The state/province/region, if the posting names one. Omit this tag entirely if none is given - never guess one.</location_state>
+<location_city>The city, if the posting names one. Omit this tag entirely if none is given - never guess one.</location_city>
+<work_mode>Exactly one of: remote, hybrid, onsite, unclear. Read the full posting, not just the header - a header can say "Hybrid" while the body clarifies "we are also open to fully remote candidates"; when a later, more specific statement differs from a header/summary line, the later statement is what the posting actually means and should win.</work_mode>
 <salary_min>The minimum of the salary range, as a bare integer with ONLY digits - no currency symbols, no separators, no words like "k", "approx", "per year". Example: "100000", never "100k" or "$100,000". If the posting gives a single figure rather than a range, repeat that exact figure here as the minimum too. If salary is not stated in the posting at all, give your best estimated minimum for this role/seniority/company size/market, still as a bare integer</salary_min>
 <salary_max>The maximum of the salary range, same bare-integer rules as salary_min. If the posting gives a single figure, repeat that same figure here as the maximum</salary_max>
 <salary_currency>The ISO 4217 currency code and nothing else - exactly one of: USD, EUR, GBP, CHF, PLN, CZK, UAH, TRY, ILS, AED, INR, CNY, JPY, CAD, AUD, SGD, SEK, NOK, DKK, MXN, BRL, RSD, GEL, KZT. Pick the code matching the currency actually used or implied by the posting (stated symbol, or the country/company location if no symbol is given). If genuinely unclear, write "USD"</salary_currency>

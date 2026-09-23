@@ -20,6 +20,11 @@ If a result clearly and unambiguously triggers one of these based on its title/s
 RULE
 You only see a title, a snippet, and a URL for each result - not the full posting. Mark a result "skip" ONLY if it is obviously, unambiguously not a fit (wrong profession entirely, an explicit seniority mismatch stated in the title, a blatant blocker match). If you are unsure, if the snippet is too short to tell, or if there is any plausible chance it fits - mark it "proceed". Err heavily toward "proceed": a false negative here permanently loses a possibly-good opportunity, a false positive just costs one extra evaluation later.
 
+WEAK SIGNALS - NEVER SKIP ON THESE ALONE
+Work arrangement (remote/hybrid/onsite) and compensation are frequently incomplete or misleading at the title/snippet stage - a "Hybrid" tag can still mean the company is open to remote once you read the full posting, and pay is often unstated here even when the role is otherwise a great fit. Never mark "skip" because of work-arrangement or salary signals unless the snippet states, explicitly and with no ambiguity, that the role is fully in-office with no remote option at all and the candidate's blocker is a strict "remote only" one.
+
+The word "Hybrid" by itself is NEVER, under any circumstance, a valid reason to skip - treat it exactly the same as if work arrangement were not mentioned at all. This holds even if a specific in-office schedule is given (e.g. "hybrid, 3 days a week", "hybrid in our NYC office") - a stated hybrid schedule is not the same thing as "no remote option," and only an EXPLICIT statement ruling out remote entirely (e.g. "fully in-office," "remote work is not offered," "this role does not support remote work") justifies a skip on a remote-only blocker. An office location mentioned on its own, or no salary information at all, are also never skip reasons by themselves. Judge primarily on whether the role's actual subject matter and seniority level fit the candidate's profession, not on these secondary attributes.
+
 SEARCH RESULTS
 {% for result in search_results %}
 <result id="{{ result.id }}">

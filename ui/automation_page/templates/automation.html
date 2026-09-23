@@ -268,19 +268,100 @@ h1 { display: flex; align-items: center; gap: 10px; }
 .add-row input[type="text"] { flex: 1; }
 .add-row .btn, .add-row .btn-ghost { margin-top: 0; white-space: nowrap; }
 
+</parameter>
+
 /* clickable, highlightable site chips */
-.site-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+.site-chip-row { display: block; line-height: 2.6; margin: 8px 0 18px; }
+
+.manual-query-toggle-wrap { margin: 18px 0 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.manual-query-optional-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-bottom: 8px;
+}
+.manual-query-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.manual-query-toggle-btn:hover { border-color: var(--border-hover); color: var(--text-primary); background-color: var(--bg-elevated); }
+.manual-query-panel-inner {
+    position: relative;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+}
+.manual-query-panel.muted .manual-query-panel-inner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border-radius: var(--radius);
+    cursor: not-allowed;
+    z-index: 5;
+}
+.manual-query-panel.muted .manual-query-panel-inner { pointer-events: none; }
+.manual-query-panel.muted .manual-query-panel-inner::after { pointer-events: auto; }
+.manual-query-toggle-btn svg.mq-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.7; }
+.manual-query-toggle-btn .mq-label { flex: 1; }
+.manual-query-toggle-btn .mq-sub { display: block; font-size: 10.5px; font-weight: 400; color: var(--text-tertiary); margin-top: 1px; }
+.manual-query-toggle-btn .mq-count {
+    font-size: 10.5px;
+    font-weight: 700;
+    background-color: var(--bg-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+}
+.manual-query-toggle-btn svg.mq-chevron { width: 13px; height: 13px; flex-shrink: 0; color: var(--text-tertiary); transition: transform 0.2s ease; }
+.manual-query-toggle-btn.expanded svg.mq-chevron { transform: rotate(180deg); }
+.manual-query-panel {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+.manual-query-panel.expanded { max-height: 2000px; opacity: 1; margin-top: 12px; }
+.manual-query-disabled-hint { font-size: 11px; color: var(--text-tertiary); margin: 6px 0 0; }
 .site-chip {
-    font-size: 11.5px;
-    padding: 4px 9px;
+    display: inline-block;
+    font-size: 12.5px;
+    padding: 6px 13px;
+    margin: 0 8px 8px 0;
     border-radius: 999px;
     background-color: var(--bg-input);
     border: 1px solid var(--border);
     color: var(--text-secondary);
     text-decoration: none;
     cursor: default;
+    white-space: nowrap;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
+.site-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
 .site-chip.used {
     background-color: var(--accent-soft);
     border-color: var(--accent);
@@ -397,9 +478,36 @@ details.advanced-details .advanced-body { margin-top: 14px; }
             <label style="margin-top:0;">{{ t.sites_in_use_label }}</label>
             <div class="site-chip-row" id="site-chip-row">
                 {% for site in target_sites %}
-                <span class="site-chip" data-site="{{ site }}">{{ site }}</span>
+                <span class="site-chip {% if settings.catch_all_enabled %}used{% endif %}" data-site="{{ site }}">{{ site }}</span>
                 {% endfor %}
             </div>
+
+            <div class="toggle-row" style="margin-top:14px;">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="catch_all_enabled" {% if settings.catch_all_enabled %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">
+                    {{ t.catch_all_label }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.catch_all_tooltip }}</span></span>
+                </span>
+            </div>
+            <p class="pipeline-hint" style="font-family:monospace;font-size:11px;word-break:break-all;">{{ catch_all_query_preview }}</p>
+
+            <div class="manual-query-toggle-wrap">
+                <span class="manual-query-optional-tag">{{ t.optional_label }}</span>
+                <button type="button" class="manual-query-toggle-btn" id="manual-query-toggle-btn">
+                    <svg class="mq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"></path><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span class="mq-label">
+                        {{ t.custom_queries_toggle }}
+                        <span class="mq-sub">{{ t.custom_queries_toggle_sub }}</span>
+                    </span>
+                    <span class="mq-count" id="manual-query-count" style="{% if not settings.saved_queries %}display:none;{% endif %}">{{ settings.saved_queries | length }}</span>
+                    <svg class="mq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <p class="manual-query-disabled-hint" id="manual-query-disabled-hint" style="{% if not settings.catch_all_enabled %}display:none;{% endif %}">{{ t.custom_queries_disabled_hint }}</p>
+                <div class="manual-query-panel" id="custom-query-section">
+                <div class="manual-query-panel-inner">
 
             <textarea id="query-input" placeholder="{{ t.query_input_placeholder }}" style="min-height:60px;"></textarea>
             <p class="salary-line">
@@ -421,6 +529,10 @@ details.advanced-details .advanced-body { margin-top: 14px; }
                 {% endfor %}
             </div>
             <p class="salary-line" id="no-saved-queries-hint" style="{% if settings.saved_queries %}display:none;{% endif %}">{{ t.no_saved_queries }}</p>
+
+                </div>
+                </div>
+            </div>
 
             <h3 style="margin:18px 0 4px;">{{ t.time_range_label }}</h3>
             <input type="hidden" id="run_time_range" value="{{ settings.default_time_range }}">
@@ -598,6 +710,13 @@ details.advanced-details .advanced-body { margin-top: 14px; }
                 <input type="text" inputmode="numeric" id="serpent_num_per_query" value="{{ settings.serpent_num_per_query }}">
             </div>
             <div class="inline-field">
+                <label for="max_pages_per_query">
+                    {{ t.max_pages_label }}
+                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_pages_tooltip }}</span></span>
+                </label>
+                <input type="text" inputmode="numeric" id="max_pages_per_query" value="{{ settings.max_pages_per_query }}">
+            </div>
+            <div class="inline-field">
                 <label for="max_results_override">{{ t.results_cap_label }}</label>
                 <input type="text" inputmode="numeric" id="max_results_override" placeholder="{{ t.results_cap_placeholder }}">
             </div>
@@ -695,8 +814,37 @@ function bindAutoSaveToggle(id, name) {
 bindAutoSaveNumber("min_score_to_proceed", "min_score_to_proceed");
 bindAutoSaveNumber("max_score_to_archive", "max_score_to_archive");
 bindAutoSaveNumber("serpent_num_per_query", "serpent_num_per_query");
+bindAutoSaveNumber("max_pages_per_query", "max_pages_per_query");
 bindAutoSaveToggle("quick_filter_enabled", "quick_filter_enabled");
 bindAutoSaveToggle("auto_archive_enabled", "auto_archive_enabled");
+
+const catchAllCheckbox = document.getElementById("catch_all_enabled");
+const manualQueryToggleBtn = document.getElementById("manual-query-toggle-btn");
+const manualQueryPanel = document.getElementById("custom-query-section");
+const manualQueryDisabledHint = document.getElementById("manual-query-disabled-hint");
+
+function applyCatchAllUI() {
+    if (catchAllCheckbox.checked) {
+        document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => chip.classList.add("used"));
+        manualQueryPanel.classList.add("muted");
+        manualQueryDisabledHint.style.display = "block";
+    } else {
+        updateSiteChipHighlights();
+        manualQueryPanel.classList.remove("muted");
+        manualQueryDisabledHint.style.display = "none";
+    }
+}
+
+catchAllCheckbox.addEventListener("change", () => {
+    autoSaveSetting("catch_all_enabled", catchAllCheckbox.checked ? "true" : "");
+    applyCatchAllUI();
+    updateStartSummary();
+});
+
+manualQueryToggleBtn.addEventListener("click", () => {
+    manualQueryToggleBtn.classList.toggle("expanded");
+    manualQueryPanel.classList.toggle("expanded");
+});
 
 function setLevelStatus(el, active) {
     el.classList.toggle("on", active);
@@ -811,6 +959,10 @@ function updateQueryWordCount() {
 }
 
 function updateSiteChipHighlights() {
+    if (catchAllCheckbox.checked) {
+        document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => chip.classList.add("used"));
+        return;
+    }
     const haystack = (SETTINGS.saved_queries.join(" ") + " " + queryInput.value).toLowerCase();
     document.querySelectorAll("#site-chip-row .site-chip").forEach((chip) => {
         const site = chip.dataset.site.toLowerCase();
@@ -854,6 +1006,9 @@ function renderSavedQueries() {
 
     hint.style.display = SETTINGS.saved_queries.length === 0 ? "block" : "none";
     document.getElementById("pool-count").textContent = SETTINGS.saved_queries.length;
+    const countBadge = document.getElementById("manual-query-count");
+    countBadge.textContent = SETTINGS.saved_queries.length;
+    countBadge.style.display = SETTINGS.saved_queries.length > 0 ? "inline-block" : "none";
     updateSiteChipHighlights();
     updateStartSummary();
 }
@@ -942,9 +1097,14 @@ function updateStartSummary() {
     const questionsCount = document.querySelectorAll("#base-question-list .preset-row").length;
     const softOn = document.getElementById("soft-status-pill").classList.contains("on");
     const mediumOn = document.getElementById("medium-status-pill").classList.contains("on");
+    const catchAllOn = document.getElementById("catch_all_enabled").checked;
+
+    const queryPart = catchAllOn
+        ? `${I18N.catch_all_summary_word} (${sitesCount} ${I18N.summary_sites_word})`
+        : `${queriesCount} ${I18N.summary_queries_word} · ${sitesCount} ${I18N.summary_sites_word}`;
 
     document.getElementById("start-summary").textContent =
-        `${queriesCount} ${I18N.summary_queries_word} · ${sitesCount} ${I18N.summary_sites_word} · ` +
+        `${queryPart} · ` +
         `${I18N.level_soft}: ${softOn ? I18N.status_on : I18N.status_off} · ` +
         `${I18N.level_medium}: ${mediumOn ? I18N.status_on : I18N.status_off} · ` +
         `${questionsCount} ${I18N.summary_questions_word}`;
@@ -1147,5 +1307,6 @@ document.getElementById("btn-start-run").addEventListener("click", async () => {
 });
 
 renderSavedQueries();
+applyCatchAllUI();
 </script>
 {% endblock %}

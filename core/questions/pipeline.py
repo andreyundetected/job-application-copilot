@@ -4,6 +4,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from core.parsing.html_like_parser import parse_html_like
+from core.questions.text_sanitize import sanitize_generated_text
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -17,19 +18,29 @@ _COVER_LETTER_PATTERNS = [
     r"cover letter",
     r"motivation letter",
     r"why (do you want to work|are you interested|should we hire)",
+    r"why (this|our) (role|position|company|team)",
+    r"what (makes|would make) you a (good|great) fit",
     r"сопроводительн\w* письм\w*",
     r"мотивационн\w* письм\w*",
     r"почему (вы хотите|вас заинтересовала|стоит нанять)",
+    r"почему (эта|наша) (роль|позиция|компания|команда)",
 ]
 
 _SUMMARY_PATTERNS = [
-    r"tell us about yourself",
+    r"tell us (a (little|bit) )?about yourself",
     r"about you\b",
     r"professional summary",
     r"introduce yourself",
+    r"(brief|short|quick) (overview|summary|introduction)",
+    r"summarize your (background|experience|career)",
+    r"describe your (background|experience|career) in (a )?few (sentences|words)",
+    r"who (are|is) you\b",
     r"расскажите о себе",
+    r"немного о себе",
     r"о себе\b",
     r"краткое резюме",
+    r"кратко расскажите",
+    r"опишите себя",
 ]
 
 _FLAG_PREFIX = "[FLAG_FOR_MANUAL_REVIEW]"
@@ -172,7 +183,7 @@ def _render(template_name: str, **kwargs) -> str:
 def _parse_single_flagged_response(raw_response: str) -> dict:
     answer_text, flag_reason = _parse_flag(raw_response)
     return {
-        "answer_text": answer_text,
+        "answer_text": sanitize_generated_text(answer_text),
         "needs_manual_input": answer_text is None,
         "flag_reason": flag_reason,
     }
@@ -185,6 +196,7 @@ def generate_cover_letter_answers(
     resume_text: str,
     linkedin_text: str,
     extra_info: str | None = None,
+    writing_preferences: str | None = None,
     links: list[str] | None = None,
 ) -> dict[int, dict]:
     """questions: list of {"id": int, "question_text": str, "char_limit": int|None}."""
@@ -197,6 +209,7 @@ def generate_cover_letter_answers(
             resume_text=resume_text,
             linkedin_text=linkedin_text,
             extra_info=extra_info or "",
+            writing_preferences=writing_preferences or "",
             links=links or [],
             char_limit=question.get("char_limit"),
         )
@@ -215,6 +228,7 @@ def generate_summary_answers(
     resume_text: str,
     linkedin_text: str,
     extra_info: str | None = None,
+    writing_preferences: str | None = None,
     links: list[str] | None = None,
 ) -> dict[int, dict]:
     results = {}
@@ -226,6 +240,7 @@ def generate_summary_answers(
             resume_text=resume_text,
             linkedin_text=linkedin_text,
             extra_info=extra_info or "",
+            writing_preferences=writing_preferences or "",
             links=links or [],
             char_limit=question.get("char_limit"),
         )
@@ -244,6 +259,7 @@ def generate_general_answers_initial(
     resume_text: str,
     linkedin_text: str,
     extra_info: str | None = None,
+    writing_preferences: str | None = None,
     links: list[str] | None = None,
 ) -> dict[int, dict]:
     """One batched call answering every 'general' (non cover_letter/summary)
@@ -260,6 +276,7 @@ def generate_general_answers_initial(
         resume_text=resume_text,
         linkedin_text=linkedin_text,
         extra_info=extra_info or "",
+        writing_preferences=writing_preferences or "",
         links=links or [],
     )
 
@@ -379,7 +396,7 @@ def run_targeted_revision(
 
     return {
         "message": message_text,
-        "answer_text": answer_text,
+        "answer_text": sanitize_generated_text(answer_text),
         "needs_manual_input": answer_text is None,
         "flag_reason": flag_reason,
     }

@@ -145,6 +145,9 @@ def _quick_extract_and_save(
             company=quick_result["company"],
             title=quick_result["role"],
             location=quick_result["location"],
+            location_country=quick_result["location_country"],
+            location_state=quick_result["location_state"],
+            location_city=quick_result["location_city"],
             work_mode=quick_result["work_mode"],
             employment_type=quick_result["employment_type"],
             tags=quick_result["tags"],
@@ -202,6 +205,9 @@ def _evaluate_and_save(
             company=result["company"],
             title=result["role"],
             location=result["location"],
+            location_country=result["location_country"],
+            location_state=result["location_state"],
+            location_city=result["location_city"],
             work_mode=result["work_mode"],
         )
 
