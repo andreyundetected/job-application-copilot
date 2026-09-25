@@ -349,7 +349,8 @@ label {
 
 textarea,
 select,
-input[type="text"] {
+input[type="text"],
+input[type="password"] {
     width: 100%;
     background-color: var(--bg-input);
     border: 1px solid var(--border);
@@ -369,7 +370,8 @@ textarea {
 
 textarea:focus,
 select:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="password"]:focus {
     outline: none;
     border-color: var(--accent);
 }
@@ -1037,20 +1039,6 @@ input::placeholder {
 }
 </parameter>
 
-.modal-overlay-centered {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 300;
-}
-
-.modal-overlay-centered.open {
-    display: flex;
-}
-
 .confirm-modal {
     background: var(--bg-elevated);
     border: 1px solid var(--border);
@@ -1333,20 +1321,4 @@ a.back-nav:active {
         opacity: 0;
         transform: translateX(40px);
     }
-.modal-overlay-centered {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: rgba(0, 0, 0, 0.6) !important;
-    display: none !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 300 !important;
-}
-
-.modal-overlay-centered.open {
-    display: flex !important;
-}
 }

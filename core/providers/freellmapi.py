@@ -9,6 +9,8 @@ class FreeLLMAPIProvider(BaseLLMProvider):
         self.client = OpenAI(
             base_url=config.FREELLMAPI_BASE_URL,
             api_key=config.FREELLMAPI_KEY or "unused",
+            timeout=60.0,
+            max_retries=1,
         )
         self.model = config.FREELLMAPI_MODEL
 

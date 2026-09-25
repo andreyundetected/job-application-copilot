@@ -44,8 +44,8 @@ def test_detect_platform_bamboohr():
 
 
 @pytest.mark.discovery
-def test_detect_platform_teamtailor():
-    assert ats.detect_platform("https://examplecorp.teamtailor.com/jobs/123-senior-engineer") == "teamtailor"
+def test_detect_platform_teamtailor_is_disabled():
+    assert ats.detect_platform("https://examplecorp.teamtailor.com/jobs/123-senior-engineer") is None
 
 
 # ---------------------------------------------------------------------------
@@ -309,35 +309,9 @@ def test_extract_job_text_bamboohr_non_200_returns_none(monkeypatch):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.discovery
-def test_extract_job_text_teamtailor(monkeypatch):
+def test_extract_job_text_teamtailor_is_disabled():
     url = "https://examplecorp.teamtailor.com/jobs/123-senior-backend-engineer"
-
-    def fake_get(api_url, headers=None, timeout=None):
-        assert api_url == "https://examplecorp.teamtailor.com/api/v1/jobs/123"
-        return _FakeResponse(
-            200,
-            {
-                "data": {
-                    "attributes": {
-                        "title": "Sample Senior Backend Engineer",
-                        "department-name": "Engineering",
-                        "location": "Stockholm",
-                        "employment-type": "Full-time",
-                        "remote-status": "remote",
-                        "body": "<p>Sample job description.</p>",
-                    }
-                }
-            },
-        )
-
-    monkeypatch.setattr(requests, "get", fake_get)
-
-    result = ats.extract_job_text(url)
-
-    assert "Sample Senior Backend Engineer" in result
-    assert "Stockholm" in result
-    assert "remote" in result
-    assert "Sample job description." in result
+    assert ats.extract_job_text(url) is None
 
 
 @pytest.mark.discovery

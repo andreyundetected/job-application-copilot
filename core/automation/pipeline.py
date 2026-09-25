@@ -343,6 +343,7 @@ def _process_search_result(
                 "summary": result["summary"],
             },
         )
+        crud.ensure_draft_application(session, job.id, source_platform="automation")
 
         crud.set_job_activity(session, job.id, None)
         crud.update_job_pipeline_stage(session, job.id, stages.EVALUATED)
@@ -351,8 +352,7 @@ def _process_search_result(
         stage = _decide_stage(result["score"], settings.min_score_to_proceed, settings.max_score_to_archive)
 
         if stage == stages.ARCHIVED_AUTO:
-            if settings.auto_archive_enabled:
-                crud.archive_job_posting(session, job.id)
+            crud.archive_job_posting(session, job.id)
             crud.update_job_pipeline_stage(session, job.id, stages.ARCHIVED_AUTO)
             crud.increment_run_counters(session, run_id, archived_count=1)
         elif stage == stages.PASSED:
@@ -440,14 +440,15 @@ def maybe_auto_tailor(
     # level_has_auto_apply/is_auto_apply are injectable so this same function
     # drives both the Automation pipeline's permission table and the Evaluator
     # sidebar's independent "manual assist" permission table.
-    soft_active = level_has_auto_apply(session, "soft")
-    medium_active = level_has_auto_apply(session, "medium")
-
-    if not soft_active and not medium_active:
+    settings = crud.get_automation_settings(session)
+    if settings is None or not settings.auto_tailor_master_enabled:
         logger.info(
-            "[run %s] job %s: no auto-apply tailoring permissions enabled, skipping", run_id, job.id
+            "[run %s] job %s: auto-tailor master toggle disabled, skipping", run_id, job.id
         )
         return
+
+    soft_active = level_has_auto_apply(session, "soft")
+    medium_active = level_has_auto_apply(session, "medium")
 
     crud.set_job_activity(session, job.id, "Tailoring resume...")
 
@@ -516,6 +517,11 @@ def maybe_auto_answer_base_questions(
     # is itself the signal that this step should run. list_base_questions is
     # injectable for the same reason as above - Automation and the Evaluator's
     # "manual assist" keep fully independent question lists.
+    settings = crud.get_automation_settings(session)
+    if settings is None or not settings.auto_questions_master_enabled:
+        logger.info("[run %s] job %s: auto-questions master toggle disabled, skipping", run_id, job.id)
+        return
+
     base_questions = list_base_questions(session)
     if not base_questions:
         logger.info("[run %s] job %s: no automation base questions configured, skipping", run_id, job.id)

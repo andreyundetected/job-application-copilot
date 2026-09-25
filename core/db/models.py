@@ -108,6 +108,8 @@ class JobPosting(Base):
     source: Mapped[str] = mapped_column(String(16), default="manual")
     pipeline_stage: Mapped[str] = mapped_column(String(32), nullable=True)
     activity_label: Mapped[str] = mapped_column(String(255), nullable=True)
+    activity_started_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
     discovery_key: Mapped[str] = mapped_column(String(64), nullable=True, unique=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
@@ -349,6 +351,8 @@ class FormQuestion(Base):
     needs_manual_input: Mapped[bool] = mapped_column(Boolean, default=False)
     flag_reason: Mapped[str] = mapped_column(Text, nullable=True)
     pending_task_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    pending_started_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
     template_label: Mapped[str] = mapped_column(String(128), nullable=True)
     template_instructions: Mapped[str] = mapped_column(Text, nullable=True)
 
@@ -461,6 +465,8 @@ class AutomationSettings(Base):
     serpent_cost_per_request: Mapped[float] = mapped_column(Float, nullable=True)
     catch_all_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     max_pages_per_query: Mapped[int] = mapped_column(Integer, default=10)
+    auto_tailor_master_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_questions_master_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class ManualAssistTailoringPermission(Base):

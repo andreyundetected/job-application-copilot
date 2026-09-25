@@ -19,6 +19,8 @@ def upsert_automation_settings(
     serpent_cost_per_request: float | None = None,
     catch_all_enabled: bool | None = None,
     max_pages_per_query: int | None = None,
+    auto_tailor_master_enabled: bool | None = None,
+    auto_questions_master_enabled: bool | None = None,
 ) -> AutomationSettings:
     settings_row = session.query(AutomationSettings).first()
 
@@ -34,6 +36,8 @@ def upsert_automation_settings(
             serpent_cost_per_request=serpent_cost_per_request,
             catch_all_enabled=catch_all_enabled if catch_all_enabled is not None else True,
             max_pages_per_query=max_pages_per_query if max_pages_per_query is not None else 10,
+            auto_tailor_master_enabled=auto_tailor_master_enabled if auto_tailor_master_enabled is not None else False,
+            auto_questions_master_enabled=auto_questions_master_enabled if auto_questions_master_enabled is not None else False,
         )
         session.add(settings_row)
     else:
@@ -57,6 +61,10 @@ def upsert_automation_settings(
             settings_row.catch_all_enabled = catch_all_enabled
         if max_pages_per_query is not None:
             settings_row.max_pages_per_query = max_pages_per_query
+        if auto_tailor_master_enabled is not None:
+            settings_row.auto_tailor_master_enabled = auto_tailor_master_enabled
+        if auto_questions_master_enabled is not None:
+            settings_row.auto_questions_master_enabled = auto_questions_master_enabled
 
     session.commit()
     session.refresh(settings_row)

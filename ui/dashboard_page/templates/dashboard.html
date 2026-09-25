@@ -642,6 +642,10 @@ function pollPendingCards() {
         const jobId = cardEl.dataset.jobId;
         try {
             const response = await fetch(`/jobs/${jobId}/card`);
+            if (response.status === 404) {
+                cardEl.remove();
+                return;
+            }
             if (!response.ok) return;
             const card = await response.json();
             renderCardInPlace(cardEl, card);
@@ -650,11 +654,26 @@ function pollPendingCards() {
         }
     });
 
-    if (document.querySelectorAll('.job-card[data-pending="true"]').length > 0) {
-        setTimeout(pollPendingCards, 2500);
-    }
+    setTimeout(pollPendingCards, 2500);
 }
 
 pollPendingCards();
+
+function pollStuckErrors() {
+    fetch("/api/tasks/stuck-errors")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+            if (!data || !data.events.length) return;
+            data.events.forEach((event) => {
+                const card = document.querySelector(`.job-card[data-job-id="${event.job_id}"]`);
+                if (card) card.remove();
+                const label = `${event.company || I18N.unknown_company_short || "?"} — ${event.role || ""}`.trim();
+                showToast(I18N.stuck_job_removed_toast.replace("{job}", label), "danger");
+            });
+        })
+        .catch(() => {});
+}
+setInterval(pollStuckErrors, 5000);
+pollStuckErrors();
 </script>
 {% endblock %}

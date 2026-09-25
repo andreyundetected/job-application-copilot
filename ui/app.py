@@ -7,6 +7,7 @@ from core.db.crud.tailoring_permissions import seed_default_tailoring_permission
 from core.db.session import SessionLocal, init_db
 from core.discovery.scheduler import start_discovery_schedulers, stop_discovery_schedulers
 from core.discovery_db.session import init_discovery_db
+from core.tasks.watchdog import start_watchdog
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,6 +52,7 @@ def on_startup():
         session.close()
 
     start_discovery_schedulers()
+    start_watchdog()
 
 
 @app.on_event("shutdown")

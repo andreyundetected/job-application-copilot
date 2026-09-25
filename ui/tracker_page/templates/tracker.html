@@ -116,6 +116,23 @@ html, body { height: 100%; overflow: hidden; }
     opacity: 0.4;
 }
 
+.tracker-card-ghost {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    transform: rotate(2deg);
+    opacity: 0.95;
+}
+
+body.tracker-is-dragging {
+    cursor: grabbing !important;
+    user-select: none !important;
+}
+body.tracker-is-dragging .tracker-card {
+    user-select: none;
+}
+
 .tracker-card-top {
     display: flex;
     justify-content: space-between;
@@ -275,7 +292,7 @@ html, body { height: 100%; overflow: hidden; }
         </div>
         <div class="tracker-column-body" data-status="{{ status }}">
             {% for card in columns[status] %}
-            <div class="tracker-card" draggable="true" data-application-id="{{ card.application_id }}" data-job-id="{{ card.job_id }}" data-created-at="{{ card.created_at or '' }}" data-interview-at="{{ card.interview_at or '' }}">
+            <div class="tracker-card" data-application-id="{{ card.application_id }}" data-job-id="{{ card.job_id }}" data-created-at="{{ card.created_at or '' }}" data-interview-at="{{ card.interview_at or '' }}">
                 <div class="tracker-card-top">
                     <div class="tracker-card-heading">
                         <div class="tracker-card-company">{{ card.company or t.unknown_company }}</div>
@@ -335,6 +352,55 @@ const INTERVIEW_STATUSES = ["interviewing", "offer"];
 
 let draggedCard = null;
 let dragOriginStatus = null;
+let ghostEl = null;
+let pointerOffsetX = 0;
+let pointerOffsetY = 0;
+let currentColumnBody = null;
+let autoScrollRafId = null;
+let autoScrollContainer = null;
+let autoScrollSpeed = 0;
+
+const AUTO_SCROLL_EDGE_PX = 90;
+const AUTO_SCROLL_MAX_SPEED = 22;
+const DRAG_START_THRESHOLD_PX = 5;
+
+function runAutoScroll() {
+    if (!autoScrollContainer || autoScrollSpeed === 0) {
+        autoScrollRafId = null;
+        return;
+    }
+    autoScrollContainer.scrollTop += autoScrollSpeed;
+    autoScrollRafId = requestAnimationFrame(runAutoScroll);
+}
+
+function updateAutoScroll(container, clientY) {
+    const rect = container.getBoundingClientRect();
+    const distanceFromTop = clientY - rect.top;
+    const distanceFromBottom = rect.bottom - clientY;
+
+    let speed = 0;
+    if (distanceFromTop < AUTO_SCROLL_EDGE_PX && distanceFromTop >= 0) {
+        speed = -AUTO_SCROLL_MAX_SPEED * (1 - distanceFromTop / AUTO_SCROLL_EDGE_PX);
+    } else if (distanceFromBottom < AUTO_SCROLL_EDGE_PX && distanceFromBottom >= 0) {
+        speed = AUTO_SCROLL_MAX_SPEED * (1 - distanceFromBottom / AUTO_SCROLL_EDGE_PX);
+    }
+
+    autoScrollContainer = container;
+    autoScrollSpeed = speed;
+
+    if (speed !== 0 && autoScrollRafId === null) {
+        autoScrollRafId = requestAnimationFrame(runAutoScroll);
+    }
+}
+
+function stopAutoScroll() {
+    autoScrollSpeed = 0;
+    autoScrollContainer = null;
+    if (autoScrollRafId !== null) {
+        cancelAnimationFrame(autoScrollRafId);
+        autoScrollRafId = null;
+    }
+}
 
 function getDragAfterElement(container, y) {
     const elements = [...container.querySelectorAll(".tracker-card:not(.dragging)")];
@@ -367,79 +433,154 @@ function renderInterviewSlot(card, newStatus) {
     }
 }
 
-board.addEventListener("dragstart", (e) => {
+let pointerDownCard = null;
+let pointerDownX = 0;
+let pointerDownY = 0;
+let isDragging = false;
+let suppressNextClick = false;
+
+board.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest(".tracker-card-remove") || e.target.closest(".interview-trigger") || e.target.closest(".interview-input")) return;
     const card = e.target.closest(".tracker-card");
     if (!card) return;
+
+    e.preventDefault();
+
+    pointerDownCard = card;
+    pointerDownX = e.clientX;
+    pointerDownY = e.clientY;
+    isDragging = false;
+
+    document.addEventListener("mousemove", onPointerMove);
+    document.addEventListener("mouseup", onPointerUp);
+});
+
+function startDrag(card, clientX, clientY) {
+    isDragging = true;
     draggedCard = card;
     dragOriginStatus = card.closest(".tracker-column-body").dataset.status;
     card.classList.add("dragging");
-    e.dataTransfer.effectAllowed = "move";
-});
+    document.body.classList.add("tracker-is-dragging");
 
-board.addEventListener("dragend", (e) => {
-    const card = e.target.closest(".tracker-card");
-    if (card) card.classList.remove("dragging");
+    const rect = card.getBoundingClientRect();
+    pointerOffsetX = clientX - rect.left;
+    pointerOffsetY = clientY - rect.top;
+
+    ghostEl = card.cloneNode(true);
+    ghostEl.classList.remove("dragging");
+    ghostEl.classList.add("tracker-card-ghost");
+    ghostEl.style.width = `${rect.width}px`;
+    ghostEl.style.left = `${rect.left}px`;
+    ghostEl.style.top = `${rect.top}px`;
+    document.body.appendChild(ghostEl);
+}
+
+function onPointerMove(e) {
+    if (!isDragging) {
+        if (!pointerDownCard) return;
+        const dx = e.clientX - pointerDownX;
+        const dy = e.clientY - pointerDownY;
+        if (Math.sqrt(dx * dx + dy * dy) < DRAG_START_THRESHOLD_PX) return;
+        startDrag(pointerDownCard, e.clientX, e.clientY);
+    }
+
+    if (!isDragging) return;
+
+    ghostEl.style.left = `${e.clientX - pointerOffsetX}px`;
+    ghostEl.style.top = `${e.clientY - pointerOffsetY}px`;
+
+    const elUnderPointer = document.elementFromPoint(e.clientX, e.clientY);
+    const columnBody = elUnderPointer ? elUnderPointer.closest(".tracker-column-body") : null;
+
+    document.querySelectorAll(".tracker-column-body.drag-over").forEach((el) => {
+        if (el !== columnBody) el.classList.remove("drag-over");
+    });
+
+    if (!columnBody) {
+        stopAutoScroll();
+        currentColumnBody = null;
+        return;
+    }
+
+    columnBody.classList.add("drag-over");
+    currentColumnBody = columnBody;
+    updateAutoScroll(columnBody, e.clientY);
+
+    const afterElement = getDragAfterElement(columnBody, e.clientY);
+    if (afterElement == null) {
+        columnBody.appendChild(draggedCard);
+    } else {
+        columnBody.insertBefore(draggedCard, afterElement);
+    }
+}
+
+async function onPointerUp(e) {
+    document.removeEventListener("mousemove", onPointerMove);
+    document.removeEventListener("mouseup", onPointerUp);
+    pointerDownCard = null;
+
+    if (!isDragging) return;
+    isDragging = false;
+    suppressNextClick = true;
+    document.body.classList.remove("tracker-is-dragging");
+
+    if (ghostEl) {
+        ghostEl.remove();
+        ghostEl = null;
+    }
     document.querySelectorAll(".tracker-column-body.drag-over").forEach((el) => el.classList.remove("drag-over"));
-});
+    stopAutoScroll();
 
-board.querySelectorAll(".tracker-column-body").forEach((columnBody) => {
-    columnBody.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        columnBody.classList.add("drag-over");
-        if (!draggedCard) return;
+    if (draggedCard) draggedCard.classList.remove("dragging");
 
-        const afterElement = getDragAfterElement(columnBody, e.clientY);
-        if (afterElement == null) {
-            columnBody.appendChild(draggedCard);
-        } else {
-            columnBody.insertBefore(draggedCard, afterElement);
-        }
-    });
-
-    columnBody.addEventListener("dragleave", (e) => {
-        if (!columnBody.contains(e.relatedTarget)) {
-            columnBody.classList.remove("drag-over");
-        }
-    });
-
-    columnBody.addEventListener("drop", async (e) => {
-        e.preventDefault();
-        columnBody.classList.remove("drag-over");
-        if (!draggedCard) return;
-
-        const newStatus = columnBody.dataset.status;
-        const applicationId = draggedCard.dataset.applicationId;
-        const statusChanged = dragOriginStatus !== newStatus;
-
-        updateCounts();
-
-        if (statusChanged) {
-            const response = await fetch(`/tracker/applications/${applicationId}/move`, {
-                method: "POST",
-                body: new URLSearchParams({ status: newStatus }),
-            });
-            if (!response.ok) {
-                const originColumn = board.querySelector(`.tracker-column-body[data-status="${dragOriginStatus}"]`);
-                originColumn.appendChild(draggedCard);
-                updateCounts();
-                showToast(I18N.move_failed_toast, "danger");
-                draggedCard = null;
-                return;
-            }
-            const data = await response.json();
-            draggedCard.dataset.interviewAt = data.interview_at || "";
-            renderInterviewSlot(draggedCard, newStatus);
-        }
-
-        const orderedIds = [...columnBody.querySelectorAll(".tracker-card")].map((c) => c.dataset.applicationId);
-        await fetch(`/tracker/applications/reorder`, {
-            method: "POST",
-            body: new URLSearchParams({ status: newStatus, ordered_ids: orderedIds.join(",") }),
-        });
-
+    const columnBody = currentColumnBody;
+    if (!columnBody || !draggedCard) {
         draggedCard = null;
+        return;
+    }
+
+    const newStatus = columnBody.dataset.status;
+    const applicationId = draggedCard.dataset.applicationId;
+    const statusChanged = dragOriginStatus !== newStatus;
+
+    updateCounts();
+
+    if (statusChanged) {
+        const response = await fetch(`/tracker/applications/${applicationId}/move`, {
+            method: "POST",
+            body: new URLSearchParams({ status: newStatus }),
+        });
+        if (!response.ok) {
+            const originColumn = board.querySelector(`.tracker-column-body[data-status="${dragOriginStatus}"]`);
+            originColumn.appendChild(draggedCard);
+            updateCounts();
+            showToast(I18N.move_failed_toast, "danger");
+            draggedCard = null;
+            currentColumnBody = null;
+            return;
+        }
+        const data = await response.json();
+        draggedCard.dataset.interviewAt = data.interview_at || "";
+        renderInterviewSlot(draggedCard, newStatus);
+    }
+
+    const orderedIds = [...columnBody.querySelectorAll(".tracker-card")].map((c) => c.dataset.applicationId);
+    await fetch(`/tracker/applications/reorder`, {
+        method: "POST",
+        body: new URLSearchParams({ status: newStatus, ordered_ids: orderedIds.join(",") }),
     });
-});
+
+    draggedCard = null;
+    currentColumnBody = null;
+}
+
+board.addEventListener("wheel", (e) => {
+    if (!isDragging) return;
+    const columnBody = e.target.closest(".tracker-column-body");
+    if (!columnBody) return;
+    columnBody.scrollTop += e.deltaY;
+}, { passive: true });
 
 function updateCounts() {
     document.querySelectorAll(".tracker-column-body").forEach((columnBody) => {
@@ -450,6 +591,13 @@ function updateCounts() {
 }
 
 board.addEventListener("click", async (e) => {
+    if (suppressNextClick) {
+        suppressNextClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+    }
+
     if (e.target.classList.contains("tracker-card-remove")) {
         e.stopPropagation();
         const card = e.target.closest(".tracker-card");

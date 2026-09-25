@@ -941,6 +941,23 @@ textarea.answer-body-editable:focus {
     renderSelectedBar();
     updateChatInputState();
 
+    function pollStuckQuestions() {
+        const pendingIds = state.questions.filter((q) => q.pending_task_id).map((q) => q.id);
+        if (pendingIds.length === 0) {
+            setTimeout(pollStuckQuestions, 4000);
+            return;
+        }
+        fetch(`/questions/pending-status?ids=${pendingIds.join(",")}`)
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                if (!data) return;
+                data.questions.forEach((q) => updateQuestion(q));
+            })
+            .catch(() => {})
+            .finally(() => setTimeout(pollStuckQuestions, 4000));
+    }
+    pollStuckQuestions();
+
     if ({{ chat_messages | length }} === 0) {
         appendChatMessage("assistant", I18N.chat_intro, false);
     } else {

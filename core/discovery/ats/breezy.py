@@ -58,9 +58,11 @@ class BreezyExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, header_line, description] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         list_url = f"https://{slug}.breezy.hr/json"
         response = requests.get(list_url, params={"verbose": "true"}, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 

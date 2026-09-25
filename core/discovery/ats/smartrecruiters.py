@@ -43,7 +43,7 @@ class SmartRecruitersExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, location_str, body_text] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         results = []
         offset = 0
         page_size = 100
@@ -51,6 +51,8 @@ class SmartRecruitersExtractor(BaseATSExtractor):
         while True:
             api_url = f"https://api.smartrecruiters.com/v1/companies/{slug}/postings"
             response = requests.get(api_url, params={"limit": page_size, "offset": offset}, timeout=20)
+            if response.status_code in (404, 410) and offset == 0:
+                return None
             if response.status_code != 200:
                 break
 

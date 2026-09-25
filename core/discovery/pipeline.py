@@ -5,7 +5,8 @@ from core.automation import stages
 from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_auto_tailor
 from core.db import crud
 from core.db.session import SessionLocal
-from core.discovery.ats import extract_job_text
+from core.discovery import run_control
+from core.discovery.ats import extract_job_text_with_extractor
 from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
 from core.discovery_db import crud as discovery_crud
 from core.discovery_db.session import DiscoverySessionLocal
@@ -64,7 +65,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
         logger.info("[discovery] posting %s: already processed as job %s, skipping", discovered_posting_id, existing_job.id)
         return True
 
-    job_text = extract_job_text(url)
+    job_text = extract_job_text_with_extractor(ats_name, url)
     if job_text is None:
         logger.warning("[discovery] posting %s: scrape failed (url=%s, ats=%s)", discovered_posting_id, url, ats_name)
         return False
@@ -105,6 +106,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
 
         provider = get_llm_provider()
 
+        run_control.eval_start()
         try:
             result = evaluate_job_posting(
                 provider,
@@ -116,6 +118,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
                 extra_info=extra_info,
             )
         except Exception as error:
+            run_control.eval_finish(passed=False, archived=False)
             logger.error("[discovery] posting %s: evaluation failed: %s", discovered_posting_id, error)
             crud.set_job_activity(session, job.id, None)
             return False
@@ -159,15 +162,16 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
                 "summary": result["summary"],
             },
         )
+        crud.ensure_draft_application(session, job.id, source_platform="discovery")
 
         crud.set_job_activity(session, job.id, None)
         crud.update_job_pipeline_stage(session, job.id, stages.EVALUATED)
 
         stage = _decide_stage(result["score"], settings.min_score_to_proceed, settings.max_score_to_archive)
+        run_control.eval_finish(passed=stage == stages.PASSED, archived=stage == stages.ARCHIVED_AUTO)
 
         if stage == stages.ARCHIVED_AUTO:
-            if settings.auto_archive_enabled:
-                crud.archive_job_posting(session, job.id)
+            crud.archive_job_posting(session, job.id)
             crud.update_job_pipeline_stage(session, job.id, stages.ARCHIVED_AUTO)
         elif stage == stages.PASSED:
             crud.update_job_pipeline_stage(session, job.id, stages.PASSED)

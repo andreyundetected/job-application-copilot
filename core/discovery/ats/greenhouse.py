@@ -31,9 +31,11 @@ class GreenhouseExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, location, body_text] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
         response = requests.get(api_url, params={"content": "false"}, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 

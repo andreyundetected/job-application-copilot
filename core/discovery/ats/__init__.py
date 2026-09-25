@@ -22,7 +22,6 @@ def _discover() -> None:
                 instance = obj()
                 _REGISTRY[instance.name] = instance
 
-
 _discover()
 
 
@@ -66,20 +65,27 @@ def extract_job_text(url: str) -> str | None:
             logger.warning("extract_job_text: no ATS extractor for url=%s (domain not supported)", url)
         return None
 
-    extractor = _REGISTRY[platform]
+    return extract_job_text_with_extractor(platform, url)
+
+
+def extract_job_text_with_extractor(ats_name: str, url: str) -> str | None:
+    extractor = _REGISTRY.get(ats_name)
+    if extractor is None:
+        logger.warning("extract_job_text_with_extractor: no extractor registered for ats_name=%s", ats_name)
+        return None
     try:
         result = extractor.extract(url)
         if result is None:
             logger.warning(
-                "extract_job_text: %s extractor could not get job text for url=%s (see specific reason logged above)",
-                platform, url,
+                "extract_job_text_with_extractor: %s extractor could not get job text for url=%s (see specific reason logged above)",
+                ats_name, url,
             )
         else:
-            logger.info("extract_job_text: %s extractor got %s chars for url=%s", platform, len(result), url)
+            logger.info("extract_job_text_with_extractor: %s extractor got %s chars for url=%s", ats_name, len(result), url)
         return result
     except requests.RequestException as error:
-        logger.error("extract_job_text: network error for url=%s: %s", url, error)
+        logger.error("extract_job_text_with_extractor: network error for url=%s: %s", url, error)
         return None
     except (ValueError, KeyError, TypeError) as error:
-        logger.error("extract_job_text: parse error for url=%s: %s", url, error)
+        logger.error("extract_job_text_with_extractor: parse error for url=%s: %s", url, error)
         return None

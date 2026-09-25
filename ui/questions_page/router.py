@@ -186,6 +186,13 @@ def _job_side_info(session: Session, job) -> dict:
     }
 
 
+@router.get("/pending-status")
+def pending_status(ids: str, session: Session = Depends(get_session)):
+    question_ids = [int(item) for item in ids.split(",") if item.strip().isdigit()]
+    questions = [crud.get_form_question(session, qid) for qid in question_ids]
+    return JSONResponse({"questions": [_serialize_question(q) for q in questions if q is not None]})
+
+
 @router.get("", response_class=HTMLResponse)
 def questions_page(
     request: Request,

@@ -57,9 +57,11 @@ class WorkableExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, location_str, body_text] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://apply.workable.com/api/v1/widget/accounts/{slug}"
         response = requests.get(api_url, params={"details": "false"}, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 

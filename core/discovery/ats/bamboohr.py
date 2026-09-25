@@ -42,13 +42,19 @@ class BambooHRExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, header_line, description] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://{slug}.bamboohr.com/careers/list"
         response = requests.get(api_url, headers={"Accept": "application/json"}, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError:
+            return []
+
         raw_list = data.get("result", data) if isinstance(data, dict) else data
         if not isinstance(raw_list, list):
             return []
@@ -59,13 +65,12 @@ class BambooHRExtractor(BaseATSExtractor):
             if job_id is None:
                 continue
             url = f"https://{slug}.bamboohr.com/careers/{job_id}"
-            posted_at = parse_iso_datetime(job.get("postingDate") or job.get("posted"))
             results.append(
                 {
                     "external_id": str(job_id),
                     "url": url,
                     "title": job.get("jobOpeningName", ""),
-                    "posted_at": posted_at,
+                    "posted_at": None,
                 }
             )
         return results

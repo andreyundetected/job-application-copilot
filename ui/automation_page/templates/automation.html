@@ -4,280 +4,297 @@
 
 {% block content %}
 <style>
-h1 { display: flex; align-items: center; gap: 10px; }
+h1 { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 
 .intro-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: linear-gradient(135deg, var(--accent-soft), transparent);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 18px;
+    display: flex; align-items: flex-start; gap: 14px;
+    background: linear-gradient(135deg, rgba(91,141,239,0.12), rgba(139,92,246,0.05));
+    border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 15px 18px; margin-bottom: 20px;
 }
-.intro-banner-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
 .intro-banner-body { flex: 1; }
-.intro-banner-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; }
-.intro-banner-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+.intro-banner-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; letter-spacing: -0.01em; }
+.intro-banner-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin: 0; }
 .intro-banner-close {
-    background: transparent;
-    border: none;
-    color: var(--text-tertiary);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 4px;
-    flex-shrink: 0;
+    background: transparent; border: none; color: var(--text-tertiary); font-size: 16px; line-height: 1;
+    cursor: pointer; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
 }
 .intro-banner-close:hover { color: var(--text-primary); background: var(--bg-input); }
 
 .info-icon {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background-color: var(--bg-input);
-    color: var(--text-tertiary);
-    font-size: 10px;
-    font-style: normal;
-    flex-shrink: 0;
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border-radius: 50%; background-color: var(--bg-input); color: var(--text-tertiary);
+    font-size: 10px; font-style: normal; flex-shrink: 0; cursor: help;
 }
 .tooltip-bubble {
-    position: absolute;
-    bottom: 135%;
-    left: 50%;
-    transform: translateX(-50%) translateY(4px);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 10px;
-    font-size: 11.5px;
-    line-height: 1.45;
-    font-weight: 400;
-    color: var(--text-primary);
-    width: max-content;
-    max-width: 240px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.12s ease, transform 0.12s ease;
-    z-index: 60;
-    text-align: left;
-    white-space: normal;
+    position: absolute; bottom: 135%; left: 50%; transform: translateX(-50%) translateY(4px);
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 10px; font-size: 11.5px; line-height: 1.45; font-weight: 400;
+    color: var(--text-primary); width: max-content; max-width: 240px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 0.12s ease, transform 0.12s ease; z-index: 60;
+    text-align: left; white-space: normal;
 }
-.tooltip-bubble::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--border);
-}
-.info-icon:hover .tooltip-bubble,
-.info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
+.tooltip-bubble::after { content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--border); }
+.info-icon:hover .tooltip-bubble, .info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-.pipeline { position: relative; }
-.pipeline-step { display: grid; grid-template-columns: 32px 1fr; gap: 16px; position: relative; }
-.pipeline-step:not(:last-child) { padding-bottom: 18px; }
-.pipeline-marker { display: flex; flex-direction: column; align-items: center; }
-
-.pipeline-marker-circle {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
+/* =========================== POWER SWITCH (replaces tiny toggles for master on/off) =========================== */
+.power-switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; flex-shrink: 0; }
+.power-switch input { display: none; }
+.power-switch-track {
+    width: 46px; height: 25px; border-radius: 999px; background-color: var(--bg-input);
+    border: 1.5px solid var(--border); position: relative; transition: background-color 0.2s ease, border-color 0.2s ease;
     flex-shrink: 0;
 }
+.power-switch-thumb {
+    position: absolute; width: 19px; height: 19px; border-radius: 50%; background-color: var(--text-tertiary);
+    top: 2px; left: 2px; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background-color 0.2s ease;
+}
+.power-switch input:checked + .power-switch-track { background: linear-gradient(135deg, var(--score-high), #22c55e); border-color: var(--score-high); }
+.power-switch input:checked + .power-switch-track .power-switch-thumb { transform: translateX(21px); background-color: white; }
+.power-switch-state { font-size: 10.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; min-width: 28px; }
+.power-switch-state.off-text { color: var(--text-tertiary); }
+.power-switch-state.on-text { color: var(--score-high); display: none; }
+.power-switch input:checked ~ .power-switch-state.on-text { display: inline; }
+.power-switch input:checked ~ .power-switch-state.off-text { display: none; }
 
-.pipeline-marker-line {
+/* =========================== HERO =========================== */
+.hero {
     position: relative;
-    flex: 1;
-    width: 3px;
-    background-color: var(--border);
-    margin: 4px 0;
-    min-height: 24px;
-    border-radius: 2px;
-    overflow: hidden;
+    background: linear-gradient(160deg, rgba(23,23,27,0.92), rgba(91,141,239,0.05) 60%);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 22px 24px 20px; margin-bottom: 16px; overflow: hidden;
+}
+.hero.is-listening { border-color: rgba(74,222,128,0.3); }
+.hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(560px 200px at 10% 0%, rgba(91,141,239,0.10), transparent 60%);
 }
 
-.pipeline-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px 20px;
-    margin-bottom: 2px;
-}
+.hero-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
 
-.pipeline-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.pipeline-card-header h3 {
-    margin: 0;
-    text-transform: none;
-    letter-spacing: normal;
-    font-size: 14px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.run-btn {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 9px;
+    min-width: 160px; background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; color: white; font-size: 14px; font-weight: 600; padding: 12px 22px;
+    border-radius: 999px; box-shadow: 0 6px 20px rgba(91,141,239,0.4);
+    cursor: pointer; transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.25s ease; margin-top: 0;
 }
+.run-btn:hover:not(:disabled) { transform: translateY(-1px) scale(1.015); box-shadow: 0 8px 26px rgba(91,141,239,0.5); }
+.run-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.run-btn.is-listening { background: linear-gradient(135deg, var(--score-high), #22c55e); box-shadow: 0 6px 20px rgba(74,222,128,0.4); animation: run-pulse 2.4s ease-in-out infinite; }
+@keyframes run-pulse { 0%,100% { box-shadow: 0 6px 20px rgba(74,222,128,0.4); } 50% { box-shadow: 0 6px 30px rgba(74,222,128,0.65); } }
+.run-btn svg { width: 15px; height: 15px; }
 
-.pipeline-hint { font-size: 12px; color: var(--text-tertiary); margin: 2px 0 16px; }
+.hero-phase { display: flex; flex-direction: column; gap: 2px; }
+.hero-phase-label { font-size: 13.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.hero-phase-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-tertiary); }
+.hero-phase-dot.on { background-color: var(--score-high); box-shadow: 0 0 8px var(--score-high); animation: dot-breathe 1.8s ease-in-out infinite; }
+@keyframes dot-breathe { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.hero-phase-sub { font-size: 11.5px; color: var(--text-tertiary); }
 
-.level-status-group { display: flex; gap: 12px; }
-.level-status-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-secondary);
-}
-.level-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--text-tertiary);
-    box-shadow: none;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-.level-status-item.on .level-status-dot {
-    background-color: var(--score-high);
-    box-shadow: 0 0 6px var(--score-high);
-}
+.hero-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.hero-actions .btn-ghost { margin-top: 0; padding: 8px 13px; font-size: 12px; }
 
-.toggle-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.hero-track { display: flex; align-items: center; gap: 8px; margin-top: 20px; position: relative; z-index: 1; }
+.hero-track-seg {
+    flex: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+    background-color: rgba(255,255,255,0.03); border: 1px solid var(--border); font-size: 11.5px;
+    color: var(--text-tertiary); font-weight: 600; transition: all 0.3s ease;
+}
+.hero-track-seg .seg-dot { width: 7px; height: 7px; border-radius: 50%; background-color: var(--border-hover); flex-shrink: 0; transition: all 0.3s ease; }
+.hero-track-seg.completed { color: var(--text-secondary); border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.05); }
+.hero-track-seg.completed .seg-dot { background-color: var(--score-high); }
+.hero-track-seg.active { color: var(--text-primary); border-color: var(--accent); background: var(--accent-soft); }
+.hero-track-seg.active .seg-dot { background-color: var(--accent); box-shadow: 0 0 6px var(--accent); animation: dot-breathe 1.4s ease-in-out infinite; }
+.hero-track-arrow { color: var(--text-tertiary); font-size: 12px; flex-shrink: 0; }
+
+.hero-detail { margin-top: 16px; position: relative; z-index: 1; }
+
+.progress-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.progress-row-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.progress-row-percent { font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.progress-row-count { font-size: 10.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.progress-track { width: 100%; height: 7px; border-radius: 999px; background-color: rgba(255,255,255,0.06); overflow: hidden; position: relative; }
+.progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), #8b5cf6); width: 0%; transition: width 0.5s ease; }
+.progress-fill.indeterminate {
+    width: 100%; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background-size: 200% 100%; animation: progress-indeterminate 1.4s linear infinite;
+}
+@keyframes progress-indeterminate { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.radar-panel { background-color: rgba(28,28,33,0.5); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 12px; }
+.radar-panel-title { font-size: 11.5px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 12px; }
+.radar-track { display: flex; gap: 5px; }
+.radar-segment {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 9px 3px 7px; border-radius: var(--radius-sm); background-color: var(--bg-input);
+    border: 1px solid var(--border); transition: all 0.35s cubic-bezier(0.2,0.8,0.3,1);
+}
+.radar-segment.active { background: linear-gradient(160deg, var(--accent-soft), rgba(139,92,246,0.1)); border-color: var(--accent); transform: translateY(-2px); }
+.radar-segment-bar { width: 100%; height: 3px; border-radius: 999px; background-color: var(--border); overflow: hidden; position: relative; }
+.radar-segment.active .radar-segment-bar { background-color: rgba(91,141,239,0.25); }
+.radar-segment.active .radar-segment-bar::after {
+    content: ""; position: absolute; inset: 0; width: 40%; border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: radar-sweep 1.1s ease-in-out infinite;
+}
+@keyframes radar-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+.radar-segment-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-tertiary); }
+.radar-segment.active .radar-segment-label { color: var(--accent); }
+.radar-segment-count { font-size: 14px; font-weight: 800; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.radar-segment.active .radar-segment-count { color: var(--text-primary); }
+
+.hero-idle-hint { font-size: 12.5px; color: var(--text-tertiary); text-align: center; padding: 6px 0; }
+
+.hero-stats { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 10px; margin-top: 18px; position: relative; z-index: 1; }
+.hero-stat { background-color: rgba(28,28,33,0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.hero-stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.hero-stat-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+.hero-stat-analyzed { background: linear-gradient(135deg, var(--accent-soft), rgba(139,92,246,0.1)); border-color: var(--accent); }
+.hero-stat-analyzed .hero-stat-value { font-size: 24px; color: var(--accent); }
+
+details.advanced-settings { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 13px; position: relative; z-index: 1; }
+details.advanced-settings summary { cursor: pointer; font-size: 12px; color: var(--accent); font-weight: 600; list-style: none; display: flex; align-items: center; gap: 6px; }
+details.advanced-settings summary::-webkit-details-marker { display: none; }
+details.advanced-settings summary::before { content: "▸"; font-size: 9px; transition: transform 0.15s ease; }
+details.advanced-settings[open] summary::before { transform: rotate(90deg); }
+details.advanced-settings .advanced-body { margin-top: 13px; }
+
+.inline-fields { display: flex; gap: 18px; flex-wrap: wrap; }
+.inline-field { display: flex; flex-direction: column; gap: 4px; }
+.inline-field label { margin: 0; display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-secondary); }
+.inline-field input[type="text"] { max-width: 170px; }
+
+.toggle-row { display: flex; align-items: center; gap: 10px; margin: 9px 0; }
 .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-    position: absolute;
-    inset: 0;
-    background-color: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-.toggle-slider::before {
-    content: "";
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    left: 2px;
-    top: 2px;
-    background-color: var(--text-secondary);
-    border-radius: 50%;
-    transition: transform 0.15s ease, background-color 0.15s ease;
-}
+.toggle-slider { position: absolute; inset: 0; background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; }
+.toggle-slider::before { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background-color: var(--text-secondary); border-radius: 50%; transition: transform 0.15s ease, background-color 0.15s ease; }
 .toggle-switch input:checked + .toggle-slider { background-color: var(--accent); border-color: var(--accent); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background-color: white; }
-.toggle-label { font-size: 13px; color: var(--text-primary); display: flex; align-items: center; gap: 5px; }
-
-.inline-fields { display: flex; gap: 20px; flex-wrap: wrap; }
-.inline-field { display: flex; flex-direction: column; gap: 4px; }
-.inline-field label { margin: 0; display: flex; align-items: center; gap: 5px; }
-.inline-field input[type="text"] { max-width: 180px; }
-
-.matrix-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-.matrix-table td { padding: 6px 8px 6px 0; font-size: 13px; border-top: 1px solid var(--border); }
-.matrix-table td:first-child { width: 40px; }
-.matrix-table td.matrix-label-cell { display: flex; align-items: center; gap: 6px; }
-.matrix-level-group td { padding-top: 12px; }
-.matrix-level-label { display: flex; align-items: center; gap: 8px; }
-
-.preset-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-}
-.preset-row:last-child { border-bottom: none; }
-
-.add-row { display: flex; gap: 8px; margin-top: 10px; }
-.add-row input[type="text"] { flex: 1; }
-.add-row .btn, .add-row .btn-ghost { margin-top: 0; white-space: nowrap; }
+.toggle-label { font-size: 12.5px; color: var(--text-primary); display: flex; align-items: center; gap: 5px; }
 
 .site-chip-row { display: block; line-height: 2.6; margin: 8px 0 4px; }
-.site-chip {
-    display: inline-block;
-    font-size: 12.5px;
-    padding: 6px 13px;
-    margin: 0 8px 8px 0;
-    border-radius: 999px;
-    background-color: var(--accent-soft);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    white-space: nowrap;
-}
+.site-chip { display: inline-block; font-size: 12px; padding: 6px 13px; margin: 0 7px 7px 0; border-radius: 999px; background-color: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); white-space: nowrap; }
 
-.run-card {
-    background: linear-gradient(160deg, var(--bg-card), rgba(91, 141, 239, 0.07));
-    border: 1px solid var(--accent);
+/* =========================== PIPELINE CARDS =========================== */
+.pcard {
+    background-color: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px 20px; margin-bottom: 14px; transition: border-color 0.2s ease;
 }
-.run-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.run-btn {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-width: 160px;
-    background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    border: none;
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 12px 22px;
-    border-radius: var(--radius);
-    box-shadow: 0 4px 18px rgba(91, 141, 239, 0.35);
-    cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
-    margin-top: 0;
+.pcard.accent-yellow { border-left-color: #facc15; }
+.pcard.accent-blue { border-left-color: var(--accent); }
+.pcard.accent-purple { border-left-color: #8b5cf6; }
+.pcard.accent-green { border-left-color: var(--score-high); }
+.pcard.accent-orange { border-left-color: #fb923c; }
+.pcard.accent-red { border-left-color: var(--score-low); }
+
+.pcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pcard-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.pcard-subtitle { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+.pcard-hint { font-size: 12px; color: var(--text-tertiary); line-height: 1.55; margin: 14px 0 4px; }
+.pcard-off-note { font-size: 11px; color: var(--text-tertiary); margin-top: 6px; }
+.matrix-locked { opacity: 0.4; pointer-events: none; filter: grayscale(0.4); transition: opacity 0.2s ease; }
+
+/* ---- Two-column tailoring layout ---- */
+.tailor-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 640px) { .tailor-columns { grid-template-columns: 1fr; } }
+.tailor-column { background-color: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; transition: border-color 0.25s ease; }
+.tailor-column.level-active { border-color: rgba(139,92,246,0.4); }
+.tailor-column-header { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-primary); }
+.tailor-column-dot { width: 7px; height: 7px; border-radius: 50%; background-color: var(--text-tertiary); flex-shrink: 0; transition: all 0.3s ease; }
+.tailor-column-dot.on { background-color: var(--score-high); box-shadow: 0 0 6px var(--score-high); }
+.tailor-column-hint { font-size: 10.5px; color: var(--text-tertiary); margin: 4px 0 11px; line-height: 1.4; }
+.tailor-row { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 12.5px; }
+.tailor-row:first-of-type { border-top: none; }
+.tailor-row-label { flex: 1; display: flex; align-items: center; gap: 6px; }
+
+.preset-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 11px;
+    border-radius: var(--radius-sm); background-color: var(--bg-input); border: 1px solid var(--border);
+    font-size: 13px; margin-bottom: 6px;
 }
-.run-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(91, 141, 239, 0.45); }
-.run-btn.is-listening {
-    background: linear-gradient(135deg, var(--score-high), #22c55e);
-    box-shadow: 0 4px 18px rgba(74, 222, 128, 0.35);
-    animation: run-pulse 2s ease-in-out infinite;
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-row input[type="text"] { flex: 1; margin-top: 0; }
+.add-row .btn { margin-top: 0; white-space: nowrap; }
+
+/* ---- Quick batch card ---- */
+.batch-main-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 14px; }
+.batch-orb {
+    position: relative; width: 74px; height: 74px; border-radius: 50%; flex-shrink: 0;
+    background: radial-gradient(circle at 35% 30%, rgba(250,204,21,0.16), rgba(28,28,33,0.4));
+    border: 2px solid rgba(250,204,21,0.35); display: flex; align-items: center; justify-content: center;
+    flex-direction: column; transition: border-color 0.3s ease;
 }
-@keyframes run-pulse {
-    0%, 100% { box-shadow: 0 4px 18px rgba(74, 222, 128, 0.35); }
-    50% { box-shadow: 0 4px 26px rgba(74, 222, 128, 0.6); }
+.batch-orb.evaluating { border-color: var(--accent); animation: orb-ring 1.4s ease-out infinite; }
+@keyframes orb-ring { 0% { box-shadow: 0 0 0 0 rgba(91,141,239,0.45); } 100% { box-shadow: 0 0 0 14px rgba(91,141,239,0); } }
+.batch-orb-value { font-size: 22px; font-weight: 800; color: var(--score-mid); font-variant-numeric: tabular-nums; transition: all 0.25s ease; }
+.batch-orb-value.zeroing { transform: scale(0.6); opacity: 0; }
+.batch-orb-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-top: 1px; }
+
+.batch-info { flex: 1; min-width: 220px; }
+.batch-info-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.batch-info-sub strong { color: var(--score-mid); }
+.batch-info-timer { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; }
+.batch-last-cycle { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+.batch-last-cycle b { color: var(--score-high); font-weight: 700; }
+.batch-last-cycle b.skip-count { color: var(--text-secondary); }
+
+/* ---- Secret field (bot token) ---- */
+.secret-field-wrap { position: relative; display: flex; align-items: center; }
+.secret-field-wrap input { padding-right: 34px; font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 0.02em; }
+.secret-field-wrap input:-webkit-autofill,
+.secret-field-wrap input:-webkit-autofill:hover,
+.secret-field-wrap input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-input) inset;
+    box-shadow: 0 0 0 1000px var(--bg-input) inset;
+    transition: background-color 5000s ease-in-out 0s;
 }
-.run-status-text { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
-.run-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--text-tertiary);
+.secret-field-toggle {
+    position: absolute; right: 6px; background: none; border: none; color: var(--text-tertiary);
+    cursor: pointer; padding: 5px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s ease;
 }
-.run-status-dot.on {
-    background-color: var(--score-high);
-    box-shadow: 0 0 6px var(--score-high);
+.secret-field-toggle:hover { color: var(--text-primary); }
+.secret-field-toggle svg { width: 14px; height: 14px; }
+.secret-field-toggle .eye-off { display: none; }
+.secret-field-wrap.revealed .eye-on { display: none; }
+.secret-field-wrap.revealed .eye-off { display: block; }
+
+.eval-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px; padding: 4px 11px; margin-top: 6px;
+    opacity: 0; transform: translateY(3px); transition: all 0.25s ease;
 }
+.eval-badge.visible { opacity: 1; transform: translateY(0); }
+
+.batch-off-note { font-size: 12px; color: var(--text-tertiary); background: var(--bg-input); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 12px; }
+
+/* ---- Evaluation card ---- */
+.eval-live-row { display: flex; align-items: center; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+.eval-live-indicator {
+    display: flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 999px;
+    background-color: var(--bg-input); border: 1px solid var(--border); font-size: 12px; font-weight: 600;
+    color: var(--text-tertiary); transition: all 0.3s ease;
+}
+.eval-live-indicator.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.eval-live-indicator .live-spinner-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-tertiary); }
+.eval-live-indicator.active .live-spinner-dot { background-color: var(--accent); animation: dot-breathe 1s ease-in-out infinite; }
+.eval-session-stats { display: flex; gap: 18px; margin-left: auto; }
+.eval-session-stat { text-align: right; }
+.eval-session-stat-value { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.eval-session-stat-value.pass { color: var(--score-high); }
+.eval-session-stat-value.archive { color: var(--text-tertiary); }
+.eval-session-stat-label { font-size: 9.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.danger-card h3 { color: var(--score-low); margin: 0; font-size: 14px; }
+.btn-danger-ghost { background-color: transparent; border: 1px solid var(--score-low); color: var(--score-low); margin-top: 12px; padding: 9px 16px; font-size: 12.5px; }
+.btn-danger-ghost:hover { background-color: var(--score-low-soft); }
 </style>
 
 <h1>{{ t.page_title }}</h1>
 
 <div class="intro-banner" id="intro-banner">
-    <span class="intro-banner-icon">🚀</span>
     <div class="intro-banner-body">
         <p class="intro-banner-title">{{ t.intro_title }}</p>
         <p class="intro-banner-text">{{ t.intro_body }}</p>
@@ -285,213 +302,289 @@ h1 { display: flex; align-items: center; gap: 10px; }
     <button type="button" class="intro-banner-close" id="btn-close-intro">&times;</button>
 </div>
 
-<div class="pipeline">
-    <div class="pipeline-step" data-step="1">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle">1</div>
-            <div class="pipeline-marker-line"></div>
+<div class="hero {% if discovery_enabled %}is-listening{% endif %}" id="hero">
+    <div class="hero-row">
+        <button type="button" class="run-btn {% if discovery_enabled %}is-listening{% endif %}" id="btn-run-discovery">
+            <span id="run-btn-spinner" class="spinner" style="display:none;"></span>
+            <svg id="run-btn-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+            <span id="run-btn-label">{{ t.pause_button if discovery_enabled else t.run_button }}</span>
+        </button>
+
+        <div class="hero-phase">
+            <span class="hero-phase-label"><span class="hero-phase-dot {% if discovery_enabled %}on{% endif %}" id="hero-phase-dot"></span><span id="hero-phase-text">–</span></span>
+            <span class="hero-phase-sub" id="hero-phase-sub"></span>
         </div>
-        <div class="pipeline-card run-card">
-            <div class="pipeline-card-header">
-                <h3>{{ t.step1_title }}</h3>
-            </div>
-            <p class="pipeline-hint">{{ t.step1_hint }}</p>
 
-            <div class="run-row">
-                <button type="button" class="run-btn {% if discovery_enabled %}is-listening{% endif %}" id="btn-run-discovery">
-                    <span id="run-btn-spinner" class="spinner" style="display:none;"></span>
-                    <span id="run-btn-label">{{ t.pause_button if discovery_enabled else t.run_button }}</span>
-                </button>
-                <span class="run-status-text">
-                    <span class="run-status-dot {% if discovery_enabled %}on{% endif %}" id="run-status-dot"></span>
-                    <span id="run-status-text">{{ t.status_listening if discovery_enabled else t.status_paused }}</span>
-                </span>
-            </div>
+        <div class="hero-actions">
+            <button type="button" class="btn-ghost btn" id="btn-skip-wayback" style="display:none;">{{ t.skip_wayback_button }}</button>
+            <button type="button" class="btn-ghost btn" id="btn-run-without-wayback" style="{% if discovery_enabled %}display:none;{% endif %}">{{ t.run_without_wayback_button }}</button>
+        </div>
+    </div>
 
-            <div class="inline-fields" style="margin-top:16px;">
+    <div class="hero-track" id="hero-track">
+        <div class="hero-track-seg" data-stage="wayback"><span class="seg-dot"></span><span>{{ t.stage_wayback_label }}</span></div>
+        <span class="hero-track-arrow">→</span>
+        <div class="hero-track-seg" data-stage="collecting"><span class="seg-dot"></span><span>{{ t.stage_collecting_label }}</span></div>
+        <span class="hero-track-arrow">→</span>
+        <div class="hero-track-seg" data-stage="listening"><span class="seg-dot"></span><span>{{ t.stage_listening_label }}</span></div>
+    </div>
+
+    <div class="hero-detail" id="hero-detail-wayback" style="display:none;">
+        <div class="progress-row-header"><span class="progress-row-label">{{ t.stage_wayback_label }}</span><span class="progress-row-percent" id="wayback-percent">–</span></div>
+        <div class="progress-track"><div class="progress-fill indeterminate" id="wayback-fill"></div></div>
+        <div class="progress-row-count" id="wayback-count"></div>
+    </div>
+
+    <div class="hero-detail" id="hero-detail-collecting" style="display:none;">
+        <div class="progress-row-header"><span class="progress-row-label">{{ t.stage_collecting_label }}</span><span class="progress-row-percent" id="collection-percent">–</span></div>
+        <div class="progress-track"><div class="progress-fill" id="collection-fill" style="width:0%;"></div></div>
+        <div class="progress-row-count" id="collection-count"></div>
+    </div>
+
+    <div class="hero-detail" id="hero-detail-listening" style="display:none;">
+        <div class="radar-panel">
+            <div class="radar-panel-title">{{ t.radar_title }}</div>
+            <div class="radar-track" id="radar-track"></div>
+        </div>
+    </div>
+
+    <div class="hero-detail" id="hero-detail-idle" style="display:none;">
+        <p class="hero-idle-hint">{{ t.stage_idle_hint }}</p>
+    </div>
+
+    <div class="hero-stats">
+        <div class="hero-stat hero-stat-analyzed">
+            <div class="hero-stat-value" id="stat-analyzed-count">0</div>
+            <div class="hero-stat-label">{{ t.stat_analyzed_label }}</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-value" id="stat-total-all-companies">–</div>
+            <div class="hero-stat-label">{{ t.stat_total_all_companies }}</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-value" id="stat-total-postings">–</div>
+            <div class="hero-stat-label">{{ t.stat_total_postings }}</div>
+        </div>
+    </div>
+
+    <details class="advanced-settings">
+        <summary>{{ t.advanced_settings_title }}</summary>
+        <div class="advanced-body">
+            <div class="inline-fields">
                 <div class="inline-field">
                     <label for="wayback_interval_hours">{{ t.wayback_interval_label }}</label>
                     <input type="text" inputmode="numeric" id="wayback_interval_hours" value="{{ discovery_wayback_interval_hours }}">
                 </div>
                 <div class="inline-field">
-                    <label for="initial_backlog_hours">
-                        {{ t.backlog_hours_label }}
-                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.backlog_hours_tooltip }}</span></span>
-                    </label>
+                    <label for="initial_backlog_hours">{{ t.backlog_hours_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.backlog_hours_tooltip }}</span></span></label>
                     <input type="text" inputmode="numeric" id="initial_backlog_hours" value="{{ discovery_initial_backlog_hours }}">
                 </div>
+                <div class="inline-field">
+                    <label for="empty_group_check_every_n_cycles">{{ t.empty_group_cycles_label }}</label>
+                    <input type="text" inputmode="numeric" id="empty_group_check_every_n_cycles" value="{{ discovery_empty_group_check_every_n_cycles }}">
+                </div>
             </div>
 
-            <label style="margin-top:16px;">{{ t.sites_in_use_label }}</label>
+            <label style="margin-top:14px;font-size:11.5px;color:var(--text-secondary);">{{ t.sites_in_use_label }}</label>
             <div class="site-chip-row">
-                {% for site in target_sites %}
-                <span class="site-chip">{{ site }}</span>
-                {% endfor %}
+                {% for site in target_sites %}<span class="site-chip">{{ site }}</span>{% endfor %}
+            </div>
+        </div>
+    </details>
+</div>
+
+<div class="pcard accent-yellow">
+    <div class="pcard-header">
+        <div>
+            <h3 class="pcard-title">{{ t.batch_title }}</h3>
+            <div class="pcard-subtitle">{{ t.batch_subtitle }}</div>
+        </div>
+        <label class="power-switch">
+            <input type="checkbox" id="quick_batch_enabled" {% if discovery_quick_batch_enabled %}checked{% endif %}>
+            <span class="power-switch-track"><span class="power-switch-thumb"></span></span>
+            <span class="power-switch-state on-text">{{ t.power_on }}</span>
+            <span class="power-switch-state off-text">{{ t.power_off }}</span>
+        </label>
+    </div>
+    <p class="pcard-hint">{{ t.batch_hint }}</p>
+
+    <div id="batch-body-on" style="{% if not discovery_quick_batch_enabled %}display:none;{% endif %}">
+        <div class="batch-main-row">
+            <div class="batch-orb" id="batch-orb">
+                <span class="batch-orb-value" id="batch-orb-value">0</span>
+                <span class="batch-orb-label">{{ t.batch_counter_label }}</span>
+            </div>
+            <div class="batch-info">
+                <div class="batch-info-sub" id="batch-info-sub"></div>
+                <div class="batch-last-cycle" id="batch-last-cycle"></div>
+                <span class="eval-badge" id="batch-eval-badge">{{ t.batch_evaluating_label }}</span>
+            </div>
+            <div class="inline-field">
+                <label for="batch_window_minutes">{{ t.batch_window_label }}</label>
+                <input type="text" inputmode="numeric" id="batch_window_minutes" value="{{ discovery_batch_window_minutes }}" style="max-width:80px;">
+            </div>
+            <div class="inline-field">
+                <label for="batch_force_flush_size">{{ t.batch_force_flush_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.batch_force_flush_tooltip }}</span></span></label>
+                <input type="text" inputmode="numeric" id="batch_force_flush_size" value="{{ discovery_batch_force_flush_size }}" style="max-width:80px;">
             </div>
         </div>
     </div>
+    <div id="batch-body-off" class="batch-off-note" style="{% if discovery_quick_batch_enabled %}display:none;{% endif %}">{{ t.batch_off_note }}</div>
+</div>
 
-    <div class="pipeline-step" data-step="2">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle">2</div>
-            <div class="pipeline-marker-line"></div>
+<div class="pcard accent-blue">
+    <div class="pcard-header">
+        <div>
+            <h3 class="pcard-title">{{ t.step3_title }}</h3>
+            <div class="pcard-subtitle">{{ t.step3_subtitle }}</div>
         </div>
-        <div class="pipeline-card">
-            <h3>{{ t.step2_title }}</h3>
-            <p class="pipeline-hint">{{ t.step2_hint }}</p>
+    </div>
+    <p class="pcard-hint">{{ t.step3_hint }}</p>
 
-            <div class="inline-fields">
-                <div class="inline-field">
-                    <label for="telegram_bot_token">{{ t.telegram_bot_token_label }}</label>
-                    <input type="text" id="telegram_bot_token" value="{{ telegram_bot_token }}" style="max-width:260px;">
-                </div>
-                <div class="inline-field">
-                    <label for="telegram_chat_id">{{ t.telegram_chat_id_label }}</label>
-                    <input type="text" id="telegram_chat_id" value="{{ telegram_chat_id }}">
-                </div>
-                <div class="inline-field">
-                    <label for="telegram_notify_min_score">{{ t.notifications_min_score_label }}</label>
-                    <input type="text" inputmode="numeric" id="telegram_notify_min_score" value="{{ telegram_notify_min_score or '' }}" style="max-width:90px;">
-                </div>
-            </div>
-
-            <div class="toggle-row">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="telegram_notify_only_successful" {% if telegram_notify_only_successful %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">{{ t.notifications_only_successful_label }}</span>
-            </div>
-
-            <div class="toggle-row">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="telegram_notify_enabled" {% if telegram_notify_enabled %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">{{ t.notifications_enabled_label }}</span>
-            </div>
+    <div class="eval-live-row">
+        <span class="eval-live-indicator" id="eval-live-indicator"><span class="live-spinner-dot"></span><span id="eval-live-text">{{ t.eval_idle_label }}</span></span>
+        <div class="eval-session-stats">
+            <div class="eval-session-stat"><div class="eval-session-stat-value pass" id="stat-eval-passed">0</div><div class="eval-session-stat-label">{{ t.eval_passed_label }}</div></div>
+            <div class="eval-session-stat"><div class="eval-session-stat-value archive" id="stat-eval-archived">0</div><div class="eval-session-stat-label">{{ t.eval_archived_label }}</div></div>
         </div>
     </div>
 
-    <div class="pipeline-step" data-step="3">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle">3</div>
-            <div class="pipeline-marker-line"></div>
+    <div class="inline-fields" style="margin-top:16px;">
+        <div class="inline-field">
+            <label for="min_score_to_proceed">{{ t.min_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span></label>
+            <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}" style="max-width:80px;">
         </div>
-        <div class="pipeline-card">
-            <h3>{{ t.step3_title }}</h3>
-            <div class="inline-fields">
-                <div class="inline-field">
-                    <label for="min_score_to_proceed">
-                        {{ t.min_score_label }}
-                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span>
-                    </label>
-                    <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}" style="max-width:90px;">
-                </div>
-                <div class="inline-field">
-                    <label for="max_score_to_archive">
-                        {{ t.max_score_label }}
-                        <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span>
-                    </label>
-                    <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}" style="max-width:90px;">
-                </div>
-            </div>
-            <div class="toggle-row">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auto_archive_enabled" {% if settings.auto_archive_enabled %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">
-                    {{ t.auto_archive_label }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.auto_archive_tooltip }}</span></span>
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="pipeline-step" data-step="4">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle">4</div>
-            <div class="pipeline-marker-line"></div>
-        </div>
-        <div class="pipeline-card">
-            <div class="pipeline-card-header">
-                <h3>{{ t.step4_title }}</h3>
-                <div class="level-status-group">
-                    <span class="level-status-item {{ 'on' if soft_active else '' }}" id="soft-status-pill">
-                        <span class="level-status-dot"></span>{{ t.level_soft }}
-                    </span>
-                    <span class="level-status-item {{ 'on' if medium_active else '' }}" id="medium-status-pill">
-                        <span class="level-status-dot"></span>{{ t.level_medium }}
-                    </span>
-                </div>
-            </div>
-            <p class="pipeline-hint">{{ t.step4_hint }}</p>
-
-            <table class="matrix-table" id="tailoring-matrix">
-                {% for row in tailoring_matrix %}
-                {% if loop.first or row.level != tailoring_matrix[loop.index0 - 1].level %}
-                <tr class="matrix-level-group">
-                    <td colspan="2" class="matrix-level-label"><span class="badge">{{ t["level_" + row.level] }}</span></td>
-                </tr>
-                {% endif %}
-                <tr data-level="{{ row.level }}" data-change-type="{{ row.change_type }}">
-                    <td>
-                        <label class="toggle-switch">
-                            <input type="checkbox" class="tailoring-checkbox" data-level="{{ row.level }}" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </td>
-                    <td class="matrix-label-cell">
-                        {{ t["change_type_" + row.change_type] }}
-                        <span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-
-    <div class="pipeline-step" data-step="5">
-        <div class="pipeline-marker">
-            <div class="pipeline-marker-circle">5</div>
-        </div>
-        <div class="pipeline-card">
-            <div class="pipeline-card-header">
-                <h3>
-                    {{ t.step5_title }}
-                    <span class="info-icon">i<span class="tooltip-bubble">{{ t.step5_tooltip }}</span></span>
-                </h3>
-            </div>
-            <p class="pipeline-hint">{{ t.step5_hint }}</p>
-
-            <div class="toggle-row" style="margin-top:0;">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="cover_letter_toggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label">{{ t.cover_letter_toggle_label }}</span>
-            </div>
-
-            <div id="base-question-list">
-                {% for question in base_questions %}
-                <div class="preset-row" data-question-id="{{ question.id }}">
-                    <span>{{ question.question_text }}</span>
-                    <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="add-row">
-                <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder }}">
-                <button type="button" class="btn" id="btn-add-base-question">{{ t.add_base_question_button }}</button>
-            </div>
+        <div class="inline-field">
+            <label for="max_score_to_archive">{{ t.max_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span></label>
+            <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}" style="max-width:80px;">
         </div>
     </div>
 </div>
 
+<div class="pcard accent-purple">
+    <div class="pcard-header">
+        <div>
+            <h3 class="pcard-title">{{ t.step4_title }}</h3>
+            <div class="pcard-subtitle">{{ t.step4_subtitle }}</div>
+        </div>
+        <label class="power-switch">
+            <input type="checkbox" id="auto_tailor_master_enabled" {% if auto_tailor_master_enabled %}checked{% endif %}>
+            <span class="power-switch-track"><span class="power-switch-thumb"></span></span>
+            <span class="power-switch-state on-text">{{ t.power_on }}</span>
+            <span class="power-switch-state off-text">{{ t.power_off }}</span>
+        </label>
+    </div>
+    <p class="pcard-hint">{{ t.step4_hint }}</p>
+    <div class="pcard-off-note" id="tailor-off-note" style="{% if auto_tailor_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
+
+    <div class="tailor-columns {% if not auto_tailor_master_enabled %}matrix-locked{% endif %}" id="tailoring-matrix">
+        <div class="tailor-column" data-level="soft">
+            <div class="tailor-column-header"><span class="tailor-column-dot" id="soft-status-dot"></span>{{ t.level_soft }}</div>
+            <div class="tailor-column-hint">{{ t.level_soft_hint }}</div>
+            {% for row in tailoring_matrix %}
+            {% if row.level == "soft" %}
+            <div class="tailor-row" data-level="soft" data-change-type="{{ row.change_type }}">
+                <label class="toggle-switch">
+                    <input type="checkbox" class="tailoring-checkbox" data-level="soft" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <div class="tailor-column" data-level="medium">
+            <div class="tailor-column-header"><span class="tailor-column-dot" id="medium-status-dot"></span>{{ t.level_medium }}</div>
+            <div class="tailor-column-hint">{{ t.level_medium_hint }}</div>
+            {% for row in tailoring_matrix %}
+            {% if row.level == "medium" %}
+            <div class="tailor-row" data-level="medium" data-change-type="{{ row.change_type }}">
+                <label class="toggle-switch">
+                    <input type="checkbox" class="tailoring-checkbox" data-level="medium" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="pcard accent-green">
+    <div class="pcard-header">
+        <div>
+            <h3 class="pcard-title">{{ t.step5_title }}</h3>
+            <div class="pcard-subtitle">{{ t.step5_subtitle }}</div>
+        </div>
+        <label class="power-switch">
+            <input type="checkbox" id="auto_questions_master_enabled" {% if auto_questions_master_enabled %}checked{% endif %}>
+            <span class="power-switch-track"><span class="power-switch-thumb"></span></span>
+            <span class="power-switch-state on-text">{{ t.power_on }}</span>
+            <span class="power-switch-state off-text">{{ t.power_off }}</span>
+        </label>
+    </div>
+    <p class="pcard-hint">{{ t.step5_hint }}</p>
+    <div class="pcard-off-note" id="questions-off-note" style="{% if auto_questions_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
+
+    <div id="base-question-list" class="{% if not auto_questions_master_enabled %}matrix-locked{% endif %}" style="margin-top:12px;">
+        {% for question in base_questions %}
+        <div class="preset-row" data-question-id="{{ question.id }}">
+            <span>{{ question.question_text }}</span>
+            <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="add-row {% if not auto_questions_master_enabled %}matrix-locked{% endif %}" id="base-question-add-row">
+        <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder_example }}">
+        <button type="button" class="btn" id="btn-add-base-question">{{ t.add_base_question_button }}</button>
+    </div>
+</div>
+
+<div class="pcard accent-orange">
+    <div class="pcard-header">
+        <div>
+            <h3 class="pcard-title">{{ t.notifications_title }}</h3>
+            <div class="pcard-subtitle">{{ t.step2_hint }}</div>
+        </div>
+        <label class="power-switch">
+            <input type="checkbox" id="telegram_notify_enabled" {% if telegram_notify_enabled %}checked{% endif %}>
+            <span class="power-switch-track"><span class="power-switch-thumb"></span></span>
+            <span class="power-switch-state on-text">{{ t.power_on }}</span>
+            <span class="power-switch-state off-text">{{ t.power_off }}</span>
+        </label>
+    </div>
+
+    <div class="inline-fields" style="margin-top:16px;">
+        <div class="inline-field">
+            <label for="telegram_bot_token">{{ t.telegram_bot_token_label }}</label>
+            <div class="secret-field-wrap" id="telegram-token-wrap">
+                <input type="password" id="telegram_bot_token" value="{{ telegram_bot_token }}" style="max-width:240px;" autocomplete="off">
+                <button type="button" class="secret-field-toggle" id="telegram-token-eye" tabindex="-1">
+                    <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                </button>
+            </div>
+        </div>
+        <div class="inline-field">
+            <label for="telegram_chat_id">{{ t.telegram_chat_id_label }}</label>
+            <input type="text" id="telegram_chat_id" value="{{ telegram_chat_id }}">
+        </div>
+        <div class="inline-field">
+            <label for="telegram_notify_min_score">{{ t.notifications_min_score_label }}</label>
+            <input type="text" inputmode="numeric" id="telegram_notify_min_score" value="{{ telegram_notify_min_score or '' }}" style="max-width:80px;">
+        </div>
+    </div>
+</div>
+
+<div class="pcard accent-red danger-card">
+    <h3>{{ t.danger_zone_title }}</h3>
+    <p class="pcard-hint">{{ t.danger_zone_hint }}</p>
+    <button type="button" class="btn btn-danger-ghost" id="btn-wipe-data">{{ t.wipe_button }}</button>
+</div>
+
 <script>
 const I18N = {{ t | tojson }};
-const COVER_LETTER_QUESTION_TEXT = {{ t.cover_letter_question_text | tojson }};
 
 (function () {
     const banner = document.getElementById("intro-banner");
@@ -507,9 +600,7 @@ function autoSaveSetting(url, name, value) {
     const formData = new FormData();
     formData.append(name, value);
     return fetch(url, { method: "POST", body: formData }).then((response) => {
-        if (!response.ok) {
-            response.json().then((data) => showToast(data.detail || "Error", "danger")).catch(() => {});
-        }
+        if (!response.ok) response.json().then((data) => showToast(data.detail || "Error", "danger")).catch(() => {});
         return response;
     });
 }
@@ -517,86 +608,54 @@ function autoSaveSetting(url, name, value) {
 function bindAutoSaveNumber(id, url, name) {
     const el = document.getElementById(id);
     let timeout = null;
-    el.addEventListener("input", () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => autoSaveSetting(url, name, el.value), 500);
-    });
-    el.addEventListener("blur", () => {
-        clearTimeout(timeout);
-        autoSaveSetting(url, name, el.value);
-    });
-}
-
-function bindAutoSaveToggle(id, url, name) {
-    const el = document.getElementById(id);
-    el.addEventListener("change", () => autoSaveSetting(url, name, el.checked ? "true" : ""));
+    el.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(() => autoSaveSetting(url, name, el.value), 500); });
+    el.addEventListener("blur", () => { clearTimeout(timeout); autoSaveSetting(url, name, el.value); });
 }
 
 bindAutoSaveNumber("min_score_to_proceed", "/automation/settings", "min_score_to_proceed");
 bindAutoSaveNumber("max_score_to_archive", "/automation/settings", "max_score_to_archive");
-bindAutoSaveToggle("auto_archive_enabled", "/automation/settings", "auto_archive_enabled");
 
 bindAutoSaveNumber("wayback_interval_hours", "/automation/discovery/settings", "wayback_interval_hours");
 bindAutoSaveNumber("initial_backlog_hours", "/automation/discovery/settings", "initial_backlog_hours");
+bindAutoSaveNumber("batch_window_minutes", "/automation/discovery/settings", "batch_window_minutes");
+bindAutoSaveNumber("batch_force_flush_size", "/automation/discovery/settings", "batch_force_flush_size");
+bindAutoSaveNumber("empty_group_check_every_n_cycles", "/automation/discovery/settings", "empty_group_check_every_n_cycles");
 
-const runBtn = document.getElementById("btn-run-discovery");
-const runBtnLabel = document.getElementById("run-btn-label");
-const runBtnSpinner = document.getElementById("run-btn-spinner");
-const runStatusDot = document.getElementById("run-status-dot");
-const runStatusText = document.getElementById("run-status-text");
-let discoveryListening = runBtn.classList.contains("is-listening");
+(function () {
+    const wrap = document.getElementById("telegram-token-wrap");
+    const input = document.getElementById("telegram_bot_token");
+    document.getElementById("telegram-token-eye").addEventListener("click", () => {
+        const revealed = wrap.classList.toggle("revealed");
+        input.type = revealed ? "text" : "password";
+    });
+})();
 
-runBtn.addEventListener("click", async () => {
-    runBtn.disabled = true;
-    runBtnSpinner.style.display = "inline-block";
-
-    const url = discoveryListening ? "/automation/discovery/stop" : "/automation/discovery/start";
-    const response = await fetch(url, { method: "POST" });
-    runBtn.disabled = false;
-    runBtnSpinner.style.display = "none";
-
-    if (!response.ok) {
-        showToast(I18N.telegram_missing_key_toast, "danger");
-        return;
-    }
-
-    const data = await response.json();
-    discoveryListening = data.enabled;
-    runBtn.classList.toggle("is-listening", discoveryListening);
-    runBtnLabel.textContent = discoveryListening ? I18N.pause_button : I18N.run_button;
-    runStatusDot.classList.toggle("on", discoveryListening);
-    runStatusText.textContent = discoveryListening ? I18N.status_listening : I18N.status_paused;
+document.getElementById("quick_batch_enabled").addEventListener("change", async (event) => {
+    const enabled = event.target.checked;
+    document.getElementById("batch-body-on").style.display = enabled ? "block" : "none";
+    document.getElementById("batch-body-off").style.display = enabled ? "none" : "block";
+    await autoSaveSetting("/automation/discovery/settings", "quick_batch_enabled", enabled ? "true" : "");
 });
 
 function saveNotifications() {
     const formData = new FormData();
     formData.append("telegram_bot_token", document.getElementById("telegram_bot_token").value);
     formData.append("telegram_chat_id", document.getElementById("telegram_chat_id").value);
-    formData.append("telegram_notify_only_successful", document.getElementById("telegram_notify_only_successful").checked ? "true" : "");
     formData.append("telegram_notify_min_score", document.getElementById("telegram_notify_min_score").value);
     return fetch("/automation/notifications", { method: "POST", body: formData });
 }
-
 ["telegram_bot_token", "telegram_chat_id", "telegram_notify_min_score"].forEach((id) => {
     const el = document.getElementById(id);
     let timeout = null;
-    el.addEventListener("input", () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(saveNotifications, 500);
-    });
+    el.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(saveNotifications, 500); });
     el.addEventListener("blur", () => { clearTimeout(timeout); saveNotifications(); });
 });
-
-document.getElementById("telegram_notify_only_successful").addEventListener("change", saveNotifications);
-
 document.getElementById("telegram_notify_enabled").addEventListener("change", async (event) => {
     const formData = new FormData();
     formData.append("telegram_bot_token", document.getElementById("telegram_bot_token").value);
     formData.append("telegram_chat_id", document.getElementById("telegram_chat_id").value);
     formData.append("telegram_notify_enabled", event.target.checked ? "true" : "");
-    formData.append("telegram_notify_only_successful", document.getElementById("telegram_notify_only_successful").checked ? "true" : "");
     formData.append("telegram_notify_min_score", document.getElementById("telegram_notify_min_score").value);
-
     const response = await fetch("/automation/notifications", { method: "POST", body: formData });
     if (!response.ok) {
         event.target.checked = false;
@@ -604,10 +663,6 @@ document.getElementById("telegram_notify_enabled").addEventListener("change", as
         showToast(data.detail || I18N.telegram_missing_key_toast, "danger");
     }
 });
-
-function setLevelStatus(el, active) {
-    el.classList.toggle("on", active);
-}
 
 document.getElementById("tailoring-matrix").addEventListener("change", async (event) => {
     if (!event.target.classList.contains("tailoring-checkbox")) return;
@@ -618,16 +673,30 @@ document.getElementById("tailoring-matrix").addEventListener("change", async (ev
     const response = await fetch("/automation/tailoring-permissions", { method: "POST", body: formData });
     if (!response.ok) return;
     const data = await response.json();
-
-    setLevelStatus(document.getElementById("soft-status-pill"), data.soft_active);
-    setLevelStatus(document.getElementById("medium-status-pill"), data.medium_active);
+    document.getElementById("soft-status-dot").classList.toggle("on", data.soft_active);
+    document.getElementById("medium-status-dot").classList.toggle("on", data.medium_active);
+    document.querySelector('.tailor-column[data-level="soft"]').classList.toggle("level-active", data.soft_active);
+    document.querySelector('.tailor-column[data-level="medium"]').classList.toggle("level-active", data.medium_active);
 });
 
-function syncCoverLetterToggle() {
-    const rows = [...document.querySelectorAll("#base-question-list .preset-row")];
-    const found = rows.some((row) => row.querySelector("span").textContent === COVER_LETTER_QUESTION_TEXT);
-    document.getElementById("cover_letter_toggle").checked = found;
+function bindMasterToggle(id, formField, lockedElIds, offNoteId) {
+    document.getElementById(id).addEventListener("change", async (event) => {
+        const checked = event.target.checked;
+        lockedElIds.forEach((elId) => document.getElementById(elId).classList.toggle("matrix-locked", !checked));
+        document.getElementById(offNoteId).style.display = checked ? "none" : "block";
+        const formData = new FormData();
+        formData.append(formField, checked ? "true" : "");
+        const response = await fetch("/automation/master-toggles", { method: "POST", body: formData });
+        if (!response.ok) {
+            event.target.checked = !checked;
+            lockedElIds.forEach((elId) => document.getElementById(elId).classList.toggle("matrix-locked", checked));
+            document.getElementById(offNoteId).style.display = checked ? "block" : "none";
+            showToast("Error", "danger");
+        }
+    });
 }
+bindMasterToggle("auto_tailor_master_enabled", "auto_tailor_master_enabled", ["tailoring-matrix"], "tailor-off-note");
+bindMasterToggle("auto_questions_master_enabled", "auto_questions_master_enabled", ["base-question-list", "base-question-add-row"], "questions-off-note");
 
 function addBaseQuestionRow(id, text) {
     const list = document.getElementById("base-question-list");
@@ -637,7 +706,6 @@ function addBaseQuestionRow(id, text) {
     row.innerHTML = `<span>${text.replace(/</g, "&lt;")}</span> <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">${I18N.btn_remove}</button>`;
     list.appendChild(row);
 }
-
 async function submitBaseQuestion(text) {
     const formData = new FormData();
     formData.append("question_text", text);
@@ -649,7 +717,6 @@ async function submitBaseQuestion(text) {
     }
     return response.json();
 }
-
 document.getElementById("btn-add-base-question").addEventListener("click", async () => {
     const input = document.getElementById("base_question_input");
     const text = input.value.trim();
@@ -658,44 +725,283 @@ document.getElementById("btn-add-base-question").addEventListener("click", async
     if (!data) return;
     addBaseQuestionRow(data.id, data.question_text);
     input.value = "";
-    syncCoverLetterToggle();
 });
-
 document.getElementById("base_question_input").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        document.getElementById("btn-add-base-question").click();
-    }
+    if (event.key === "Enter") { event.preventDefault(); document.getElementById("btn-add-base-question").click(); }
 });
-
 document.getElementById("base-question-list").addEventListener("click", async (event) => {
     if (!event.target.classList.contains("delete-base-question-btn")) return;
     const questionId = event.target.closest(".preset-row").dataset.questionId;
     const response = await fetch(`/automation/base-questions/${questionId}/delete`, { method: "POST" });
-    if (response.ok) {
-        event.target.closest(".preset-row").remove();
-        syncCoverLetterToggle();
-    }
+    if (response.ok) event.target.closest(".preset-row").remove();
 });
 
-document.getElementById("cover_letter_toggle").addEventListener("change", async (event) => {
-    if (event.target.checked) {
-        const data = await submitBaseQuestion(COVER_LETTER_QUESTION_TEXT);
-        if (!data) {
-            event.target.checked = false;
-            return;
-        }
-        addBaseQuestionRow(data.id, data.question_text);
+const runBtn = document.getElementById("btn-run-discovery");
+const runBtnLabel = document.getElementById("run-btn-label");
+const runBtnSpinner = document.getElementById("run-btn-spinner");
+const runBtnIcon = document.getElementById("run-btn-icon");
+const hero = document.getElementById("hero");
+const heroPhaseDot = document.getElementById("hero-phase-dot");
+let discoveryListening = runBtn.classList.contains("is-listening");
+
+const skipWaybackBtn = document.getElementById("btn-skip-wayback");
+skipWaybackBtn.addEventListener("click", async () => {
+    skipWaybackBtn.disabled = true;
+    await fetch("/automation/discovery/skip-wayback", { method: "POST" });
+    skipWaybackBtn.style.display = "none";
+});
+
+function applyListeningState(listening) {
+    discoveryListening = listening;
+    runBtn.classList.toggle("is-listening", listening);
+    hero.classList.toggle("is-listening", listening);
+    heroPhaseDot.classList.toggle("on", listening);
+    runBtnIcon.style.display = listening ? "none" : "inline-block";
+    document.getElementById("btn-run-without-wayback").style.display = listening ? "none" : "inline-flex";
+}
+
+async function startDiscovery(skipWayback) {
+    runBtn.disabled = true;
+    runBtnSpinner.style.display = "inline-block";
+    const formData = new FormData();
+    formData.append("skip_wayback", skipWayback ? "true" : "");
+    const response = await fetch("/automation/discovery/start", { method: "POST", body: formData });
+    runBtn.disabled = false;
+    runBtnSpinner.style.display = "none";
+    if (!response.ok) { showToast("Error", "danger"); return; }
+    const data = await response.json();
+    applyListeningState(data.enabled);
+    runBtnLabel.textContent = data.enabled ? I18N.pause_button : I18N.run_button;
+}
+document.getElementById("btn-run-without-wayback").addEventListener("click", () => startDiscovery(true));
+
+runBtn.addEventListener("click", async () => {
+    if (!discoveryListening) { await startDiscovery(false); return; }
+    runBtn.disabled = true;
+    runBtnSpinner.style.display = "inline-block";
+    const response = await fetch("/automation/discovery/stop", { method: "POST" });
+    runBtn.disabled = false;
+    runBtnSpinner.style.display = "none";
+    if (!response.ok) { showToast("Error", "danger"); return; }
+    const data = await response.json();
+    applyListeningState(data.enabled);
+    runBtnLabel.textContent = data.enabled ? I18N.pause_button : I18N.run_button;
+});
+
+function updateProgressRow(prefix, checked, total, done, indeterminate) {
+    const fill = document.getElementById(`${prefix}-fill`);
+    const percentEl = document.getElementById(`${prefix}-percent`);
+    const countEl = document.getElementById(`${prefix}-count`);
+    if (indeterminate) {
+        fill.classList.add("indeterminate");
+        fill.style.width = "";
+        percentEl.textContent = total > 0 ? `${checked}/${total}` : "…";
+        countEl.textContent = "";
+        return;
+    }
+    fill.classList.remove("indeterminate");
+    const percent = total > 0 ? Math.min(100, Math.round((checked / total) * 100)) : (done ? 100 : 0);
+    fill.style.width = `${percent}%`;
+    percentEl.textContent = `${percent}%`;
+    countEl.textContent = total > 0 ? `${checked} / ${total}` : "";
+}
+
+const TIER_LABELS = [];
+for (let i = 0; i < 7; i++) TIER_LABELS.push(`Q${i + 1}`);
+TIER_LABELS.push(I18N.tier_label_empty_short);
+
+const radarTrack = document.getElementById("radar-track");
+TIER_LABELS.forEach((label, index) => {
+    const seg = document.createElement("div");
+    seg.className = "radar-segment";
+    seg.dataset.tierIndex = index;
+    seg.innerHTML = `<span class="radar-segment-count" id="radar-count-${index}">0</span><div class="radar-segment-bar"></div><span class="radar-segment-label">${label}</span>`;
+    radarTrack.appendChild(seg);
+});
+function renderRadar(currentTier, tierFoundCounts) {
+    TIER_LABELS.forEach((_, index) => {
+        const seg = radarTrack.querySelector(`[data-tier-index="${index}"]`);
+        seg.classList.toggle("active", index === currentTier);
+        document.getElementById(`radar-count-${index}`).textContent = tierFoundCounts[String(index)] || 0;
+    });
+}
+
+const STAGE_ORDER = ["wayback", "collecting", "listening"];
+const STAGE_TEXT = { wayback: I18N.stage_wayback_label, collecting: I18N.stage_collecting_label, listening: I18N.stage_listening_label, idle: I18N.phase_idle };
+let lastRenderedPhase = null;
+
+function renderStage(phase) {
+    if (phase === lastRenderedPhase) return;
+    lastRenderedPhase = phase;
+
+    const currentIndex = STAGE_ORDER.indexOf(phase);
+    document.getElementById("hero-phase-text").textContent = STAGE_TEXT[phase] || phase;
+
+    STAGE_ORDER.forEach((stageName, index) => {
+        const segEl = document.querySelector(`.hero-track-seg[data-stage="${stageName}"]`);
+        segEl.classList.remove("completed", "active");
+        if (currentIndex === -1) return;
+        if (index < currentIndex) segEl.classList.add("completed");
+        else if (index === currentIndex) segEl.classList.add("active");
+    });
+
+    ["wayback", "collecting", "listening", "idle"].forEach((name) => {
+        document.getElementById(`hero-detail-${name}`).style.display = name === phase ? "block" : "none";
+    });
+    if (currentIndex === -1) document.getElementById("hero-detail-idle").style.display = "block";
+}
+
+function formatSecondsDuration(seconds) {
+    if (seconds === null || seconds === undefined) return "–";
+    if (seconds < 90) return `${Math.round(seconds)}s`;
+    const minutes = seconds / 60;
+    if (minutes < 90) return `${Math.round(minutes)}m`;
+    return `${(minutes / 60).toFixed(1)}h`;
+}
+
+function refreshDiscoveryStatus() {
+    fetch("/automation/discovery/status")
+        .then((response) => response.json())
+        .then((data) => {
+            document.getElementById("stat-total-postings").textContent = data.total_postings;
+            document.getElementById("stat-analyzed-count").textContent = data.new_postings_this_run;
+            document.getElementById("hero-phase-sub").textContent = data.initial_collection_done
+                ? `${I18N.stat_postings_after_collection}: ${data.postings_after_initial_collection}`
+                : "";
+
+            renderStage(data.phase);
+            renderRadar(data.current_tier, data.tier_found_counts || {});
+
+            skipWaybackBtn.style.display = data.phase === "wayback" ? "inline-flex" : "none";
+            if (data.phase !== "wayback") skipWaybackBtn.disabled = false;
+            document.getElementById("btn-run-without-wayback").style.display = data.enabled ? "none" : "inline-flex";
+
+            const waybackDone = data.wayback_ats_total > 0 && data.wayback_ats_done >= data.wayback_ats_total;
+            updateProgressRow("wayback", data.wayback_ats_done, data.wayback_ats_total, waybackDone, data.phase === "wayback" && !waybackDone);
+            updateProgressRow("collection", data.collection_checked, data.collection_total, data.collection_done);
+
+            if (!runBtn.disabled) {
+                applyListeningState(data.enabled);
+                runBtnLabel.textContent = data.enabled ? I18N.pause_button : I18N.run_button;
+            }
+        })
+        .catch(() => {});
+}
+refreshDiscoveryStatus();
+setInterval(refreshDiscoveryStatus, 3000);
+
+function refreshDiscoveryMetrics() {
+    fetch("/automation/discovery/metrics")
+        .then((response) => response.json())
+        .then((data) => {
+            document.getElementById("stat-total-all-companies").textContent = data.total_all ?? "–";
+        })
+        .catch(() => {});
+}
+refreshDiscoveryMetrics();
+setInterval(refreshDiscoveryMetrics, 15000);
+
+// ---------------- Quick batch + evaluation live stats ----------------
+const batchOrb = document.getElementById("batch-orb");
+const batchOrbValue = document.getElementById("batch-orb-value");
+const batchInfoSub = document.getElementById("batch-info-sub");
+const batchLastCycle = document.getElementById("batch-last-cycle");
+const batchEvalBadge = document.getElementById("batch-eval-badge");
+let lastBatchPending = 0;
+
+function setBatchCount(newCount) {
+    if (newCount < lastBatchPending) {
+        batchOrbValue.classList.add("zeroing");
+        setTimeout(() => { batchOrbValue.textContent = newCount; batchOrbValue.classList.remove("zeroing"); }, 220);
     } else {
-        const rows = [...document.querySelectorAll("#base-question-list .preset-row")];
-        const match = rows.find((row) => row.querySelector("span").textContent === COVER_LETTER_QUESTION_TEXT);
-        if (match) {
-            await fetch(`/automation/base-questions/${match.dataset.questionId}/delete`, { method: "POST" });
-            match.remove();
-        }
+        batchOrbValue.textContent = newCount;
     }
-});
+    lastBatchPending = newCount;
+}
 
-syncCoverLetterToggle();
+const evalLiveIndicator = document.getElementById("eval-live-indicator");
+const evalLiveText = document.getElementById("eval-live-text");
+
+function refreshLiveStats() {
+    fetch("/automation/discovery/live-stats")
+        .then((response) => response.json())
+        .then((data) => {
+            document.getElementById("quick_batch_enabled").checked = data.quick_batch_enabled;
+            document.getElementById("batch-body-on").style.display = data.quick_batch_enabled ? "block" : "none";
+            document.getElementById("batch-body-off").style.display = data.quick_batch_enabled ? "none" : "block";
+
+            if (data.quick_batch_enabled) {
+                setBatchCount(data.pending_count);
+                batchOrb.classList.toggle("evaluating", data.batch_evaluating);
+                batchEvalBadge.classList.toggle("visible", data.batch_evaluating);
+
+                let timerText = I18N.batch_timer_paused;
+                if (discoveryListening && data.batch_last_flush_at) {
+                    const elapsedMs = Date.now() - new Date(data.batch_last_flush_at + "Z").getTime();
+                    const remainingSeconds = Math.max(0, Math.round(data.batch_window_minutes * 60 - elapsedMs / 1000));
+                    const mm = Math.floor(remainingSeconds / 60);
+                    const ss = String(remainingSeconds % 60).padStart(2, "0");
+                    timerText = `<span class="batch-info-timer">${mm}:${ss}</span>`;
+                }
+
+                batchInfoSub.innerHTML = I18N.batch_info_sub_template
+                    .replace("{count}", `<strong>${data.pending_count}</strong>`)
+                    .replace("{timer}", timerText);
+
+                if (data.last_batch_size > 0) {
+                    batchLastCycle.innerHTML = I18N.batch_last_cycle_template
+                        .replace("{size}", data.last_batch_size)
+                        .replace("{proceeded}", `<b>${data.last_batch_proceeded}</b>`)
+                        .replace("{skipped}", `<b class="skip-count">${data.last_batch_skipped}</b>`);
+                } else {
+                    batchLastCycle.textContent = "";
+                }
+            }
+
+            const evaluating = data.eval_in_flight > 0;
+            evalLiveIndicator.classList.toggle("active", evaluating);
+            evalLiveText.textContent = evaluating
+                ? I18N.eval_active_label.replace("{count}", data.eval_in_flight)
+                : I18N.eval_idle_label;
+
+            document.getElementById("stat-eval-passed").textContent = data.eval_passed_count;
+            document.getElementById("stat-eval-archived").textContent = data.eval_archived_count;
+        })
+        .catch(() => {});
+}
+refreshLiveStats();
+setInterval(refreshLiveStats, 2500);
+
+// ---------------- New-job toasts (stacked, uses the shared toast system) ----------------
+let seenJobIds = null;
+
+function pollNewJobs() {
+    fetch("/jobs/recent-feed")
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+            if (!data) return;
+            if (seenJobIds === null) { seenJobIds = new Set(data.jobs.map((j) => j.id)); return; }
+            data.jobs.forEach((job) => {
+                if (!seenJobIds.has(job.id)) {
+                    seenJobIds.add(job.id);
+                    showToast(`${I18N.new_job_toast_title}: ${job.company || ""} — ${job.role || ""}`, "success");
+                }
+            });
+        })
+        .catch(() => {});
+}
+setInterval(pollNewJobs, 5000);
+pollNewJobs();
+
+document.getElementById("btn-wipe-data").addEventListener("click", async () => {
+    if (!window.confirm(I18N.wipe_confirm_text)) return;
+    const button = document.getElementById("btn-wipe-data");
+    button.disabled = true;
+    const response = await fetch("/automation/wipe-data", { method: "POST" });
+    button.disabled = false;
+    if (!response.ok) { showToast("Error", "danger"); return; }
+    showToast(I18N.wipe_done_toast, "success");
+    setTimeout(() => window.location.reload(), 800);
+});
 </script>
 {% endblock %}

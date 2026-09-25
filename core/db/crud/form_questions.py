@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import Session
 
 from core.db.models import FormQuestion
@@ -129,9 +131,43 @@ def set_question_pending_task(
     if question is None:
         return None
     question.pending_task_id = task_id
+    question.pending_started_at = datetime.datetime.utcnow() if task_id is not None else None
     session.commit()
     session.refresh(question)
     return question
+
+
+def increment_question_retry_count(session: Session, form_question_id: int) -> FormQuestion | None:
+    question = session.get(FormQuestion, form_question_id)
+    if question is None:
+        return None
+    question.retry_count = (question.retry_count or 0) + 1
+    session.commit()
+    session.refresh(question)
+    return question
+
+
+def reset_question_retry_count(session: Session, form_question_id: int) -> FormQuestion | None:
+    question = session.get(FormQuestion, form_question_id)
+    if question is None:
+        return None
+    question.retry_count = 0
+    session.commit()
+    session.refresh(question)
+    return question
+
+
+def list_stuck_questions(session: Session, cutoff: datetime.datetime) -> list[tuple[int, int]]:
+    rows = (
+        session.query(FormQuestion)
+        .filter(
+            FormQuestion.pending_task_id.isnot(None),
+            FormQuestion.pending_started_at.isnot(None),
+            FormQuestion.pending_started_at <= cutoff,
+        )
+        .all()
+    )
+    return [(question.id, question.retry_count or 0) for question in rows]
 
 
 def update_form_question_char_limit(

@@ -127,6 +127,20 @@ def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
     }
 
 
+@router.get("/jobs/recent-feed")
+def jobs_recent_feed(session: Session = Depends(get_session)):
+    jobs = crud.list_job_postings(session, include_archived=False)[:20]
+    return JSONResponse(
+        {
+            "jobs": [
+                {"id": job.id, "company": job.company, "role": job.title}
+                for job in jobs
+                if job.pending_task_id is None and job.activity_label is None
+            ]
+        }
+    )
+
+
 @router.get("/jobs/{job_id}/card")
 def job_card_data(job_id: int, session: Session = Depends(get_session)):
     job = crud.get_job_posting(session, job_id)
@@ -266,6 +280,19 @@ def delete_job_forever(job_id: int, session: Session = Depends(get_session)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Job not found")
     return JSONResponse({"status": "ok", "id": job_id})
+
+
+@router.post("/archive/clear-all")
+def clear_archive(session: Session = Depends(get_session)):
+    archived_jobs = [job for job in crud.list_job_postings(session, include_archived=True) if job.archived]
+    deleted_count = 0
+    for job in archived_jobs:
+        try:
+            if crud.delete_job_posting(session, job.id):
+                deleted_count += 1
+        except Exception:
+            session.rollback()
+    return JSONResponse({"status": "ok", "count": deleted_count})
 
 
 @router.post("/jobs/{job_id}/start-application")

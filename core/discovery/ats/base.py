@@ -60,19 +60,17 @@ class BaseATSExtractor(ABC):
     def _slug_from_match(self, match: re.Match) -> str:
         return match.group(1)
 
-    def list_wayback_slugs(self) -> list[str]:
+    def list_wayback_slugs(self, is_cancelled=None) -> list[str]:
         slugs: set[str] = set()
         for domain in self.site_filter_domains:
-            for url in fetch_cdx_urls(domain):
+            if is_cancelled is not None and is_cancelled():
+                break
+            for url in fetch_cdx_urls(domain, is_cancelled=is_cancelled):
                 match = self.url_pattern.search(url)
                 if match:
                     slugs.add(self._slug_from_match(match))
         return sorted(slugs)
 
     @abstractmethod
-    def list_active_postings(self, slug: str) -> list[dict]:
-        """Every currently-live posting for this company slug, as
-        {"external_id": str, "url": str, "title": str, "posted_at": datetime|None}.
-        Never raises for expected failure modes (404, deactivated board) -
-        returns [] and lets the caller log; only unexpected errors bubble."""
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         raise NotImplementedError

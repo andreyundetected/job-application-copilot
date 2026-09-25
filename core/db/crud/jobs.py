@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import Session
 
 from core.db.models import JobPosting
@@ -96,9 +98,43 @@ def set_job_activity(session: Session, job_posting_id: int, activity_label: str 
     if job is None:
         return None
     job.activity_label = activity_label
+    job.activity_started_at = datetime.datetime.utcnow() if activity_label is not None else None
     session.commit()
     session.refresh(job)
     return job
+
+
+def increment_job_retry_count(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.retry_count = (job.retry_count or 0) + 1
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def reset_job_retry_count(session: Session, job_posting_id: int) -> JobPosting | None:
+    job = session.get(JobPosting, job_posting_id)
+    if job is None:
+        return None
+    job.retry_count = 0
+    session.commit()
+    session.refresh(job)
+    return job
+
+
+def list_stuck_jobs(session: Session, cutoff: datetime.datetime) -> list[tuple[int, str | None, str | None, int]]:
+    rows = (
+        session.query(JobPosting)
+        .filter(
+            JobPosting.activity_label.isnot(None),
+            JobPosting.activity_started_at.isnot(None),
+            JobPosting.activity_started_at <= cutoff,
+        )
+        .all()
+    )
+    return [(job.id, job.company, job.title, job.retry_count or 0) for job in rows]
 
 
 def get_job_posting(session: Session, job_posting_id: int) -> JobPosting | None:
@@ -133,9 +169,79 @@ def unarchive_job_posting(session: Session, job_posting_id: int) -> JobPosting |
 
 
 def delete_job_posting(session: Session, job_posting_id: int) -> bool:
+    from core.db.models import (
+        Application,
+        ApplicationChatMessage,
+        Evaluation,
+        FormQuestion,
+        GapItem,
+        QuestionChange,
+        TailoredResume,
+        TailoringChange,
+        TailoringMessage,
+        TailoringSession,
+    )
+
     job = session.get(JobPosting, job_posting_id)
     if job is None:
         return False
-    session.delete(job)
+
+    evaluation_ids = [
+        row[0]
+        for row in session.query(Evaluation.id).filter(Evaluation.job_posting_id == job_posting_id).all()
+    ]
+    if evaluation_ids:
+        session.query(TailoredResume).filter(TailoredResume.evaluation_id.in_(evaluation_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(TailoringChange).filter(TailoringChange.evaluation_id.in_(evaluation_ids)).update(
+            {TailoringChange.evaluation_id: None}, synchronize_session=False
+        )
+
+    tailoring_session_ids = [
+        row[0]
+        for row in session.query(TailoringSession.id)
+        .filter(TailoringSession.job_posting_id == job_posting_id)
+        .all()
+    ]
+    if tailoring_session_ids:
+        session.query(GapItem).filter(GapItem.session_id.in_(tailoring_session_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(TailoringChange).filter(TailoringChange.session_id.in_(tailoring_session_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(TailoringMessage).filter(TailoringMessage.session_id.in_(tailoring_session_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(TailoringSession).filter(TailoringSession.id.in_(tailoring_session_ids)).delete(
+            synchronize_session=False
+        )
+
+    application_ids = [
+        row[0]
+        for row in session.query(Application.id).filter(Application.job_posting_id == job_posting_id).all()
+    ]
+    if application_ids:
+        form_question_ids = [
+            row[0]
+            for row in session.query(FormQuestion.id)
+            .filter(FormQuestion.application_id.in_(application_ids))
+            .all()
+        ]
+        if form_question_ids:
+            session.query(QuestionChange).filter(QuestionChange.question_id.in_(form_question_ids)).delete(
+                synchronize_session=False
+            )
+        session.query(ApplicationChatMessage).filter(
+            ApplicationChatMessage.application_id.in_(application_ids)
+        ).delete(synchronize_session=False)
+        session.query(FormQuestion).filter(FormQuestion.application_id.in_(application_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(Application).filter(Application.id.in_(application_ids)).delete(synchronize_session=False)
+
+    session.query(Evaluation).filter(Evaluation.job_posting_id == job_posting_id).delete(synchronize_session=False)
+    session.query(JobPosting).filter(JobPosting.id == job_posting_id).delete(synchronize_session=False)
     session.commit()
     return True

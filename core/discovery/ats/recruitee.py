@@ -53,9 +53,11 @@ class RecruiteeExtractor(BaseATSExtractor):
 
         return "\n\n".join(part for part in [title, header_line, description, requirements] if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://{slug}.recruitee.com/api/offers/"
         response = requests.get(api_url, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 

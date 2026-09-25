@@ -69,7 +69,7 @@ class PersonioExtractor(BaseATSExtractor):
     def _slug_from_match(self, match) -> str:
         return f"{match.group(1)}.{match.group(2)}"
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         import xml.etree.ElementTree as ET
 
         if "." not in slug:
@@ -98,7 +98,7 @@ class PersonioExtractor(BaseATSExtractor):
             if not job_id:
                 continue
             url = f"https://{subdomain}.jobs.personio.{tld}/job/{job_id}"
-            posted_at = parse_iso_datetime(position.findtext("createDate") or position.findtext("createdAt"))
+            posted_at = parse_iso_datetime(position.findtext("createdAt"))
             results.append(
                 {"external_id": job_id, "url": url, "title": position.findtext("name") or "", "posted_at": posted_at}
             )

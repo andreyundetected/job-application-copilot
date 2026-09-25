@@ -52,9 +52,11 @@ class LeverExtractor(BaseATSExtractor):
         parts = [title, header_line, description, *lists_text, additional]
         return "\n\n".join(part for part in parts if part)
 
-    def list_active_postings(self, slug: str) -> list[dict]:
+    def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://api.lever.co/v0/postings/{slug}"
         response = requests.get(api_url, params={"mode": "json"}, timeout=20)
+        if response.status_code in (404, 410):
+            return None
         if response.status_code != 200:
             return []
 

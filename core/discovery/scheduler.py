@@ -1,10 +1,8 @@
-import datetime
 import logging
 import threading
 
-import config
-from core.discovery.poll_cycle import run_poll_tick
-from core.discovery.wayback_scan import run_wayback_scan_cycle
+from core.discovery import run_control
+from core.discovery.posting_batch import start_posting_batch_collector, stop_posting_batch_collector
 from core.discovery_db import crud as discovery_crud
 from core.discovery_db.session import DiscoverySessionLocal
 
@@ -12,63 +10,44 @@ logger = logging.getLogger(__name__)
 
 _started = False
 _started_lock = threading.Lock()
-_stop_event = threading.Event()
-
-
-def _settings_enabled() -> bool:
-    session = DiscoverySessionLocal()
-    try:
-        return discovery_crud.get_or_create_settings(session).enabled
-    finally:
-        session.close()
-
-
-def _wayback_loop() -> None:
-    check_interval_seconds = 600
-    while not _stop_event.is_set():
-        try:
-            if _settings_enabled():
-                session = DiscoverySessionLocal()
-                try:
-                    settings = discovery_crud.get_or_create_settings(session)
-                finally:
-                    session.close()
-
-                due = (
-                    settings.last_wayback_run_at is None
-                    or datetime.datetime.utcnow() - settings.last_wayback_run_at
-                    >= datetime.timedelta(hours=settings.wayback_interval_hours)
-                )
-                if due:
-                    run_wayback_scan_cycle()
-        except Exception as error:
-            logger.error("[scheduler] wayback loop error: %s", error)
-
-        _stop_event.wait(check_interval_seconds)
-
-
-def _poll_loop() -> None:
-    while not _stop_event.is_set():
-        try:
-            if _settings_enabled():
-                run_poll_tick()
-        except Exception as error:
-            logger.error("[scheduler] poll loop error: %s", error)
-
-        _stop_event.wait(config.DISCOVERY_POLL_TICK_SECONDS)
 
 
 def start_discovery_schedulers() -> None:
+    """No longer runs its own polling loop - the entire wayback -> initial
+    collection -> backlog -> listening sequence lives inside the task
+    submitted by /automation/discovery/start (see ui/automation_page/router.py
+    _run_discovery_bootstrap). This function only recovers from an unclean
+    shutdown: if discovery was left enabled when the process died, it resumes
+    automatically so an overnight crash doesn't silently stop collection."""
     global _started
     with _started_lock:
         if _started:
             return
         _started = True
 
-    threading.Thread(target=_wayback_loop, daemon=True, name="discovery-wayback").start()
-    threading.Thread(target=_poll_loop, daemon=True, name="discovery-poll").start()
-    logger.info("[scheduler] discovery schedulers started")
+    logger.info("[scheduler] starting posting batch collector thread")
+    start_posting_batch_collector()
+
+    discovery_session = DiscoverySessionLocal()
+    try:
+        settings = discovery_crud.get_or_create_settings(discovery_session)
+        was_enabled = settings.enabled
+        backlog_hours = settings.initial_backlog_hours
+    finally:
+        discovery_session.close()
+
+    if was_enabled:
+        logger.info("[scheduler] discovery was left enabled, resuming bootstrap (respecting wayback interval)")
+        from core.tasks.executor import submit_task
+        from ui.automation_page.router import _run_discovery_bootstrap
+
+        run_control.reset_run()
+        run_control.request_skip_wayback_if_recent()
+        submit_task(_run_discovery_bootstrap, backlog_hours)
+    else:
+        logger.info("[scheduler] discovery is disabled, idling")
 
 
 def stop_discovery_schedulers() -> None:
-    _stop_event.set()
+    run_control.cancel_run()
+    stop_posting_batch_collector()
