@@ -97,7 +97,20 @@ function _getToastContainer() {
     return container;
 }
 
-function showToast(message, type = "info") {
+const TOAST_PREFS_STORAGE_KEY = "toast_prefs";
+
+function _toastEnabled(key) {
+    if (!key) return true;
+    try {
+        const prefs = JSON.parse(localStorage.getItem(TOAST_PREFS_STORAGE_KEY) || "{}");
+        return prefs[key] !== false;
+    } catch (error) {
+        return true;
+    }
+}
+
+function showToast(message, type = "info", options = {}) {
+    if (!_toastEnabled(options.key)) return;
     const container = _getToastContainer();
 
     while (container.children.length >= TOAST_MAX_VISIBLE) {
@@ -111,6 +124,13 @@ function showToast(message, type = "info") {
         <button type="button" class="toast-close">&times;</button>
     `;
     toast.querySelector(".toast-message").textContent = message;
+
+    if (options.href) {
+        toast.classList.add("toast-clickable");
+        toast.querySelector(".toast-message").addEventListener("click", () => {
+            window.location.href = options.href;
+        });
+    }
 
     const remove = () => {
         toast.classList.add("toast-hide");

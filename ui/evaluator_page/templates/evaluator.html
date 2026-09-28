@@ -1082,7 +1082,7 @@ function pollEvaluationResult(jobId) {
             charCount.textContent = `0 ${I18N.char_count_suffix}`;
             extraInfoBlock.classList.remove("expanded");
             extraInfoToggle.classList.remove("expanded");
-            showToast(I18N.job_added_toast, "success");
+            showToast(I18N.job_added_toast, "success", { key: "job_added", href: `/jobs/${jobId}` });
         } else {
             setTimeout(poll, 1500);
         }

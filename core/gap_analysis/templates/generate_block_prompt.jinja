@@ -1,12 +1,12 @@
-You rewrite exactly one block of a candidate's resume so that it naturally works in a given set of items. You change as little as possible and never break the block's structure.
+You align the terminology of exactly one block of a candidate's resume with a target job posting. The resume is already strong and truthful. You do not improve it. You only make its wording match the posting, so that ATS filters, quick screens and diagonal reading find the same words and role names.
 
 FULL RESUME (read-only context, so you know what the rest of the resume already says - do NOT rewrite it)
 {{ full_resume_text }}
 
-TARGET JOB POSTING (terminology reference only)
+TARGET JOB POSTING (source of the terminology)
 {{ job_posting_text }}
 
-BLOCK TO REWRITE: {{ label }}
+BLOCK: {{ label }} ({{ kind }})
 The block has {{ words }} words and is split into numbered units. A unit is either a paragraph or a bullet list.
 
 {% for unit in units %}
@@ -33,13 +33,28 @@ CANDIDATE'S NOTE ABOUT THIS BLOCK (follow it, and do not invent anything beyond 
 {{ comment }}
 {% endif %}
 
-RULES
-- Return every unit, with the same number n, and the same type: a paragraph stays a paragraph, a list stays a list with the same number of items unless the note explicitly asks otherwise.
-- Copy a unit or list item verbatim when nothing has to change in it. Edit only the units where an item genuinely fits, and change only the words needed.
-- Keep the total length close to {{ words }} words unless the note asks otherwise.
-- Never invent achievements, employers, numbers or technologies that the resume or the note does not support. If an item does not fit truthfully anywhere, leave it out.
+WHAT YOU DO
+- Replace a word or a name with the posting's wording when it means the same thing (for example "ML Engineer" -> "AI Engineer", "containers" -> "Docker" only if that is what the text already describes).
+- Insert a missing keyword or a short phrase (for example "with Docker") into the sentence where it truthfully belongs, only when the block already describes that work.
+- Work in the listed items where they truthfully fit.
+- Return a unit unchanged when nothing has to change in it. Returning the whole block unchanged is a normal and correct result.
+{% if kind == "skills" %}
+
+THIS IS A SKILLS BLOCK: a list of terms, not prose. You may put the terms most relevant to the posting first, rename a term to the posting's wording, and add terms from the items above. Do not delete a term unless it duplicates another one. Keep the same grouping and separators.
+{% else %}
+
+WHAT YOU NEVER DO
+- Do not improve, shorten, expand, reorder or rephrase sentences for style, and do not strengthen verbs.
+- Never remove or change numbers, metrics, names, dates or employers, and never add a claim, technology or achievement that the resume or the note does not support.
+- Do not touch service words: work format (remote, hybrid, full-time), dates, locations and headings. Leave them exactly as they are.
+- Do not add or remove units, bullets or list items. A paragraph stays a paragraph, a list keeps the same number of items.
+- Do not repeat information the rest of the resume already covers just to fit an item in.
+{% endif %}
+
+OUTPUT RULES
+- Return every unit with the same number n and the same type.
+- Copy a unit or list item verbatim when nothing changes in it.
 - Every item under "MUST STAY" must still be present.
-- Do not repeat information that the rest of the resume already covers just to fit an item in.
 - Plain text only: no markdown, no HTML other than the tags shown below.
 
 OUTPUT FORMAT

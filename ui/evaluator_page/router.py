@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_auto_tailor
 from core.db import crud
 from core.db.session import SessionLocal, get_session
-from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
+from core.evaluator.persist import store_evaluation
+from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, quick_extract_job_posting
 from core.providers.factory import get_llm_provider
 from core.tasks.runner import run_tracked_task
 
@@ -160,6 +161,7 @@ def _quick_extract_and_save(
             job_posting_text,
             extra_info,
             lang,
+            quick_result,
         )
         crud.set_job_pending_task(session, job_posting_id, full_task_id)
 
@@ -169,7 +171,11 @@ def _quick_extract_and_save(
 
 
 def _evaluate_and_save(
-    job_posting_id: int, job_posting_text: str, extra_info: str | None, lang: str = "en"
+    job_posting_id: int,
+    job_posting_text: str,
+    extra_info: str | None,
+    lang: str = "en",
+    quick_result: dict | None = None,
 ) -> dict:
     session = SessionLocal()
     try:
@@ -199,34 +205,7 @@ def _evaluate_and_save(
             language=lang,
         )
 
-        crud.update_job_quick_meta(
-            session,
-            job_posting_id,
-            company=result["company"],
-            title=result["role"],
-            location=result["location"],
-            location_country=result["location_country"],
-            location_state=result["location_state"],
-            location_city=result["location_city"],
-            work_mode=result["work_mode"],
-        )
-
-        crud.create_evaluation(
-            session,
-            job_posting_id=job_posting_id,
-            resume_version_id=resume.id,
-            verdict=result["verdict"],
-            blocker_bullets={"cons": result["cons"]},
-            fit_score=result["score"],
-            fit_bullets={"pros": result["pros"]},
-            checked_keywords={
-                "location": result["location"],
-                "work_mode": result["work_mode"],
-                "salary": result["salary"],
-                "matched_factors": result["matched_factors"],
-                "summary": result["summary"],
-            },
-        )
+        store_evaluation(session, job_posting_id, resume.id, quick_result or empty_quick_result(), result)
         crud.ensure_draft_application(session, job_posting_id, source_platform="manual")
 
         crud.set_job_pending_task(session, job_posting_id, None)

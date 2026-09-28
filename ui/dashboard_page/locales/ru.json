@@ -53,5 +53,12 @@
     "unknown_company_short": "вакансия",
     "work_mode_remote": "Удалённо",
     "work_mode_hybrid": "Гибрид",
-    "work_mode_onsite": "Офис"
+    "work_mode_onsite": "Офис",
+    "applied_button_mark": "Отметить как поданную",
+    "applied_button_done": "Заявка подана",
+    "applied_zone_title": "Поданные заявки",
+    "search_in_applied_label": "Искать по поданным",
+    "applied_toast_on": "Отмечено как поданная.",
+    "applied_toast_off": "Возвращено в черновики.",
+    "applied_failed_toast": "Не удалось обновить статус заявки, попробуй ещё раз."
 }

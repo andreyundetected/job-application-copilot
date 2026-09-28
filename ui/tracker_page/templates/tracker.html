@@ -606,7 +606,7 @@ board.addEventListener("click", async (e) => {
         if (response.ok) {
             card.remove();
             updateCounts();
-            showToast(I18N.job_removed_toast, "danger");
+            showToast(I18N.job_removed_toast, "danger", { key: "job_archived" });
         } else {
             showToast(I18N.delete_failed_toast, "danger");
         }
@@ -668,7 +668,7 @@ document.getElementById("sort-date-btn").addEventListener("click", async () => {
         });
     }
 
-    showToast(I18N.sort_by_date_button, "success");
+    showToast(I18N.sort_by_date_button, "success", { key: "tracker_sorted" });
 });
 </script>
 {% endblock %}

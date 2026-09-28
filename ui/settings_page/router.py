@@ -322,6 +322,7 @@ def get_resume_blocks(resume_version_id: int, session: Session = Depends(get_ses
             "detected": resume.blocks is not None,
             "blocks": blocks,
             "elements": elements,
+            "html": html,
             "kinds": sorted(VALID_KINDS),
         }
     )

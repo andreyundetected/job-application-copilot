@@ -1297,6 +1297,65 @@ a.back-nav:active {
     color: var(--text-primary);
 }
 
+.toast-clickable .toast-message {
+    cursor: pointer;
+}
+
+.toast-clickable .toast-message:hover {
+    text-decoration: underline;
+}
+
+.applied-toggle-btn {
+    width: 100%;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px dashed var(--border-hover);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.applied-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.applied-toggle-btn:hover {
+    border-style: solid;
+    border-color: var(--score-high);
+    color: var(--score-high);
+    background: var(--score-high-soft);
+    transform: translateY(-1px);
+}
+
+.applied-toggle-btn.is-applied {
+    border-style: solid;
+    border-color: transparent;
+    color: #ffffff;
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    box-shadow: 0 4px 14px rgba(74, 222, 128, 0.28);
+}
+
+.applied-toggle-btn.is-applied:hover {
+    color: #ffffff;
+    filter: brightness(1.08);
+}
+
+.applied-toggle-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .toast-hide {
     animation: toast-out 0.25s ease forwards;
 }

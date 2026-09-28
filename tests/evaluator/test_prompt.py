@@ -89,10 +89,11 @@ def test_prompt_omits_scoring_factors_section_when_not_given():
     )
 
     assert "SCORING FACTORS" not in prompt
+    assert "<matched_factor" not in prompt
 
 
 @pytest.mark.evaluator
-def test_prompt_contains_output_format_tags():
+def test_prompt_outputs_only_evaluation_tags():
     prompt = render_evaluator_prompt(
         job_posting_text="job",
         resume_text="resume",
@@ -100,27 +101,45 @@ def test_prompt_contains_output_format_tags():
         blockers=[],
     )
 
-    tags = [
-        "<reasoning>",
+    for tag in ["<reasoning>", "<con>", "<pro>", "<score>"]:
+        assert tag in prompt
+
+    for tag in [
         "<company>",
         "<role>",
-        "<score>",
         "<location_country>",
-        "<location_state>",
-        "<location_city>",
         "<work_mode>",
         "<salary_min>",
-        "<salary_max>",
         "<salary_currency>",
-        "<salary_period>",
-        "<salary_is_estimate>",
-        "<salary_original_text>",
-        "<con>",
-        "<pro>",
         "<summary>",
-    ]
-    for tag in tags:
-        assert tag in prompt
+    ]:
+        assert tag not in prompt
+
+
+@pytest.mark.evaluator
+def test_prompt_asks_for_score_after_pros_and_cons():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=[],
+    )
+
+    assert prompt.rindex("<score>") > prompt.rindex("<pro>")
+    assert prompt.rindex("<pro>") > prompt.rindex("<con>")
+
+
+@pytest.mark.evaluator
+def test_prompt_blockers_section_still_lists_blockers_for_reference():
+    prompt = render_evaluator_prompt(
+        job_posting_text="job",
+        resume_text="resume",
+        linkedin_text="linkedin",
+        blockers=["Sample blocker one", "Sample blocker two"],
+    )
+
+    assert "1. Sample blocker one" in prompt
+    assert "2. Sample blocker two" in prompt
 
 
 @pytest.mark.evaluator
@@ -134,7 +153,23 @@ def test_quick_extract_prompt_includes_job_posting():
 def test_quick_extract_prompt_contains_output_format_tags():
     prompt = render_quick_extract_prompt(job_posting_text="job")
 
-    tags = ["<company>", "<role>", "<location_country>", "<location_state>", "<location_city>", "<work_mode>", "<employment_type>", "<tag>"]
+    tags = [
+        "<company>",
+        "<role>",
+        "<location_country>",
+        "<location_state>",
+        "<location_city>",
+        "<work_mode>",
+        "<employment_type>",
+        "<salary_min>",
+        "<salary_max>",
+        "<salary_currency>",
+        "<salary_period>",
+        "<salary_is_estimate>",
+        "<salary_original_text>",
+        "<tag>",
+        "<summary>",
+    ]
     for tag in tags:
         assert tag in prompt
 

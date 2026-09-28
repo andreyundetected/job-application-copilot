@@ -75,6 +75,48 @@
     border-radius: 999px;
     background: var(--bg-input);
 }
+.job-card[data-applied="true"] { border-left: 3px solid var(--score-high); }
+.job-card-pending .applied-toggle-btn { display: none; }
+
+.applied-zone { margin-top: 34px; padding-top: 22px; position: relative; }
+.applied-zone::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--score-high) 0%, transparent 55%);
+    opacity: 0.55;
+}
+.applied-zone-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-family: inherit;
+}
+.applied-zone-title { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.applied-zone-title svg { width: 17px; height: 17px; color: var(--score-high); }
+.applied-zone-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--score-high-soft);
+    color: var(--score-high);
+}
+.applied-zone-chevron { margin-left: auto; width: 14px; height: 14px; color: var(--text-tertiary); transition: transform 0.2s ease; }
+.applied-zone.collapsed .applied-zone-chevron { transform: rotate(-90deg); }
+.applied-zone.collapsed #applied-grid { display: none; }
+.applied-zone .job-card { opacity: 0.88; transition: opacity 0.15s ease, border-color 0.15s ease; }
+.applied-zone .job-card:hover { opacity: 1; }
+.applied-search-toggle { margin-left: 4px; white-space: nowrap; }
 </style>
 <div class="dashboard-header">
     <h1 style="margin:0;">{{ t.page_title }}</h1>
@@ -98,6 +140,13 @@
         </svg>
         <input type="text" id="search-input" placeholder="{{ t.search_placeholder }}">
     </div>
+    <label class="salary-estimate-toggle applied-search-toggle" id="applied-search-toggle" style="display:none;">
+        <span class="mini-toggle-switch">
+            <input type="checkbox" id="include-applied-checkbox">
+            <span class="mini-toggle-slider"></span>
+        </span>
+        <span class="salary-estimate-toggle-label">{{ t.search_in_applied_label }}</span>
+    </label>
     <div class="filters-toggle-wrap" id="filters-toggle-wrap" style="display:none;">
         <button type="button" class="filters-toggle-btn" id="filters-toggle-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,7 +192,7 @@
 
 <div class="job-grid" id="job-grid">
     {% for card in cards %}
-    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-state="{{ card.state or '' }}" data-city="{{ card.city or '' }}" data-tags="{{ (card.tags or []) | join(',') }}" data-salary-max="{{ card.salary_max_converted if card.salary_max_converted is not none else '' }}" data-is-estimate="{{ 'true' if card.is_estimate else 'false' }}">
+    <div class="job-card {% if card.pending %}job-card-pending{% endif %}" data-job-id="{{ card.job_id }}" data-pending="{{ 'true' if card.pending else 'false' }}" data-company="{{ (card.company or '') | lower }}" data-role="{{ (card.role or '') | lower }}" data-employment-type="{{ card.employment_type or '' }}" data-work-mode="{{ card.work_mode or '' }}" data-country="{{ card.country or '' }}" data-state="{{ card.state or '' }}" data-city="{{ card.city or '' }}" data-tags="{{ (card.tags or []) | join(',') }}" data-salary-max="{{ card.salary_max_converted if card.salary_max_converted is not none else '' }}" data-is-estimate="{{ 'true' if card.is_estimate else 'false' }}" data-applied="{{ 'true' if card.applied else 'false' }}" data-created-at="{{ card.created_at or '' }}">
         <div class="job-card-top">
             {% if card.pending and card.score is none %}
             <div class="job-card-score-loading"><span class="loading-dot"></span></div>
@@ -186,11 +235,28 @@
             {% endif %}
         </div>
 
+        <button type="button" class="applied-toggle-btn{% if card.applied %} is-applied{% endif %}" data-job-id="{{ card.job_id }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="applied-toggle-label">{{ t.applied_button_done if card.applied else t.applied_button_mark }}</span>
+        </button>
+
         {% if card.activity_label %}
         <div class="job-card-activity"><span class="loading-dot"></span>{{ card.activity_label }}</div>
         {% endif %}
     </div>
     {% endfor %}
+</div>
+
+<div class="applied-zone" id="applied-zone" style="display:none;">
+    <button type="button" class="applied-zone-header" id="applied-zone-toggle">
+        <span class="applied-zone-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            {{ t.applied_zone_title }}
+        </span>
+        <span class="applied-zone-count" id="applied-zone-count">0</span>
+        <svg class="applied-zone-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
+    <div class="job-grid" id="applied-grid"></div>
 </div>
 
 {% if not cards %}
@@ -218,6 +284,7 @@ const filterState = {
     tags: new Set(),
     salaryMin: 0,
     includeEstimated: false,
+    includeApplied: false,
 };
 
 function countActiveFilters() {
@@ -441,6 +508,11 @@ function buildFilterGroups() {
 function applyFilters() {
     let visibleCount = 0;
     document.querySelectorAll(".job-card").forEach((card) => {
+        if (card.dataset.applied === "true" && !filterState.includeApplied) {
+            card.style.display = "";
+            return;
+        }
+
         const matchesSearch =
             !filterState.search ||
             card.dataset.company.includes(filterState.search) ||
@@ -505,12 +577,20 @@ filtersToggleBtn.addEventListener("click", () => {
 buildFilterGroups();
 updateFiltersToggleBadge();
 
-document.getElementById("job-grid").addEventListener("click", async (event) => {
+document.querySelector("main").addEventListener("click", async (event) => {
+    const appliedBtn = event.target.closest(".applied-toggle-btn");
+    if (appliedBtn) {
+        event.stopPropagation();
+        await toggleApplied(appliedBtn.closest(".job-card"));
+        return;
+    }
+
     if (event.target.classList.contains("job-card-archive")) {
         const jobId = event.target.dataset.jobId;
         await fetch(`/jobs/${jobId}/archive`, { method: "POST" });
         event.target.closest(".job-card").remove();
-        showToast(I18N.job_removed_toast, "danger");
+        refreshAppliedZone();
+        showToast(I18N.job_removed_toast, "danger", { key: "job_archived" });
         return;
     }
 
@@ -519,6 +599,85 @@ document.getElementById("job-grid").addEventListener("click", async (event) => {
         window.location.href = `/jobs/${card.dataset.jobId}`;
     }
 });
+
+const jobGrid = document.getElementById("job-grid");
+const appliedGrid = document.getElementById("applied-grid");
+const appliedZone = document.getElementById("applied-zone");
+const appliedSearchToggle = document.getElementById("applied-search-toggle");
+
+function cardTime(card) {
+    const value = new Date(card.dataset.createdAt || 0).getTime();
+    return isNaN(value) ? 0 : value;
+}
+
+function sortGrid(grid) {
+    [...grid.querySelectorAll(".job-card")]
+        .sort((a, b) => cardTime(b) - cardTime(a))
+        .forEach((card) => grid.appendChild(card));
+}
+
+function updateAppliedButton(card) {
+    const button = card.querySelector(".applied-toggle-btn");
+    if (!button) return;
+    const applied = card.dataset.applied === "true";
+    button.classList.toggle("is-applied", applied);
+    button.querySelector(".applied-toggle-label").textContent = applied ? I18N.applied_button_done : I18N.applied_button_mark;
+}
+
+function refreshAppliedZone() {
+    const count = appliedGrid.querySelectorAll(".job-card").length;
+    appliedZone.style.display = count > 0 ? "block" : "none";
+    appliedSearchToggle.style.display = count > 0 ? "inline-flex" : "none";
+    document.getElementById("applied-zone-count").textContent = count;
+}
+
+function placeCard(card) {
+    const target = card.dataset.applied === "true" ? appliedGrid : jobGrid;
+    if (card.parentElement !== target) target.appendChild(card);
+    updateAppliedButton(card);
+}
+
+async function toggleApplied(card) {
+    const button = card.querySelector(".applied-toggle-btn");
+    const next = card.dataset.applied !== "true";
+    button.disabled = true;
+    const response = await fetch(`/jobs/${card.dataset.jobId}/applied`, {
+        method: "POST",
+        body: new URLSearchParams({ applied: next ? "true" : "" }),
+    });
+    button.disabled = false;
+    if (!response.ok) {
+        showToast(I18N.applied_failed_toast, "danger");
+        return;
+    }
+    const data = await response.json();
+    card.dataset.applied = data.applied ? "true" : "false";
+    placeCard(card);
+    sortGrid(data.applied ? appliedGrid : jobGrid);
+    refreshAppliedZone();
+    applyFilters();
+    showToast(data.applied ? I18N.applied_toast_on : I18N.applied_toast_off, "success", { key: "applied" });
+}
+
+document.getElementById("include-applied-checkbox").addEventListener("change", (event) => {
+    filterState.includeApplied = event.target.checked;
+    applyFilters();
+});
+
+document.getElementById("applied-zone-toggle").addEventListener("click", () => {
+    const collapsed = appliedZone.classList.toggle("collapsed");
+    try {
+        localStorage.setItem("dashboard_applied_collapsed", collapsed ? "1" : "0");
+    } catch (error) {}
+});
+
+try {
+    if (localStorage.getItem("dashboard_applied_collapsed") === "1") appliedZone.classList.add("collapsed");
+} catch (error) {}
+
+document.querySelectorAll(".job-card").forEach((card) => placeCard(card));
+sortGrid(appliedGrid);
+refreshAppliedZone();
 
 function scoreClassFor(score) {
     if (score === null || score === undefined) return "score-mid";
@@ -668,7 +827,7 @@ function pollStuckErrors() {
                 const card = document.querySelector(`.job-card[data-job-id="${event.job_id}"]`);
                 if (card) card.remove();
                 const label = `${event.company || I18N.unknown_company_short || "?"} — ${event.role || ""}`.trim();
-                showToast(I18N.stuck_job_removed_toast.replace("{job}", label), "danger");
+                showToast(I18N.stuck_job_removed_toast.replace("{job}", label), "danger", { key: "stuck_removed" });
             });
         })
         .catch(() => {});

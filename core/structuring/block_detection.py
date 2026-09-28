@@ -15,7 +15,8 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-VALID_KINDS = {"title_main", "summary", "skills", "exp_title", "exp_body", "section"}
+VALID_KINDS = {"title_main", "summary", "skills", "exp_title", "exp_body"}
+MERGEABLE_KINDS = {"summary", "skills", "exp_body"}
 
 _BLOCK_RE = re.compile(r"<block\s+([^>]*?)/?>", re.DOTALL)
 _ATTR_RE = re.compile(r'(\w+)="([^"]*)"')
@@ -23,7 +24,7 @@ _SIZE_RE = re.compile(r"font-size:\s*([\d.]+)pt")
 _LI_RE = re.compile(r"<li\b[^>]*>(.*?)</li>", re.DOTALL)
 
 
-def compute_field_path(kind: str, label: str, company: str) -> str:
+def compute_field_path(kind: str, company: str) -> str:
     if kind == "title_main":
         return "title:main"
     if kind == "summary":
@@ -32,21 +33,17 @@ def compute_field_path(kind: str, label: str, company: str) -> str:
         return "skills"
     if kind == "exp_title":
         return f"title:{company}"
-    if kind == "exp_body":
-        return f"experience: {company}"
-    return f"section: {label}"
+    return f"experience: {company}"
 
 
-def default_label(kind: str, label: str, company: str) -> str:
+def default_label(kind: str, company: str) -> str:
     if kind == "title_main":
         return "Title"
     if kind == "summary":
         return "Summary"
     if kind == "skills":
         return "Skills"
-    if kind in ("exp_title", "exp_body"):
-        return company
-    return label
+    return company
 
 
 def finalize_blocks(blocks: list[dict]) -> list[dict]:
@@ -58,9 +55,7 @@ def finalize_blocks(blocks: list[dict]) -> list[dict]:
         label = (block.get("label") or "").strip()
         if kind in ("exp_title", "exp_body") and not company:
             company = label or "Company"
-        if kind == "section" and not label:
-            label = "Section"
-        base = compute_field_path(kind, label, company)
+        base = compute_field_path(kind, company)
         count = used.get(base, 0) + 1
         used[base] = count
         field_path = base if count == 1 else f"{base} #{count}"
@@ -69,11 +64,29 @@ def finalize_blocks(blocks: list[dict]) -> list[dict]:
                 **block,
                 "company": company,
                 "role": (block.get("role") or "").strip(),
-                "label": default_label(kind, label, company),
+                "label": default_label(kind, company),
                 "field_path": field_path,
             }
         )
     return result
+
+
+def merge_adjacent_blocks(blocks: list[dict], position: dict[str, int]) -> list[dict]:
+    merged: list[dict] = []
+    for block in blocks:
+        previous = merged[-1] if merged else None
+        can_merge = (
+            previous is not None
+            and block["kind"] in MERGEABLE_KINDS
+            and previous["kind"] == block["kind"]
+            and (previous.get("company") or "").strip().lower() == (block.get("company") or "").strip().lower()
+            and position[block["element_ids"][0]] == position[previous["element_ids"][-1]] + 1
+        )
+        if can_merge:
+            previous["element_ids"] = previous["element_ids"] + block["element_ids"]
+        else:
+            merged.append({**block, "element_ids": list(block["element_ids"])})
+    return merged
 
 
 def _describe(element: dict) -> dict:
@@ -121,7 +134,7 @@ def parse_blocks(raw: str, ordered_eids: list[str]) -> list[dict]:
         )
 
     blocks.sort(key=lambda block: position[block["element_ids"][0]])
-    return finalize_blocks(blocks)
+    return finalize_blocks(merge_adjacent_blocks(blocks, position))
 
 
 def detect_blocks(provider, html: str) -> list[dict]:
@@ -136,6 +149,7 @@ def detect_blocks(provider, html: str) -> list[dict]:
         system_prompt="You segment a resume into working blocks. Output only block tags.",
         user_prompt=prompt,
         max_tokens=4096,
-        reasoning_effort="low",
+        reasoning_effort="medium",
     )
+
     return parse_blocks(raw_response, [element["eid"] for element in elements])

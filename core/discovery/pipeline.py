@@ -7,7 +7,8 @@ from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery import run_control
 from core.discovery.ats import extract_job_text_with_extractor
-from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
+from core.evaluator.persist import apply_quick_meta, store_evaluation
+from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, quick_extract_job_posting
 from core.discovery_db import crud as discovery_crud
 from core.discovery_db.session import DiscoverySessionLocal
 from core.notifications.telegram import notify_job_evaluated
@@ -106,6 +107,13 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
 
         provider = get_llm_provider()
 
+        try:
+            quick_result = quick_extract_job_posting(provider, job_text)
+            apply_quick_meta(session, job.id, quick_result)
+        except Exception as error:
+            logger.warning("[discovery] posting %s: quick-extract failed, leaving metadata unset: %s", discovered_posting_id, error)
+            quick_result = empty_quick_result()
+
         run_control.eval_start()
         try:
             result = evaluate_job_posting(
@@ -123,45 +131,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
             crud.set_job_activity(session, job.id, None)
             return False
 
-        crud.update_job_quick_meta(
-            session,
-            job.id,
-            company=result["company"],
-            title=result["role"],
-            location=result["location"],
-            location_country=result["location_country"],
-            location_state=result["location_state"],
-            location_city=result["location_city"],
-            work_mode=result["work_mode"],
-        )
-
-        try:
-            quick_result = quick_extract_job_posting(provider, job_text)
-            crud.update_job_quick_meta(
-                session,
-                job.id,
-                employment_type=quick_result["employment_type"],
-                tags=quick_result["tags"],
-            )
-        except Exception as error:
-            logger.warning("[discovery] posting %s: quick-extract failed, leaving unset: %s", discovered_posting_id, error)
-
-        crud.create_evaluation(
-            session,
-            job_posting_id=job.id,
-            resume_version_id=resume_version.id,
-            verdict=result["verdict"],
-            blocker_bullets={"cons": result["cons"]},
-            fit_score=result["score"],
-            fit_bullets={"pros": result["pros"]},
-            checked_keywords={
-                "location": result["location"],
-                "work_mode": result["work_mode"],
-                "salary": result["salary"],
-                "matched_factors": result["matched_factors"],
-                "summary": result["summary"],
-            },
-        )
+        store_evaluation(session, job.id, resume_version.id, quick_result, result)
         crud.ensure_draft_application(session, job.id, source_platform="discovery")
 
         crud.set_job_activity(session, job.id, None)
@@ -180,7 +150,9 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
         else:
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
-        notify_job_evaluated(company=result["company"], role=result["role"], score=result["score"], job_id=job.id)
+        notify_job_evaluated(
+            company=quick_result.get("company"), role=quick_result.get("role"), score=result["score"], job_id=job.id
+        )
 
         return True
     finally:

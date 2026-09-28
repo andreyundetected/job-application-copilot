@@ -70,7 +70,7 @@ document.getElementById("archive-grid").addEventListener("click", async (event) 
         const jobId = event.target.dataset.jobId;
         await fetch(`/jobs/${jobId}/unarchive`, { method: "POST" });
         event.target.closest(".job-card").remove();
-        showToast(I18N.job_restored_toast, "success");
+        showToast(I18N.job_restored_toast, "success", { key: "job_restored" });
         checkEmptyState();
         return;
     }
@@ -171,7 +171,7 @@ document.getElementById("clear-archive-confirm-btn").addEventListener("click", a
     const response = await fetch("/archive/clear-all", { method: "POST" });
     if (response.ok) {
         document.getElementById("archive-grid").innerHTML = "";
-        showToast(I18N.clear_archive_done_toast, "danger");
+        showToast(I18N.clear_archive_done_toast, "danger", { key: "archive_cleared" });
         if (clearArchiveBtn) clearArchiveBtn.style.display = "none";
         checkEmptyState();
     }

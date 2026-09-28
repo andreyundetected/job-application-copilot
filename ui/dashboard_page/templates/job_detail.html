@@ -76,7 +76,31 @@
     <button type="button" class="btn-ghost btn" id="btn-start-application">
         {{ t.start_application_button }}
     </button>
+    <button type="button" class="applied-toggle-btn detail-applied-btn{% if applied %} is-applied{% endif %}" id="btn-toggle-applied" data-applied="{{ 'true' if applied else 'false' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="applied-label">{{ t.applied_button_done if applied else t.applied_button_mark }}</span>
+    </button>
     <script>
+    const appliedBtn = document.getElementById("btn-toggle-applied");
+    appliedBtn.addEventListener("click", async () => {
+        const next = appliedBtn.dataset.applied !== "true";
+        appliedBtn.disabled = true;
+        const response = await fetch("/jobs/{{ job.id }}/applied", {
+            method: "POST",
+            body: new URLSearchParams({ applied: next ? "true" : "" }),
+        });
+        appliedBtn.disabled = false;
+        if (!response.ok) {
+            showToast({{ t.applied_failed_toast | tojson }}, "danger");
+            return;
+        }
+        const data = await response.json();
+        appliedBtn.dataset.applied = data.applied ? "true" : "false";
+        appliedBtn.classList.toggle("is-applied", data.applied);
+        document.getElementById("applied-label").textContent = data.applied ? {{ t.applied_button_done | tojson }} : {{ t.applied_button_mark | tojson }};
+        showToast(data.applied ? {{ t.applied_toast_on | tojson }} : {{ t.applied_toast_off | tojson }}, "success", { key: "applied" });
+    });
+
     document.getElementById("btn-start-application").addEventListener("click", async () => {
         const response = await fetch("/jobs/{{ job.id }}/start-application", { method: "POST" });
         const data = await response.json();
@@ -96,6 +120,7 @@
 </div>
 
 <style>
+.detail-applied-btn { width: auto; margin-top: 18px; padding: 10px 20px; font-size: 13px; }
 .accent-link { color: var(--accent); text-decoration: none; }
 .accent-link:hover { text-decoration: underline; }
 

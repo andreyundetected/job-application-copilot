@@ -166,6 +166,12 @@ def _replace_block(blocks: list[dict], new_block: dict) -> list[dict]:
     return [new_block if block["id"] == new_block["id"] else block for block in blocks]
 
 
+def _title_sort_key(item: dict, block_order: dict[str, int]) -> tuple:
+    if "order" in item:
+        return (item["order"], item.get("line", 0))
+    return (block_order.get(item.get("key"), len(block_order)), item.get("line", 0))
+
+
 def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None:
     session = SessionLocal()
     try:
@@ -639,6 +645,7 @@ def _run_generate_block(session_id: int, field_path: str) -> dict:
             included_texts,
             keep_texts,
             comment,
+            kind=block["kind"],
         )
 
         if fragments == originals:
@@ -698,8 +705,11 @@ def revert_block(
     crud.unmark_block_edited(session, session_id, field_path)
 
     if restored_suggestions:
-        current = list(crud.get_tailoring_session(session, session_id).title_suggestions or [])
-        crud.save_title_suggestions(session, session_id, current + restored_suggestions)
+        latest = crud.get_tailoring_session(session, session_id)
+        order = {block["field_path"]: index for index, block in enumerate(latest.blocks or [])}
+        merged = list(latest.title_suggestions or []) + restored_suggestions
+        merged.sort(key=lambda item: _title_sort_key(item, order))
+        crud.save_title_suggestions(session, session_id, merged)
 
     refreshed = crud.get_tailoring_session(session, session_id)
     return JSONResponse(

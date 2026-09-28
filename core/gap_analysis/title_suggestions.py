@@ -39,5 +39,6 @@ def suggest_title_changes(provider, targets: list[dict], job_posting_text: str) 
         target = targets[index]
         if not suggested or suggested == target["current"]:
             continue
-        suggestions.append({**target, "suggested": suggested})
+        suggestions.append({**target, "suggested": suggested, "order": index})
+    suggestions.sort(key=lambda item: item["order"])
     return suggestions

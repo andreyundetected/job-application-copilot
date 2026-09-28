@@ -72,8 +72,7 @@
 }
 .autosave-status.visible { opacity: 1; }
 
-/* resume upload */
-.resume-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.resume-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .resume-upload-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .resume-upload-row label {
     margin: 0; font-size: 11.5px; color: var(--text-secondary); cursor: pointer;
@@ -93,8 +92,7 @@
 
 .linkedin-actions-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 
-/* editor: resume doc + linkedin textarea */
-.doc-editor-panel { background: #ffffff; color: #111; border-radius: var(--radius); padding: 22px 26px; font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10.5pt; outline: none; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.2); height: 560px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent; }
+.doc-editor-panel { background: #ffffff; color: #111; border-radius: var(--radius); padding: 22px 26px; font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10.5pt; outline: none; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.2); height: min(78vh, 860px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent; }
 .doc-editor-panel::-webkit-scrollbar { width: 8px; }
 .doc-editor-panel::-webkit-scrollbar-track { background: transparent; }
 .doc-editor-panel::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 999px; }
@@ -102,6 +100,30 @@
 .doc-editor-panel p { margin: 3px 0; line-height: 1.45; }
 .doc-editor-panel ul { margin: 3px 0 10px; padding-left: 22px; }
 .doc-editor-panel li { margin: 2px 0; line-height: 1.45; }
+
+.doc-editor-panel.blocks-mode { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.doc-editor-panel.blocks-mode > * { border-radius: 3px; transition: background-color 0.12s ease; }
+.doc-editor-panel.blocks-mode > *:hover { outline: 1px dashed rgba(91, 141, 239, 0.8); outline-offset: -1px; }
+.doc-editor-panel.blocks-mode > .blk-selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.blk-tip {
+    position: fixed; display: none; z-index: 400; pointer-events: none;
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 10px; font-size: 11.5px; font-weight: 600; color: var(--text-primary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); max-width: 280px;
+}
+
+.blocks-bar {
+    display: none; flex-direction: column; gap: 10px; margin-top: 10px;
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;
+}
+.blocks-bar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.blocks-bar-row select, .blocks-bar-row input { margin-top: 0; width: auto; flex: 1 1 150px; min-width: 130px; }
+.blocks-bar-row .btn { margin-top: 0; padding: 8px 13px; font-size: 12px; white-space: nowrap; }
+.blocks-bar-hint { font-size: 11.5px; color: var(--text-tertiary); flex: 1; }
+.blocks-bar-count { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.blocks-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.blocks-legend-chip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid; cursor: pointer; }
 
 .doc-toolbar { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
 .doc-toolbar button {
@@ -126,7 +148,6 @@
 .linkedin-editor-textarea::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; border: 2px solid var(--bg-elevated); }
 .linkedin-editor-textarea::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
 
-/* chips (additional links) */
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-item {
     display: inline-flex; align-items: center; gap: 6px;
@@ -138,7 +159,6 @@
 .chip-item-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 6px; border-radius: 50%; flex-shrink: 0; }
 .chip-item-remove:hover { color: var(--score-low); background-color: var(--score-low-soft); }
 
-/* blocker / factor cards */
 .quick-add-row { display: flex; gap: 8px; margin-top: 4px; }
 .quick-add-row input[type="text"] { flex: 1; margin-top: 0; }
 .quick-add-row .btn { margin-top: 0; padding: 9px 15px; font-size: 12.5px; white-space: nowrap; }
@@ -178,14 +198,56 @@
 .segmented-btn.active.minus { background-color: var(--score-low); color: white; }
 .segmented-btn.active.weight { background-color: var(--accent); color: white; }
 .segmented-group-label { font-size: 10.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.range-toggle { display: flex; gap: 6px; }
+.range-toggle button {
+    padding: 8px 14px; font-size: 12.5px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background-color: var(--bg-input); color: var(--text-secondary); cursor: pointer;
+}
+.range-toggle button.active { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+.currency-select .custom-select-trigger {
+    width: 100%;
+    justify-content: space-between;
+    background-color: var(--bg-input);
+    padding: 9px 12px 9px 15px;
+}
+.currency-select .custom-select-menu { left: 0; right: auto; min-width: 160px; }
 </style>
+
+<style>
+.pref-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 4px; }
+.pref-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin: 0;
+    background-color: var(--bg-input); cursor: pointer; font-size: 13px; color: var(--text-primary);
+    transition: background-color 0.12s ease;
+}
+.pref-row + .pref-row { border-top: 1px solid var(--border); }
+.pref-row:hover { background-color: var(--bg-elevated); }
+.pref-switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; }
+.pref-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.pref-slider {
+    position: absolute; inset: 0; background-color: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 999px; transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.pref-slider::before {
+    content: ""; position: absolute; width: 15px; height: 15px; left: 2px; top: 2px;
+    background-color: var(--text-secondary); border-radius: 50%;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.pref-switch input:checked + .pref-slider { background-color: var(--accent); border-color: var(--accent); }
+.pref-switch input:checked + .pref-slider::before { transform: translateX(17px); background-color: #ffffff; }
+.pref-actions { display: flex; gap: 8px; margin-top: 12px; }
+.pref-actions .btn { margin-top: 0; padding: 7px 13px; font-size: 12px; }
+</style>
+
+<style id="blocks-dynamic-style"></style>
 
 <div class="profile-header">
     <h1>{{ t.page_title }}</h1>
     <p class="profile-subtitle">{{ t.page_subtitle }}</p>
 </div>
 
-<!-- ABOUT ME -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -232,7 +294,6 @@
     <textarea class="autosave-textarea" data-profile-field="extra_info" placeholder="{{ t.extra_info_placeholder }}">{{ profile.extra_info or '' if profile else '' }}</textarea>
 </div>
 
-<!-- RESUME -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -243,7 +304,15 @@
     </div>
 
     <div class="resume-status-row" style="margin-top:14px;">
-        <span class="resume-upload-status" id="resume-status"></span>
+        <div style="display:flex;align-items:center;gap:12px;">
+            {% if active_resume %}
+            <div class="range-toggle" id="doc-mode-toggle">
+                <button type="button" class="active" data-mode="text">{{ t.mode_text }}</button>
+                <button type="button" data-mode="blocks">{{ t.mode_blocks }}</button>
+            </div>
+            {% endif %}
+            <span class="resume-upload-status" id="resume-status"></span>
+        </div>
         <div class="resume-upload-row">
             <label for="resume_file">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -267,287 +336,36 @@
             <div class="autosave-status" id="resume-save-status" style="margin-left:auto;align-self:center;">✓ {{ t.saved_status }}</div>
         </div>
         <div class="doc-editor-panel" id="resume-doc" contenteditable="true" data-resume-id="{{ active_resume.id }}">{{ active_resume.content_html | safe }}</div>
+
+        <div class="blocks-bar" id="blocks-bar">
+            <div class="blocks-bar-row">
+                <span class="blocks-bar-count"><span id="blocks-selected-count">0</span> {{ t.blocks_selected }}</span>
+                <span class="blocks-bar-hint">{{ t.blocks_mode_hint }}</span>
+                <span class="settings-card-meta" id="blocks-status"></span>
+                <button type="button" class="btn btn-ghost" id="blocks-detect-btn">{{ t.blocks_detect_button }}</button>
+            </div>
+            <div class="blocks-legend" id="blocks-legend"></div>
+            <div class="blocks-bar-row">
+                <select id="blocks-kind-select"></select>
+                <input type="text" id="blocks-name-input" placeholder="{{ t.blocks_name_placeholder }}">
+                <input type="text" id="blocks-role-input" placeholder="{{ t.blocks_role_placeholder }}" style="display:none;">
+                <button type="button" class="btn" id="blocks-create-btn">{{ t.blocks_create }}</button>
+                <button type="button" class="btn btn-ghost" id="blocks-update-btn">{{ t.blocks_update }}</button>
+            </div>
+            <div class="blocks-bar-row">
+                <select id="blocks-target-select"></select>
+                <button type="button" class="btn btn-ghost" id="blocks-add-btn">{{ t.blocks_add_to }}</button>
+                <button type="button" class="btn btn-ghost" id="blocks-unassign-btn">{{ t.blocks_unassign }}</button>
+                <button type="button" class="btn btn-ghost" id="blocks-delete-btn" style="color:var(--score-low);">{{ t.blocks_delete }}</button>
+            </div>
+        </div>
+        <div class="blk-tip" id="blk-tip"></div>
         {% else %}
         <div class="resume-preview-empty">{{ t.none_set }}</div>
         {% endif %}
     </div>
 </div>
 
-{% if active_resume %}
-<div class="settings-card" id="blocks-card">
-    <div class="settings-card-header">
-        <div class="settings-card-header-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <h2>{{ t.blocks_title }}</h2>
-        </div>
-        <span class="settings-card-meta" id="blocks-status"></span>
-    </div>
-    <p class="settings-card-hint">{{ t.blocks_hint }}</p>
-
-    <div class="blocks-toolbar">
-        <button type="button" class="btn btn-ghost" id="blocks-detect-btn" style="margin-top:0;">{{ t.blocks_detect_button }}</button>
-    </div>
-
-    <div class="blocks-layout">
-        <div class="blocks-elements" id="blocks-elements"></div>
-        <div class="blocks-side">
-            <div class="blocks-panel">
-                <div class="blocks-panel-title"><span id="blocks-selected-count">0</span> {{ t.blocks_selected }}</div>
-                <div class="blocks-form">
-                    <select id="blocks-kind-select"></select>
-                    <input type="text" id="blocks-name-input" placeholder="{{ t.blocks_name_placeholder }}">
-                    <input type="text" id="blocks-role-input" placeholder="{{ t.blocks_role_placeholder }}">
-                    <button type="button" class="btn" id="blocks-create-btn" style="margin-top:0;">{{ t.blocks_create }}</button>
-                </div>
-                <div class="blocks-form">
-                    <select id="blocks-target-select"></select>
-                    <button type="button" class="btn btn-ghost" id="blocks-add-btn" style="margin-top:0;">{{ t.blocks_add_to }}</button>
-                </div>
-                <button type="button" class="btn btn-ghost" id="blocks-unassign-btn" style="margin-top:0;">{{ t.blocks_unassign }}</button>
-            </div>
-            <div class="blocks-list" id="blocks-list"></div>
-        </div>
-    </div>
-</div>
-
-<style>
-.blocks-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.blocks-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
-@media (max-width: 900px) { .blocks-layout { grid-template-columns: 1fr; } }
-.blocks-elements { max-height: 560px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-input); scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
-.blocks-row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px; user-select: none; }
-.blocks-row:last-child { border-bottom: none; }
-.blocks-row:hover { background: var(--bg-elevated); }
-.blocks-row.selected { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
-.blocks-row-tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 3px 6px; align-self: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-tertiary); border: 1px dashed var(--border); }
-.blocks-row-text { color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
-.blocks-side { display: flex; flex-direction: column; gap: 12px; }
-.blocks-panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-input); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.blocks-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); }
-.blocks-form { display: flex; flex-direction: column; gap: 6px; }
-.blocks-form select, .blocks-form input { margin-top: 0; }
-.blocks-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
-.blocks-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--bg-input); display: flex; flex-direction: column; gap: 6px; }
-.blocks-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.blocks-item-path { font-size: 10.5px; color: var(--text-tertiary); word-break: break-all; }
-.blocks-item select, .blocks-item input { margin-top: 0; font-size: 12px; padding: 6px 8px; }
-.blocks-item-delete { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; line-height: 1; }
-.blocks-item-delete:hover { color: var(--score-low); }
-</style>
-
-<script>
-(function () {
-    const T = {{ t | tojson }};
-    const RESUME_ID = {{ active_resume.id }};
-    const PALETTE = ["#5b8def", "#4ade80", "#facc15", "#f87171", "#a78bfa", "#fb923c", "#2dd4bf", "#f472b6"];
-    const KINDS = ["title_main", "summary", "skills", "exp_title", "exp_body", "section"];
-
-    let elements = [];
-    let blocks = [];
-    let selected = new Set();
-    let lastIndex = null;
-
-    const elementsEl = document.getElementById("blocks-elements");
-    const listEl = document.getElementById("blocks-list");
-    const statusEl = document.getElementById("blocks-status");
-    const kindSelect = document.getElementById("blocks-kind-select");
-    const nameInput = document.getElementById("blocks-name-input");
-    const roleInput = document.getElementById("blocks-role-input");
-    const targetSelect = document.getElementById("blocks-target-select");
-
-    function kindLabel(kind) { return T["blocks_kind_" + kind] || kind; }
-    function escapeHtml(value) { return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
-    function randomId() { return "b" + Math.random().toString(16).slice(2, 10); }
-    function colorFor(blockId) {
-        const index = blocks.findIndex((b) => b.id === blockId);
-        return PALETTE[index % PALETTE.length];
-    }
-    function blockOf(eid) { return blocks.find((b) => b.element_ids.includes(eid)); }
-
-    kindSelect.innerHTML = KINDS.map((kind) => `<option value="${kind}">${escapeHtml(kindLabel(kind))}</option>`).join("");
-
-    function renderElements() {
-        elementsEl.innerHTML = "";
-        if (!elements.length) {
-            elementsEl.innerHTML = `<div class="blocks-row"><span></span><span class="blocks-row-text">${escapeHtml(T.blocks_no_elements)}</span></div>`;
-            return;
-        }
-        elements.forEach((element, index) => {
-            const block = blockOf(element.eid);
-            const row = document.createElement("div");
-            row.className = "blocks-row" + (selected.has(element.eid) ? " selected" : "");
-            row.dataset.index = index;
-            const tag = block
-                ? `<span class="blocks-row-tag" style="color:${colorFor(block.id)};border:1px solid ${colorFor(block.id)};background:${colorFor(block.id)}22;">${escapeHtml(kindLabel(block.kind))}${block.label ? " · " + escapeHtml(block.label) : ""}</span>`
-                : `<span class="blocks-row-tag">—</span>`;
-            row.innerHTML = `${tag}<span class="blocks-row-text">${escapeHtml(element.text)}</span>`;
-            elementsEl.appendChild(row);
-        });
-        document.getElementById("blocks-selected-count").textContent = selected.size;
-    }
-
-    function renderList() {
-        listEl.innerHTML = "";
-        blocks.forEach((block) => {
-            const item = document.createElement("div");
-            item.className = "blocks-item";
-            item.dataset.blockId = block.id;
-            const isExp = block.kind === "exp_title" || block.kind === "exp_body";
-            const nameValue = isExp ? block.company : block.label;
-            item.innerHTML = `
-                <div class="blocks-item-head">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${colorFor(block.id)};flex-shrink:0;"></span>
-                    <select class="blocks-item-kind">${KINDS.map((k) => `<option value="${k}" ${k === block.kind ? "selected" : ""}>${escapeHtml(kindLabel(k))}</option>`).join("")}</select>
-                    <button type="button" class="blocks-item-delete">&times;</button>
-                </div>
-                <input type="text" class="blocks-item-name" value="${escapeHtml(nameValue)}" placeholder="${escapeHtml(T.blocks_name_placeholder)}">
-                ${block.kind === "exp_title" ? `<input type="text" class="blocks-item-role" value="${escapeHtml(block.role)}" placeholder="${escapeHtml(T.blocks_role_placeholder)}">` : ""}
-                <span class="blocks-item-path">${escapeHtml(block.field_path || "")} · ${block.element_ids.length}</span>
-            `;
-            listEl.appendChild(item);
-        });
-        targetSelect.innerHTML = `<option value="">${escapeHtml(T.blocks_pick_block)}</option>` +
-            blocks.map((b) => `<option value="${b.id}">${escapeHtml(kindLabel(b.kind))} · ${escapeHtml(b.label)}</option>`).join("");
-    }
-
-    function renderAll() { renderElements(); renderList(); }
-
-    async function save() {
-        const payload = blocks.filter((b) => b.element_ids.length);
-        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`, {
-            method: "POST",
-            body: new URLSearchParams({ blocks_json: JSON.stringify(payload) }),
-        });
-        if (!response.ok) { showToast("Error", "danger"); return; }
-        const data = await response.json();
-        blocks = data.blocks;
-        statusEl.textContent = `${T.blocks_saved} · ${blocks.length}`;
-        renderAll();
-    }
-
-    function removeFromBlocks(eids) {
-        blocks.forEach((b) => { b.element_ids = b.element_ids.filter((eid) => !eids.includes(eid)); });
-        blocks = blocks.filter((b) => b.element_ids.length);
-    }
-
-    elementsEl.addEventListener("click", (event) => {
-        const row = event.target.closest(".blocks-row");
-        if (!row || row.dataset.index === undefined) return;
-        const index = parseInt(row.dataset.index, 10);
-        const eid = elements[index].eid;
-        if (event.shiftKey && lastIndex !== null) {
-            const [low, high] = [Math.min(lastIndex, index), Math.max(lastIndex, index)];
-            for (let i = low; i <= high; i++) selected.add(elements[i].eid);
-        } else if (selected.has(eid)) {
-            selected.delete(eid);
-        } else {
-            selected.add(eid);
-        }
-        lastIndex = index;
-        renderElements();
-    });
-
-    document.getElementById("blocks-create-btn").addEventListener("click", async () => {
-        if (!selected.size) return;
-        const kind = kindSelect.value;
-        const name = nameInput.value.trim();
-        const eids = [...selected];
-        removeFromBlocks(eids);
-        const isExp = kind === "exp_title" || kind === "exp_body";
-        blocks.push({
-            id: randomId(),
-            kind,
-            label: isExp ? "" : name,
-            company: isExp ? name : "",
-            role: kind === "exp_title" ? roleInput.value.trim() : "",
-            element_ids: eids,
-            field_path: "",
-        });
-        selected = new Set();
-        nameInput.value = "";
-        roleInput.value = "";
-        await save();
-    });
-
-    document.getElementById("blocks-add-btn").addEventListener("click", async () => {
-        const targetId = targetSelect.value;
-        if (!selected.size || !targetId) return;
-        const eids = [...selected];
-        removeFromBlocks(eids);
-        const target = blocks.find((b) => b.id === targetId);
-        if (!target) return;
-        target.element_ids = [...target.element_ids, ...eids];
-        selected = new Set();
-        await save();
-    });
-
-    document.getElementById("blocks-unassign-btn").addEventListener("click", async () => {
-        if (!selected.size) return;
-        removeFromBlocks([...selected]);
-        selected = new Set();
-        await save();
-    });
-
-    listEl.addEventListener("click", async (event) => {
-        if (!event.target.classList.contains("blocks-item-delete")) return;
-        const blockId = event.target.closest(".blocks-item").dataset.blockId;
-        blocks = blocks.filter((b) => b.id !== blockId);
-        await save();
-    });
-
-    listEl.addEventListener("change", async (event) => {
-        const item = event.target.closest(".blocks-item");
-        if (!item) return;
-        const block = blocks.find((b) => b.id === item.dataset.blockId);
-        if (!block) return;
-        if (event.target.classList.contains("blocks-item-kind")) {
-            block.kind = event.target.value;
-        } else if (event.target.classList.contains("blocks-item-name")) {
-            if (block.kind === "exp_title" || block.kind === "exp_body") block.company = event.target.value.trim();
-            else block.label = event.target.value.trim();
-        } else if (event.target.classList.contains("blocks-item-role")) {
-            block.role = event.target.value.trim();
-        }
-        await save();
-    });
-
-    document.getElementById("blocks-detect-btn").addEventListener("click", async () => {
-        const button = document.getElementById("blocks-detect-btn");
-        button.disabled = true;
-        statusEl.textContent = T.blocks_detecting;
-        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks/detect`, { method: "POST" });
-        if (!response.ok) { button.disabled = false; return; }
-        const data = await response.json();
-        pollTaskStatus([data.task_id], async (tasks) => {
-            const task = tasks[0];
-            if (task.status === "done") {
-                button.disabled = false;
-                await load();
-                statusEl.textContent = T.blocks_detected_done;
-            } else if (task.status === "failed") {
-                button.disabled = false;
-                statusEl.textContent = task.error;
-            }
-        });
-    });
-
-    async function load() {
-        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`);
-        if (!response.ok) return;
-        const data = await response.json();
-        elements = data.elements;
-        blocks = data.blocks;
-        selected = new Set();
-        statusEl.textContent = data.detected ? `${blocks.length}` : T.blocks_not_detected;
-        renderAll();
-    }
-
-    load();
-})();
-</script>
-{% endif %}
-
-<!-- LINKEDIN -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -565,7 +383,6 @@
     </div>
 </div>
 
-<!-- SALARY PREFERENCES -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -605,55 +422,6 @@
     </div>
 </div>
 
-<style>
-.range-toggle { display: flex; gap: 6px; }
-.range-toggle button {
-    padding: 8px 14px; font-size: 12.5px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border); background-color: var(--bg-input); color: var(--text-secondary); cursor: pointer;
-}
-.range-toggle button.active { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-
-.currency-select .custom-select-trigger {
-    width: 100%;
-    justify-content: space-between;
-    background-color: var(--bg-input);
-    padding: 9px 12px 9px 15px;
-}
-.currency-select .custom-select-menu { left: 0; right: auto; min-width: 160px; }
-</style>
-
-<script>
-(function () {
-    const status = document.getElementById("salary-save-status");
-    const periodToggle = document.getElementById("salary-period-toggle");
-    let currentPeriod = {{ preferred_salary_period | tojson }};
-    let currentCurrency = {{ preferred_currency | tojson }};
-
-    periodToggle.querySelectorAll("button").forEach((btn) => {
-        if (btn.dataset.period === currentPeriod) btn.classList.add("active");
-        btn.addEventListener("click", () => {
-            periodToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-            currentPeriod = btn.dataset.period;
-            saveSalaryPrefs();
-        });
-    });
-
-    function saveSalaryPrefs() {
-        const formData = new FormData();
-        formData.append("preferred_currency", currentCurrency);
-        formData.append("preferred_salary_period", currentPeriod);
-        fetch("/settings/salary-preferences", { method: "POST", body: formData }).then(() => flashSaved(status));
-    }
-
-    initCustomSelect(document.getElementById("preferred_currency"), (value) => {
-        currentCurrency = value;
-        saveSalaryPrefs();
-    });
-})();
-</script>
-
-<!-- BLOCKERS -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -680,7 +448,6 @@
     </div>
 </div>
 
-<!-- SCORING FACTORS -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -722,7 +489,6 @@
     </div>
 </div>
 
-<!-- WRITING PREFERENCES -->
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
@@ -735,6 +501,22 @@
     <textarea class="autosave-textarea" id="writing_preferences" placeholder="{{ t.writing_prefs_placeholder }}" style="min-height:100px;">{{ profile.writing_preferences or '' if profile else '' }}</textarea>
 </div>
 
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div class="settings-card-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <h2>{{ t.toast_prefs_title }}</h2>
+        </div>
+        <span class="autosave-status" id="toast-prefs-save-status">✓ {{ t.saved_status }}</span>
+    </div>
+    <p class="settings-card-hint">{{ t.toast_prefs_hint }}</p>
+    <div class="pref-list" id="toast-prefs-list"></div>
+    <div class="pref-actions">
+        <button type="button" class="btn btn-ghost" id="toast-prefs-enable-all">{{ t.toast_prefs_enable_all }}</button>
+        <button type="button" class="btn btn-ghost" id="toast-prefs-disable-all">{{ t.toast_prefs_disable_all }}</button>
+    </div>
+</div>
+
 <script>
 const I18N = {{ t | tojson }};
 
@@ -744,7 +526,35 @@ function flashSaved(el) {
     el._hideTimeout = setTimeout(() => el.classList.remove("visible"), 1600);
 }
 
-// ---- profile autosave ----
+(function () {
+    const status = document.getElementById("salary-save-status");
+    const periodToggle = document.getElementById("salary-period-toggle");
+    let currentPeriod = {{ preferred_salary_period | tojson }};
+    let currentCurrency = {{ preferred_currency | tojson }};
+
+    periodToggle.querySelectorAll("button").forEach((btn) => {
+        if (btn.dataset.period === currentPeriod) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+            periodToggle.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentPeriod = btn.dataset.period;
+            saveSalaryPrefs();
+        });
+    });
+
+    function saveSalaryPrefs() {
+        const formData = new FormData();
+        formData.append("preferred_currency", currentCurrency);
+        formData.append("preferred_salary_period", currentPeriod);
+        fetch("/settings/salary-preferences", { method: "POST", body: formData }).then(() => flashSaved(status));
+    }
+
+    initCustomSelect(document.getElementById("preferred_currency"), (value) => {
+        currentCurrency = value;
+        saveSalaryPrefs();
+    });
+})();
+
 const profileSaveStatus = document.getElementById("profile-save-status");
 let profileSaveTimeout = null;
 
@@ -763,7 +573,6 @@ document.querySelectorAll("[data-profile-field]").forEach((el) => {
     el.addEventListener("blur", () => { clearTimeout(profileSaveTimeout); saveProfile(); });
 });
 
-// ---- profile links (chips) ----
 function renderProfileLinks(links) {
     const list = document.getElementById("profile-links-list");
     list.innerHTML = links.map((link, index) => `
@@ -796,7 +605,6 @@ document.getElementById("profile-links-list").addEventListener("click", async (e
     renderProfileLinks(data.extra_links);
 });
 
-// ---- resume upload ----
 const resumeFileInput = document.getElementById("resume_file");
 const resumeStatus = document.getElementById("resume-status");
 
@@ -821,25 +629,38 @@ resumeFileInput.addEventListener("change", async () => {
     });
 });
 
-// ---- resume doc toolbar ----
-function bindResumeToolbar() {
-    const resumeDoc = document.getElementById("resume-doc");
-    if (!resumeDoc) return;
-    const resumeSaveStatus = document.getElementById("resume-save-status");
-    const resumeId = resumeDoc.dataset.resumeId;
-    let resumeSaveTimeout = null;
+const resumeDocEl = document.getElementById("resume-doc");
 
-    function saveResumeHtml() {
-        const formData = new FormData();
-        formData.append("html_content", resumeDoc.innerHTML);
-        fetch(`/settings/resume/${resumeId}/edit-html`, { method: "POST", body: formData }).then(() => flashSaved(resumeSaveStatus));
-    }
+function cleanDocHtml() {
+    const clone = resumeDocEl.cloneNode(true);
+    clone.querySelectorAll("[data-blk]").forEach((el) => el.removeAttribute("data-blk"));
+    clone.querySelectorAll("[class]").forEach((el) => {
+        [...el.classList].filter((name) => name.startsWith("blk-")).forEach((name) => el.classList.remove(name));
+        if (!el.getAttribute("class")) el.removeAttribute("class");
+    });
+    return clone.innerHTML;
+}
+
+function saveResumeNow() {
+    if (!resumeDocEl || resumeDocEl.classList.contains("blocks-mode")) return Promise.resolve();
+    const formData = new FormData();
+    formData.append("html_content", cleanDocHtml());
+    return fetch(`/settings/resume/${resumeDocEl.dataset.resumeId}/edit-html`, { method: "POST", body: formData }).then(() => {
+        const statusEl = document.getElementById("resume-save-status");
+        if (statusEl) flashSaved(statusEl);
+    });
+}
+
+function bindResumeToolbar() {
+    const resumeDoc = resumeDocEl;
+    if (!resumeDoc) return;
+    let resumeSaveTimeout = null;
 
     resumeDoc.addEventListener("input", () => {
         clearTimeout(resumeSaveTimeout);
-        resumeSaveTimeout = setTimeout(saveResumeHtml, 800);
+        resumeSaveTimeout = setTimeout(saveResumeNow, 800);
     });
-    resumeDoc.addEventListener("blur", () => { clearTimeout(resumeSaveTimeout); saveResumeHtml(); });
+    resumeDoc.addEventListener("blur", () => { clearTimeout(resumeSaveTimeout); saveResumeNow(); });
 
     let savedRange = null;
     function restoreSelection() {
@@ -857,8 +678,8 @@ function bindResumeToolbar() {
         savedRange = range;
     });
 
-    document.getElementById("r-bold-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("bold"); saveResumeHtml(); });
-    document.getElementById("r-italic-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("italic"); saveResumeHtml(); });
+    document.getElementById("r-bold-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("bold"); saveResumeNow(); });
+    document.getElementById("r-italic-btn").addEventListener("click", () => { restoreSelection(); document.execCommand("italic"); saveResumeNow(); });
 
     let alignState = "left";
     const alignIcons = { left: "⬅", center: "↔", right: "➡" };
@@ -870,14 +691,14 @@ function bindResumeToolbar() {
         else if (alignState === "center") document.execCommand("justifyCenter");
         else document.execCommand("justifyRight");
         document.getElementById("r-align-btn").textContent = alignIcons[alignState];
-        saveResumeHtml();
+        saveResumeNow();
     });
 
     function applyForeColor(color) {
         restoreSelection();
         document.execCommand("foreColor", false, color);
         document.getElementById("r-color-picker").value = color;
-        saveResumeHtml();
+        saveResumeNow();
     }
     document.getElementById("r-color-black").addEventListener("click", () => applyForeColor("#000000"));
     document.getElementById("r-color-gray").addEventListener("click", () => applyForeColor("#595959"));
@@ -887,7 +708,290 @@ function bindResumeToolbar() {
 }
 bindResumeToolbar();
 
-// ---- linkedin autosave ----
+{% if active_resume %}
+(function () {
+    const doc = resumeDocEl;
+    const RESUME_ID = doc.dataset.resumeId;
+    const PALETTE = ["#5b8def", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#ea580c", "#0d9488", "#db2777"];
+    const KINDS = ["title_main", "summary", "skills", "exp_title", "exp_body"];
+    const toolbar = document.getElementById("resume-toolbar");
+    const bar = document.getElementById("blocks-bar");
+    const tip = document.getElementById("blk-tip");
+    const styleEl = document.getElementById("blocks-dynamic-style");
+    const legend = document.getElementById("blocks-legend");
+    const statusEl = document.getElementById("blocks-status");
+    const kindSelect = document.getElementById("blocks-kind-select");
+    const nameInput = document.getElementById("blocks-name-input");
+    const roleInput = document.getElementById("blocks-role-input");
+    const targetSelect = document.getElementById("blocks-target-select");
+    const modeButtons = document.querySelectorAll("#doc-mode-toggle button");
+
+    let mode = "text";
+    let blocks = [];
+    let selected = new Set();
+    let lastIndex = null;
+
+    function kindLabel(kind) { return I18N["blocks_kind_" + kind] || kind; }
+    function isExp(kind) { return kind === "exp_title" || kind === "exp_body"; }
+    function escapeHtml(value) { return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+    function randomId() { return "b" + Math.random().toString(16).slice(2, 10); }
+    function colorOf(block) { return PALETTE[Math.max(0, blocks.indexOf(block)) % PALETTE.length]; }
+    function blockOf(eid) { return blocks.find((b) => b.element_ids.includes(eid)); }
+    function childEls() { return [...doc.children].filter((el) => el.dataset.eid); }
+    function blockTitle(block) { return block.label ? `${kindLabel(block.kind)} · ${block.label}` : kindLabel(block.kind); }
+
+    function selectedBlocks() {
+        const found = [];
+        selected.forEach((eid) => { const b = blockOf(eid); if (b && !found.includes(b)) found.push(b); });
+        return found;
+    }
+
+    kindSelect.innerHTML = KINDS.map((kind) => `<option value="${kind}">${escapeHtml(kindLabel(kind))}</option>`).join("");
+    kindSelect.addEventListener("change", () => { roleInput.style.display = kindSelect.value === "exp_title" ? "" : "none"; });
+
+    function stripMarks() {
+        doc.querySelectorAll("[data-blk]").forEach((el) => el.removeAttribute("data-blk"));
+        doc.querySelectorAll("[class]").forEach((el) => {
+            [...el.classList].filter((name) => name.startsWith("blk-")).forEach((name) => el.classList.remove(name));
+            if (!el.getAttribute("class")) el.removeAttribute("class");
+        });
+    }
+
+    function decorate() {
+        const rules = blocks.map((block) => {
+            const color = colorOf(block);
+            return `#resume-doc.blocks-mode [data-blk="${block.id}"] { box-shadow: inset 4px 0 0 ${color}; background-color: ${color}22; }`;
+        });
+        styleEl.textContent = rules.join("\n");
+
+        childEls().forEach((el) => {
+            const block = blockOf(el.dataset.eid);
+            if (block) el.setAttribute("data-blk", block.id); else el.removeAttribute("data-blk");
+            el.classList.toggle("blk-selected", selected.has(el.dataset.eid));
+        });
+
+        legend.innerHTML = blocks.map((block) => {
+            const color = colorOf(block);
+            return `<span class="blocks-legend-chip" data-block-id="${block.id}" style="color:${color};border-color:${color};background:${color}22;">${escapeHtml(blockTitle(block))} · ${block.element_ids.length}</span>`;
+        }).join("");
+
+        targetSelect.innerHTML = `<option value="">${escapeHtml(I18N.blocks_pick_block)}</option>` +
+            blocks.map((block) => `<option value="${block.id}">${escapeHtml(blockTitle(block))}</option>`).join("");
+
+        document.getElementById("blocks-selected-count").textContent = selected.size;
+    }
+
+    function syncForm() {
+        const touched = selectedBlocks();
+        if (touched.length !== 1) return;
+        const block = touched[0];
+        kindSelect.value = block.kind;
+        nameInput.value = isExp(block.kind) ? block.company : "";
+        roleInput.value = block.role || "";
+        roleInput.style.display = block.kind === "exp_title" ? "" : "none";
+    }
+
+    async function save() {
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`, {
+            method: "POST",
+            body: new URLSearchParams({ blocks_json: JSON.stringify(blocks.filter((b) => b.element_ids.length)) }),
+        });
+        if (!response.ok) { showToast("Error", "danger"); return; }
+        const data = await response.json();
+        blocks = data.blocks;
+        statusEl.textContent = `${I18N.blocks_saved} · ${blocks.length}`;
+        decorate();
+    }
+
+    function removeFromBlocks(eids) {
+        blocks.forEach((b) => { b.element_ids = b.element_ids.filter((eid) => !eids.includes(eid)); });
+        blocks = blocks.filter((b) => b.element_ids.length);
+    }
+
+    async function loadBlocks() {
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`);
+        if (!response.ok) return false;
+        const data = await response.json();
+        blocks = data.blocks;
+        doc.innerHTML = data.html;
+        selected = new Set();
+        lastIndex = null;
+        statusEl.textContent = data.detected ? `${blocks.length}` : I18N.blocks_not_detected;
+        decorate();
+        return true;
+    }
+
+    async function setMode(next) {
+        if (next === mode) return;
+        if (next === "blocks") {
+            await saveResumeNow();
+            doc.contentEditable = "false";
+            doc.classList.add("blocks-mode");
+            if (!(await loadBlocks())) {
+                doc.contentEditable = "true";
+                doc.classList.remove("blocks-mode");
+                return;
+            }
+            toolbar.style.display = "none";
+            bar.style.display = "flex";
+            mode = "blocks";
+        } else {
+            stripMarks();
+            styleEl.textContent = "";
+            doc.classList.remove("blocks-mode");
+            doc.contentEditable = "true";
+            toolbar.style.display = "flex";
+            bar.style.display = "none";
+            tip.style.display = "none";
+            mode = "text";
+        }
+        modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+    }
+
+    modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+
+    function topLevelOf(target) {
+        let node = target;
+        while (node && node.parentElement !== doc) node = node.parentElement;
+        return node && node.dataset && node.dataset.eid ? node : null;
+    }
+
+    function selectBlock(block) {
+        selected = new Set(block.element_ids);
+        decorate();
+        syncForm();
+    }
+
+    doc.addEventListener("click", (event) => {
+        if (mode !== "blocks") return;
+        event.preventDefault();
+        const el = topLevelOf(event.target);
+        if (!el) return;
+        const elements = childEls();
+        const index = elements.indexOf(el);
+        const eid = el.dataset.eid;
+        if (event.shiftKey && lastIndex !== null) {
+            const low = Math.min(lastIndex, index);
+            const high = Math.max(lastIndex, index);
+            for (let i = low; i <= high; i++) selected.add(elements[i].dataset.eid);
+        } else if (selected.has(eid)) {
+            selected.delete(eid);
+        } else {
+            selected.add(eid);
+        }
+        lastIndex = index;
+        decorate();
+        syncForm();
+    });
+
+    doc.addEventListener("dblclick", (event) => {
+        if (mode !== "blocks") return;
+        const el = topLevelOf(event.target);
+        const block = el ? blockOf(el.dataset.eid) : null;
+        if (block) selectBlock(block);
+    });
+
+    doc.addEventListener("mousemove", (event) => {
+        if (mode !== "blocks") return;
+        const el = topLevelOf(event.target);
+        if (!el) { tip.style.display = "none"; return; }
+        const block = blockOf(el.dataset.eid);
+        tip.textContent = block ? blockTitle(block) : I18N.blocks_outside;
+        tip.style.display = "block";
+        tip.style.left = `${event.clientX + 14}px`;
+        tip.style.top = `${event.clientY + 16}px`;
+    });
+    doc.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+
+    legend.addEventListener("click", (event) => {
+        const chip = event.target.closest(".blocks-legend-chip");
+        const block = chip ? blocks.find((b) => b.id === chip.dataset.blockId) : null;
+        if (block) selectBlock(block);
+    });
+
+    document.getElementById("blocks-create-btn").addEventListener("click", async () => {
+        if (!selected.size) return;
+        const kind = kindSelect.value;
+        const name = nameInput.value.trim();
+        if (isExp(kind) && !name) { showToast(I18N.blocks_name_required, "danger"); return; }
+        const eids = [...selected];
+        removeFromBlocks(eids);
+        blocks.push({
+            id: randomId(),
+            kind,
+            label: "",
+            company: isExp(kind) ? name : "",
+            role: kind === "exp_title" ? roleInput.value.trim() : "",
+            element_ids: eids,
+            field_path: "",
+        });
+        selected = new Set();
+        await save();
+    });
+
+    document.getElementById("blocks-update-btn").addEventListener("click", async () => {
+        const touched = selectedBlocks();
+        if (touched.length !== 1) return;
+        const block = touched[0];
+        const kind = kindSelect.value;
+        const name = nameInput.value.trim();
+        if (isExp(kind) && !name) { showToast(I18N.blocks_name_required, "danger"); return; }
+        block.kind = kind;
+        block.company = isExp(kind) ? name : "";
+        block.role = kind === "exp_title" ? roleInput.value.trim() : "";
+        await save();
+    });
+
+    document.getElementById("blocks-add-btn").addEventListener("click", async () => {
+        const target = blocks.find((b) => b.id === targetSelect.value);
+        if (!selected.size || !target) return;
+        const eids = [...selected];
+        removeFromBlocks(eids);
+        const alive = blocks.find((b) => b.id === target.id);
+        if (!alive) return;
+        alive.element_ids = [...alive.element_ids, ...eids];
+        selected = new Set();
+        await save();
+    });
+
+    document.getElementById("blocks-unassign-btn").addEventListener("click", async () => {
+        if (!selected.size) return;
+        removeFromBlocks([...selected]);
+        selected = new Set();
+        await save();
+    });
+
+    document.getElementById("blocks-delete-btn").addEventListener("click", async () => {
+        const touched = selectedBlocks();
+        if (!touched.length) return;
+        const ids = touched.map((b) => b.id);
+        blocks = blocks.filter((b) => !ids.includes(b.id));
+        selected = new Set();
+        await save();
+    });
+
+    document.getElementById("blocks-detect-btn").addEventListener("click", async () => {
+        const button = document.getElementById("blocks-detect-btn");
+        button.disabled = true;
+        statusEl.textContent = I18N.blocks_detecting;
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks/detect`, { method: "POST" });
+        if (!response.ok) { button.disabled = false; return; }
+        const data = await response.json();
+        pollTaskStatus([data.task_id], async (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                button.disabled = false;
+                await loadBlocks();
+                statusEl.textContent = I18N.blocks_detected_done;
+            } else if (task.status === "failed") {
+                button.disabled = false;
+                statusEl.textContent = task.error;
+            }
+        });
+    });
+})();
+{% endif %}
+
 const linkedinTextarea = document.getElementById("linkedin_text");
 const linkedinStatus = document.getElementById("linkedin-status");
 let linkedinSaveTimeout = null;
@@ -916,7 +1020,6 @@ linkedinTextarea.addEventListener("input", () => {
 });
 linkedinTextarea.addEventListener("blur", () => { clearTimeout(linkedinSaveTimeout); saveLinkedinText(); });
 
-// ---- blockers ----
 function addBlockerCard(id, text) {
     const list = document.getElementById("blocker-list");
     const card = document.createElement("div");
@@ -951,7 +1054,6 @@ document.getElementById("blocker-list").addEventListener("click", async (e) => {
     e.target.closest(".item-card").remove();
 });
 
-// ---- scoring factors ----
 let selectedDirection = "plus";
 let selectedWeight = "1";
 
@@ -1007,6 +1109,60 @@ document.getElementById("scoring-factor-list").addEventListener("click", async (
     await fetch(`/settings/scoring-factors/${id}/delete`, { method: "POST" });
     e.target.closest(".item-card").remove();
 });
+
+(function () {
+    const STORAGE_KEY = "toast_prefs";
+    const KEYS = ["new_job", "job_added", "applied", "job_archived", "job_restored", "archive_cleared", "stuck_removed", "copied", "tailoring", "tracker_sorted", "data_wiped"];
+    const list = document.getElementById("toast-prefs-list");
+    const status = document.getElementById("toast-prefs-save-status");
+
+    function readPrefs() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function writePrefs(prefs) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+        } catch (error) {}
+        flashSaved(status);
+    }
+
+    function render() {
+        const prefs = readPrefs();
+        list.innerHTML = KEYS.map((key) => `
+            <label class="pref-row">
+                <span class="pref-switch">
+                    <input type="checkbox" data-key="${key}" ${prefs[key] === false ? "" : "checked"}>
+                    <span class="pref-slider"></span>
+                </span>
+                <span>${I18N["toast_cat_" + key]}</span>
+            </label>
+        `).join("");
+    }
+
+    list.addEventListener("change", (event) => {
+        const input = event.target.closest("input[data-key]");
+        if (!input) return;
+        const prefs = readPrefs();
+        prefs[input.dataset.key] = input.checked;
+        writePrefs(prefs);
+    });
+
+    function setAll(value) {
+        const prefs = {};
+        KEYS.forEach((key) => { prefs[key] = value; });
+        writePrefs(prefs);
+        render();
+    }
+
+    document.getElementById("toast-prefs-enable-all").addEventListener("click", () => setAll(true));
+    document.getElementById("toast-prefs-disable-all").addEventListener("click", () => setAll(false));
+    render();
+})();
 
 (function () {
     const status = document.getElementById("writing-prefs-save-status");

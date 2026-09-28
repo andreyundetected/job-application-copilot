@@ -984,7 +984,7 @@ function pollNewJobs() {
             data.jobs.forEach((job) => {
                 if (!seenJobIds.has(job.id)) {
                     seenJobIds.add(job.id);
-                    showToast(`${I18N.new_job_toast_title}: ${job.company || ""} — ${job.role || ""}`, "success");
+                    showToast(`${I18N.new_job_toast_title}: ${job.company || ""} — ${job.role || ""}`, "success", { key: "new_job", href: `/jobs/${job.id}` });
                 }
             });
         })
@@ -1000,7 +1000,7 @@ document.getElementById("btn-wipe-data").addEventListener("click", async () => {
     const response = await fetch("/automation/wipe-data", { method: "POST" });
     button.disabled = false;
     if (!response.ok) { showToast("Error", "danger"); return; }
-    showToast(I18N.wipe_done_toast, "success");
+    showToast(I18N.wipe_done_toast, "success", { key: "data_wiped" });
     setTimeout(() => window.location.reload(), 800);
 });
 </script>

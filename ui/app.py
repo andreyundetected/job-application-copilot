@@ -1,8 +1,10 @@
 import logging
+import threading
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from core.currency.converter import warm_up_rates
 from core.db.crud.tailoring_permissions import seed_default_tailoring_permissions
 from core.db.session import SessionLocal, init_db
 from core.discovery.scheduler import start_discovery_schedulers, stop_discovery_schedulers
@@ -51,6 +53,7 @@ def on_startup():
     finally:
         session.close()
 
+    threading.Thread(target=warm_up_rates, daemon=True, name="currency-warmup").start()
     start_discovery_schedulers()
     start_watchdog()
 

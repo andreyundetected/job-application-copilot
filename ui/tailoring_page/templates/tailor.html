@@ -800,7 +800,7 @@ main {
         rebuildElementMap();
         if (data.title_suggestions) titleSuggestions = data.title_suggestions;
         setResumeHtml(data.html, { persist: false });
-        showToast("Откачено к оригиналу", "success");
+        showToast("Откачено к оригиналу", "success", { key: "tailoring" });
     });
 
     function setBlockHot(path, on, opts) {
@@ -1122,7 +1122,7 @@ main {
         rebuildElementMap();
         titleSuggestions = titleSuggestions.filter((s) => s !== suggestion);
         setResumeHtml(data.html, { persist: false });
-        showToast("Тайтл обновлён", "success");
+        showToast("Тайтл обновлён", "success", { key: "tailoring" });
     }
 
     function persistTitleSuggestions() {
@@ -1352,14 +1352,14 @@ main {
                     button.classList.remove("generating");
                     button.textContent = "Сгенерировать";
                     if (task.result.unchanged) {
-                        showToast("Без изменений", "info");
+                        showToast("Без изменений", "info", { key: "tailoring" });
                         return;
                     }
                     gapState.editedBlocks = task.result.edited_blocks || {};
                     blocksState = task.result.blocks || blocksState;
                     rebuildElementMap();
                     setResumeHtml(task.result.html, { persist: false });
-                    showToast("Готово", "success");
+                    showToast("Готово", "success", { key: "tailoring" });
                 } else if (task.status === "failed") {
                     button.classList.remove("generating");
                     button.textContent = "Сгенерировать";

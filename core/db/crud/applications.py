@@ -119,6 +119,40 @@ def update_application_interview(
     return application
 
 
+APPLIED_STATUSES = ("applied", "interviewing", "offer", "rejected")
+
+
+def is_job_applied(session: Session, job_posting_id: int) -> bool:
+    return (
+        session.query(Application)
+        .filter(Application.job_posting_id == job_posting_id, Application.status.in_(APPLIED_STATUSES))
+        .first()
+        is not None
+    )
+
+
+def set_job_applied(session: Session, job_posting_id: int, applied: bool) -> Application:
+    application = ensure_draft_application(session, job_posting_id, source_platform="manual")
+
+    if applied:
+        if not is_job_applied(session, job_posting_id):
+            application.status = "applied"
+            application.applied_at = application.applied_at or datetime.datetime.utcnow()
+    else:
+        applied_rows = (
+            session.query(Application)
+            .filter(Application.job_posting_id == job_posting_id, Application.status.in_(APPLIED_STATUSES))
+            .all()
+        )
+        for row in applied_rows:
+            row.status = "draft"
+            row.applied_at = None
+
+    session.commit()
+    session.refresh(application)
+    return application
+
+
 def delete_application(session: Session, application_id: int) -> bool:
     application = session.get(Application, application_id)
     if application is None:

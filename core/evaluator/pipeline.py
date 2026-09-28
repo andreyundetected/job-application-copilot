@@ -88,6 +88,10 @@ def _build_matched_factors(parsed: dict, scoring_factors: list[dict]) -> list[di
     return matched
 
 
+def _clean_bullets(values: list) -> list[str]:
+    return [value.strip() for value in values if isinstance(value, str) and value.strip()]
+
+
 def evaluate_job_posting(
     provider,
     job_posting_text: str,
@@ -119,23 +123,13 @@ def evaluate_job_posting(
 
     parsed = parse_html_like(raw_response)
     score = _parse_score(_first_or_none(parsed, "score"))
-    location = _build_location(parsed)
 
     return {
         "reasoning": _first_or_none(parsed, "reasoning"),
-        "company": _first_or_none(parsed, "company"),
-        "role": _first_or_none(parsed, "role"),
         "score": score,
-        "location": location["display"],
-        "location_country": location["country"],
-        "location_state": location["state"],
-        "location_city": location["city"],
-        "work_mode": _first_or_none(parsed, "work_mode"),
-        "salary": _build_salary(parsed),
         "matched_factors": _build_matched_factors(parsed, scoring_factors),
-        "cons": parsed.get("con", []),
-        "pros": parsed.get("pro", []),
-        "summary": _first_or_none(parsed, "summary"),
+        "cons": _clean_bullets(parsed.get("con", [])),
+        "pros": _clean_bullets(parsed.get("pro", [])),
         "verdict": bool(score) and score > 0,
         "raw_response": raw_response,
     }
@@ -162,4 +156,22 @@ def quick_extract_job_posting(provider, job_posting_text: str) -> dict:
         "work_mode": _first_or_none(parsed, "work_mode"),
         "employment_type": _first_or_none(parsed, "employment_type"),
         "tags": parsed.get("tag", []),
+        "salary": _build_salary(parsed),
+        "summary": _first_or_none(parsed, "summary"),
+    }
+
+
+def empty_quick_result() -> dict:
+    return {
+        "company": None,
+        "role": None,
+        "location": None,
+        "location_country": None,
+        "location_state": None,
+        "location_city": None,
+        "work_mode": None,
+        "employment_type": None,
+        "tags": [],
+        "salary": _build_salary({}),
+        "summary": None,
     }

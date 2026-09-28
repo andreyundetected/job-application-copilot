@@ -14,7 +14,8 @@ from core.discovery.ats import detect_platform, extract_job_text
 from core.discovery.quick_filter import quick_filter_search_results
 from core.discovery.search_provider import SerpentSearchError, get_search_provider
 from core.discovery.url_utils import normalize_url
-from core.evaluator.pipeline import evaluate_job_posting, quick_extract_job_posting
+from core.evaluator.persist import apply_quick_meta, store_evaluation
+from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, quick_extract_job_posting
 from core.providers.factory import get_llm_provider
 from core.questions.pipeline import (
     classify_template_category,
@@ -278,6 +279,18 @@ def _process_search_result(
         crud.set_job_activity(session, job.id, "Evaluating fit...")
 
         provider = get_llm_provider()
+
+        try:
+            quick_result = quick_extract_job_posting(provider, job_text)
+            _log_llm_usage(session, provider, run_id, "quick_extract", job_posting_id=job.id)
+            apply_quick_meta(session, job.id, quick_result)
+        except Exception as error:
+            logger.warning(
+                "[run %s] job %s: quick-extract failed, leaving metadata unset: %s",
+                run_id, job.id, error,
+            )
+            quick_result = empty_quick_result()
+
         try:
             result = evaluate_job_posting(
                 provider,
@@ -300,49 +313,7 @@ def _process_search_result(
             return False
         _log_llm_usage(session, provider, run_id, "evaluation", job_posting_id=job.id)
 
-        crud.update_job_quick_meta(
-            session,
-            job.id,
-            company=result["company"],
-            title=result["role"],
-            location=result["location"],
-            location_country=result["location_country"],
-            location_state=result["location_state"],
-            location_city=result["location_city"],
-            work_mode=result["work_mode"],
-        )
-
-        try:
-            quick_result = quick_extract_job_posting(provider, job_text)
-            _log_llm_usage(session, provider, run_id, "quick_extract", job_posting_id=job.id)
-            crud.update_job_quick_meta(
-                session,
-                job.id,
-                employment_type=quick_result["employment_type"],
-                tags=quick_result["tags"],
-            )
-        except Exception as error:
-            logger.warning(
-                "[run %s] job %s: tag/employment_type quick-extract failed, leaving unset: %s",
-                run_id, job.id, error,
-            )
-
-        crud.create_evaluation(
-            session,
-            job_posting_id=job.id,
-            resume_version_id=resume_version.id,
-            verdict=result["verdict"],
-            blocker_bullets={"cons": result["cons"]},
-            fit_score=result["score"],
-            fit_bullets={"pros": result["pros"]},
-            checked_keywords={
-                "location": result["location"],
-                "work_mode": result["work_mode"],
-                "salary": result["salary"],
-                "matched_factors": result["matched_factors"],
-                "summary": result["summary"],
-            },
-        )
+        store_evaluation(session, job.id, resume_version.id, quick_result, result)
         crud.ensure_draft_application(session, job.id, source_platform="automation")
 
         crud.set_job_activity(session, job.id, None)

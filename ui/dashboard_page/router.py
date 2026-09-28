@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -76,6 +76,12 @@ def _get_currency_prefs(session: Session) -> tuple[str, str]:
 
 
 def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
+    card = _base_card_data(job, preferred_currency, preferred_period)
+    card["applied"] = any(application.status in crud.APPLIED_STATUSES for application in job.applications)
+    return card
+
+
+def _base_card_data(job, preferred_currency: str, preferred_period: str) -> dict:
     latest_evaluation = job.evaluations[-1] if job.evaluations else None
     pending = job.pending_task_id is not None or job.activity_label is not None
 
@@ -150,6 +156,16 @@ def job_card_data(job_id: int, session: Session = Depends(get_session)):
     return JSONResponse(_card_data(job, currency, period))
 
 
+@router.post("/jobs/{job_id}/applied")
+def toggle_job_applied(job_id: int, applied: str = Form(""), session: Session = Depends(get_session)):
+    job = crud.get_job_posting(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    application = crud.set_job_applied(session, job_id, applied == "true")
+    return JSONResponse({"applied": crud.is_job_applied(session, job_id), "status": application.status})
+
+
 @router.get("/", response_class=HTMLResponse)
 def dashboard_page(
     request: Request,
@@ -202,6 +218,7 @@ def job_detail_page(
             "summary": checked.get("summary"),
             "pros": (latest_evaluation.fit_bullets or {}).get("pros", []) if latest_evaluation else [],
             "cons": (latest_evaluation.blocker_bullets or {}).get("cons", []) if latest_evaluation else [],
+            "applied": crud.is_job_applied(session, job_id),
             "lang": lang,
             "t": load_page_strings("ui/dashboard_page", lang),
         },

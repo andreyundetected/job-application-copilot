@@ -20,8 +20,8 @@ _SPAN_RE = re.compile(r'<span\b[^>]*style="([^"]*)"[^>]*>(.*?)</span>', re.DOTAL
 _EL_RE = re.compile(r'<el\s+n="(\d+)"[^>]*>(.*?)</el>', re.DOTALL)
 _OUT_LI_RE = re.compile(r"<li>(.*?)</li>", re.DOTALL)
 
-MIN_LENGTH_RATIO = 0.5
-MAX_LENGTH_RATIO = 1.6
+SKILLS_LENGTH_BOUNDS = (0.5, 1.6)
+TEXT_LENGTH_BOUNDS = (0.8, 1.35)
 
 
 def _plain(fragment: str) -> str:
@@ -131,12 +131,14 @@ def generate_block_fragments(
     included_items: list[str],
     keep_items: list[str],
     comment: str,
+    kind: str = "exp_body",
 ) -> list[str]:
     units = build_units(fragments)
     original_words = count_words(units)
 
     prompt = _env.get_template("generate_block_prompt.jinja").render(
         label=label,
+        kind=kind,
         units=units,
         words=original_words,
         full_resume_text=full_resume_text,
@@ -147,7 +149,7 @@ def generate_block_fragments(
     )
 
     raw_response = provider.call(
-        system_prompt="You rewrite one block of a resume with minimal, truthful edits and keep its structure intact.",
+        system_prompt="You align the terminology of one resume block with a job posting and change nothing else.",
         user_prompt=prompt,
         max_tokens=2048,
         reasoning_effort="low",
@@ -155,6 +157,7 @@ def generate_block_fragments(
 
     merged = merge_generated(fragments, units, parse_generated(raw_response))
     new_words = count_words(build_units(merged))
-    if original_words and not (MIN_LENGTH_RATIO * original_words <= new_words <= MAX_LENGTH_RATIO * original_words):
+    low, high = SKILLS_LENGTH_BOUNDS if kind == "skills" else TEXT_LENGTH_BOUNDS
+    if original_words and not (low * original_words <= new_words <= high * original_words):
         raise ValueError(f"The model changed the block length too much ({original_words} -> {new_words} words)")
     return merged
