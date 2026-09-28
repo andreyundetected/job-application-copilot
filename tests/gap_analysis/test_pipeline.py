@@ -82,7 +82,7 @@ def test_match_gap_items_skips_invalid_status():
         '<g status=match text="Docker" category=skill />'
     )
 
-    result = match_gap_items(provider, requirements=[], resume_items=[])
+    result = match_gap_items(provider, requirements=[{"text": "Docker", "priority": "required", "category": "skill"}], resume_items=[])
 
     assert len(result) == 1
     assert result[0]["text"] == "Docker"

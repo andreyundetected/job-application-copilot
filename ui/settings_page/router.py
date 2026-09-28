@@ -1,4 +1,6 @@
+import json
 import shutil
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
@@ -10,7 +12,10 @@ from sqlalchemy.orm import Session
 from core.currency.converter import SUPPORTED_CURRENCIES
 from core.db import crud
 from core.db.session import SessionLocal, get_session
+from core.parsing.docx_to_html import docx_to_html
 from core.parsing.file_extraction import extract_text
+from core.parsing.html_blocks import normalize_elements, split_top_level
+from core.structuring.block_detection import VALID_KINDS, detect_blocks, finalize_blocks
 from core.parsing.html_sanitize import sanitize_html
 from core.parsing.html_to_text import html_to_text
 from core.providers.factory import get_llm_provider
@@ -123,7 +128,8 @@ def upload_resume(
     lang: str = Depends(get_language),
 ):
     file_path = _save_upload(resume_file)
-    raw_text = extract_text(file_path)
+    is_docx = file_path.lower().endswith(".docx")
+    raw_text = "" if is_docx else extract_text(file_path)
 
     task_id = run_tracked_task(
         "resume_structuring",
@@ -131,16 +137,30 @@ def upload_resume(
         raw_text,
         resume_file.filename,
         lang,
+        file_path if is_docx else None,
     )
 
     return JSONResponse({"status": "processing", "task_id": task_id})
 
 
-def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -> dict:
+def _structure_and_save_resume(
+    raw_text: str, filename: str, lang: str = "en", docx_path: str | None = None
+) -> dict:
     session = SessionLocal()
     try:
         provider = get_llm_provider()
-        content_html = structure_resume_to_html(provider, raw_text)
+        if docx_path:
+            content_html = docx_to_html(docx_path)
+            raw_text = html_to_text(content_html)
+        else:
+            content_html = structure_resume_to_html(provider, raw_text)
+
+        content_html, _ = normalize_elements(content_html, [])
+
+        try:
+            blocks = detect_blocks(provider, content_html)
+        except Exception:
+            blocks = None
 
         resume = crud.create_resume_version(
             session,
@@ -150,6 +170,8 @@ def _structure_and_save_resume(raw_text: str, filename: str, lang: str = "en") -
             label=filename,
             is_active=True,
         )
+        if blocks is not None:
+            crud.set_resume_blocks(session, resume.id, blocks)
         return {"resume_version_id": resume.id, "content_html": content_html}
     finally:
         session.close()
@@ -161,11 +183,16 @@ def edit_resume_html(
     html_content: str = Form(...),
     session: Session = Depends(get_session),
 ):
-    cleaned = sanitize_html(html_content)
-    plain_text = html_to_text(cleaned)
-    resume = crud.update_resume_content(session, resume_version_id, content_html=cleaned, raw_text=plain_text)
-    if resume is None:
+    existing = crud.get_resume_version(session, resume_version_id)
+    if existing is None:
         raise HTTPException(status_code=404, detail="Resume version not found")
+
+    cleaned = sanitize_html(html_content)
+    cleaned, blocks = normalize_elements(cleaned, existing.blocks or [])
+    plain_text = html_to_text(cleaned)
+    crud.update_resume_content(session, resume_version_id, content_html=cleaned, raw_text=plain_text)
+    if existing.blocks is not None:
+        crud.set_resume_blocks(session, resume_version_id, blocks)
     return JSONResponse({"status": "ok"})
 
 
@@ -274,3 +301,97 @@ def update_salary_preferences(
         preferred_salary_period=preferred_salary_period,
     )
     return JSONResponse({"status": "ok"})
+
+
+@router.get("/resume/{resume_version_id}/blocks")
+def get_resume_blocks(resume_version_id: int, session: Session = Depends(get_session)):
+    resume = crud.get_resume_version(session, resume_version_id)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+
+    html, blocks = normalize_elements(resume.content_html or "", resume.blocks or [])
+    if html != (resume.content_html or ""):
+        crud.update_resume_content(session, resume_version_id, content_html=html)
+
+    elements = [
+        {"eid": element["eid"], "tag": element["tag"], "text": html_to_text(element["html"])[:400]}
+        for element in split_top_level(html)
+    ]
+    return JSONResponse(
+        {
+            "detected": resume.blocks is not None,
+            "blocks": blocks,
+            "elements": elements,
+            "kinds": sorted(VALID_KINDS),
+        }
+    )
+
+
+@router.post("/resume/{resume_version_id}/blocks")
+def save_resume_blocks(
+    resume_version_id: int,
+    blocks_json: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    resume = crud.get_resume_version(session, resume_version_id)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+
+    try:
+        raw_blocks = json.loads(blocks_json)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    html, _ = normalize_elements(resume.content_html or "", [])
+    position = {element["eid"]: index for index, element in enumerate(split_top_level(html))}
+
+    cleaned = []
+    taken: set[str] = set()
+    for item in raw_blocks:
+        kind = item.get("kind")
+        if kind not in VALID_KINDS:
+            continue
+        ids = [eid for eid in item.get("element_ids", []) if eid in position and eid not in taken]
+        if not ids:
+            continue
+        ids.sort(key=position.get)
+        taken.update(ids)
+        cleaned.append(
+            {
+                "id": item.get("id") or "b" + uuid.uuid4().hex[:8],
+                "kind": kind,
+                "label": item.get("label", ""),
+                "company": item.get("company", ""),
+                "role": item.get("role", ""),
+                "element_ids": ids,
+            }
+        )
+
+    cleaned.sort(key=lambda block: position[block["element_ids"][0]])
+    finalized = finalize_blocks(cleaned)
+    crud.update_resume_content(session, resume_version_id, content_html=html)
+    crud.set_resume_blocks(session, resume_version_id, finalized)
+    return JSONResponse({"blocks": finalized})
+
+
+@router.post("/resume/{resume_version_id}/blocks/detect")
+def detect_resume_blocks(resume_version_id: int, session: Session = Depends(get_session)):
+    resume = crud.get_resume_version(session, resume_version_id)
+    if resume is None:
+        raise HTTPException(status_code=404, detail="Resume version not found")
+
+    task_id = run_tracked_task("resume_blocks_detect", _detect_and_save_blocks, resume_version_id)
+    return JSONResponse({"task_id": task_id})
+
+
+def _detect_and_save_blocks(resume_version_id: int) -> dict:
+    session = SessionLocal()
+    try:
+        resume = crud.get_resume_version(session, resume_version_id)
+        html, _ = normalize_elements(resume.content_html or "", [])
+        blocks = detect_blocks(get_llm_provider(), html)
+        crud.update_resume_content(session, resume_version_id, content_html=html)
+        crud.set_resume_blocks(session, resume_version_id, blocks)
+        return {"count": len(blocks)}
+    finally:
+        session.close()

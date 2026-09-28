@@ -1,4 +1,3 @@
-import datetime
 import logging
 import re
 
@@ -11,19 +10,29 @@ from sqlalchemy.orm import Session
 import config
 from core.db import crud
 from core.db.session import SessionLocal, get_session
+from core.gap_analysis.block_generation import generate_block_fragments
+from core.gap_analysis.pipeline import run_full_gap_analysis
+from core.gap_analysis.title_suggestions import suggest_title_changes
+from core.parsing.html_blocks import (
+    TITLE_KINDS,
+    block_fragments,
+    build_title_targets,
+    normalize_elements,
+    replace_block_elements,
+)
 from core.parsing.html_sanitize import sanitize_html
+from core.parsing.html_to_text import html_to_text
 from core.providers.factory import get_llm_provider
 from core.rendering.docx_renderer import render_html_export_to_docx
 from core.rendering.pdf_renderer import render_html_export_to_pdf
 from core.rendering.txt_renderer import render_html_export_to_txt
-from core.gap_analysis.block_extraction import extract_ordered_blocks
-from core.gap_analysis.pipeline import run_full_gap_analysis
+from core.tailoring.blocks_service import ensure_session_blocks
 from core.tailoring.fragment_pipeline import (
     propose_medium_fragment_changes,
     propose_soft_fragment_changes,
     run_agent_fragment_turn,
 )
-from core.tailoring.html_diff import apply_fragment, strip_marks, wrap_highlights
+from core.tailoring.html_diff import apply_fragment, strip_marks
 from core.tailoring.keyword_extraction import extract_tailoring_keywords
 from core.tasks.runner import run_tracked_task
 from ui.common.i18n import get_language, load_page_strings
@@ -145,24 +154,19 @@ def _store_changes_with_dedup(
     return created, superseded
 
 
-def _pending_changes_for_render(session: Session, session_id: int) -> list[dict]:
-    changes = crud.list_tailoring_changes_for_session(session, session_id)
-    return [_serialize_change(c) for c in changes if c.status == "pending"]
+def _find_block(blocks: list[dict], field_path: str) -> dict | None:
+    return next((block for block in blocks if block["field_path"] == field_path), None)
 
 
-def _approved_changes_for_render(session: Session, session_id: int) -> list[dict]:
-    changes = crud.list_tailoring_changes_for_session(session, session_id)
-    return [_serialize_change(c) for c in changes if c.status == "approved"]
+def _body_blocks(blocks: list[dict]) -> list[dict]:
+    return [block for block in blocks if block["kind"] not in TITLE_KINDS]
 
 
-def _render_working_html(session: Session, tailoring_session) -> str:
-    return tailoring_session.working_html or ""
+def _replace_block(blocks: list[dict], new_block: dict) -> list[dict]:
+    return [new_block if block["id"] == new_block["id"] else block for block in blocks]
 
 
 def pregenerate_tailoring_context(job_posting_id: int, lang: str = "en") -> None:
-    """Runs keyword extraction + soft + medium proposals ahead of time, right after a
-    high-scoring evaluation, so the tailoring page opens already populated. Guarded by
-    the app_settings pregenerate toggle and min-score threshold - see evaluator_page router."""
     session = SessionLocal()
     try:
         resume = crud.get_active_resume_version(session, "resume")
@@ -236,14 +240,7 @@ def tailor_page(
         raise HTTPException(status_code=404, detail="Job not found")
 
     tailoring_session = _get_or_create_session(session, job_id)
-    highlighted_html = _render_working_html(session, tailoring_session)
-
-    messages = crud.list_tailoring_messages(session, tailoring_session.id)
-    changes = crud.list_tailoring_changes_for_session(session, tailoring_session.id)
-
-    changes_by_message: dict[int, list[dict]] = {}
-    for change in changes:
-        changes_by_message.setdefault(change.message_id, []).append(_serialize_change(change))
+    tailoring_session = ensure_session_blocks(session, tailoring_session)
 
     job_context = _get_job_context(session, job_id)
 
@@ -253,9 +250,8 @@ def tailor_page(
             "request": request,
             "job": job,
             "session_id": tailoring_session.id,
-            "resume_html": highlighted_html,
-            "messages": messages,
-            "changes_by_message": changes_by_message,
+            "resume_html": tailoring_session.working_html or "",
+            "blocks": tailoring_session.blocks or [],
             "keywords": tailoring_session.extracted_keywords or [],
             **job_context,
             "lang": lang,
@@ -276,6 +272,7 @@ def _serialize_gap_item(item) -> dict:
         "suggested_field_paths": item.suggested_field_paths or [],
         "suggested_reason": item.suggested_reason,
         "assigned_field_paths": item.assigned_field_paths or [],
+        "disabled_field_paths": item.disabled_field_paths or [],
         "recommend_keep": item.recommend_keep,
         "included": item.included,
     }
@@ -288,17 +285,23 @@ def get_gap_items(session_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Session not found")
 
     items = crud.list_gap_items_for_session(session, session_id)
-    blocks = extract_ordered_blocks(tailoring_session.working_html or "")
-    block_order = [b["field_path"] for b in blocks]
+    blocks = tailoring_session.blocks or []
 
-    logger.info("[session %s] get_gap_items: ready=%s, %s items", session_id, tailoring_session.gap_analysis_ready, len(items))
+    title_suggestions = tailoring_session.title_suggestions
+    if title_suggestions is not None:
+        valid = [s for s in title_suggestions if s.get("key")]
+        title_suggestions = valid if valid or not title_suggestions else None
+
     return JSONResponse(
         {
             "ready": tailoring_session.gap_analysis_ready,
             "items": [_serialize_gap_item(i) for i in items],
             "block_comments": tailoring_session.block_comments or {},
-            "block_order": block_order,
+            "block_order": [block["field_path"] for block in _body_blocks(blocks)],
+            "blocks": blocks,
             "resume_items": tailoring_session.resume_items or [],
+            "edited_blocks": tailoring_session.edited_blocks or {},
+            "title_suggestions": title_suggestions,
         }
     )
 
@@ -320,10 +323,9 @@ def _run_gap_analysis_task(session_id: int) -> dict:
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
         linkedin = crud.get_active_resume_version(session, "linkedin")
         profile = crud.get_candidate_profile(session)
+        blocks = tailoring_session.blocks or []
 
         provider = get_llm_provider()
-
-        logger.info("[session %s] run_gap_analysis: starting, resume_html_len=%s", session_id, len(tailoring_session.working_html or ""))
 
         result = run_full_gap_analysis(
             provider,
@@ -331,16 +333,19 @@ def _run_gap_analysis_task(session_id: int) -> dict:
             resume_html=tailoring_session.working_html or "",
             linkedin_text=linkedin.raw_text if linkedin else "",
             extra_info=profile.extra_info if profile else None,
+            blocks=blocks,
         )
         gap_items = result["gap_items"]
         resume_items = result["resume_items"]
 
-        logger.info(
-            "[session %s] run_gap_analysis: got %s gap items, %s resume items",
-            session_id, len(gap_items), len(resume_items),
-        )
+        valid_paths = {block["field_path"] for block in _body_blocks(blocks)}
+        for item in gap_items:
+            item["suggested_field_paths"] = [
+                path for path in item.get("suggested_field_paths") or [] if path in valid_paths
+            ]
+
         if not gap_items:
-            logger.warning("[session %s] run_gap_analysis: 0 gap items after retries - check LLM output format", session_id)
+            logger.warning("[session %s] run_gap_analysis: 0 gap items after retries", session_id)
 
         crud.clear_gap_items_for_session(session, session_id)
         created = crud.bulk_create_gap_items(session, session_id, gap_items)
@@ -361,6 +366,7 @@ def add_custom_gap_item(
     session_id: int,
     text: str = Form(...),
     field_path: str = Form(...),
+    is_original: str = Form(""),
     session: Session = Depends(get_session),
 ):
     tailoring_session = crud.get_tailoring_session(session, session_id)
@@ -373,29 +379,37 @@ def add_custom_gap_item(
 
     existing = [i for i in crud.list_gap_items_for_session(session, session_id) if i.text.lower() == cleaned.lower()]
     if existing:
-        item = crud.toggle_gap_item_location(session, existing[0].id, field_path)
+        item = existing[0]
+        if field_path not in (item.assigned_field_paths or []):
+            item = crud.toggle_gap_item_location(session, item.id, field_path)
+        if is_original == "true" and not item.original_field_path:
+            item.original_field_path = field_path
+            session.commit()
+            session.refresh(item)
         return JSONResponse({"item": _serialize_gap_item(item)})
 
-    item = crud.create_custom_gap_item(session, session_id, cleaned, field_path)
+    original_field_path = field_path if is_original == "true" else None
+    item = crud.create_custom_gap_item(session, session_id, cleaned, field_path, original_field_path=original_field_path)
     return JSONResponse({"item": _serialize_gap_item(item)})
 
 
-def _extract_titles(html: str) -> tuple[str, list[dict]]:
-    import re
+@router.post("/session/{session_id}/title-suggestions")
+def save_title_suggestions(
+    session_id: int,
+    suggestions_json: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    import json as _json
 
-    title_match = re.search(r'font-size:16pt[^>]*>(.*?)<', html)
-    main_title = title_match.group(1).strip() if title_match else ""
+    try:
+        suggestions = _json.loads(suggestions_json)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    experience_titles = []
-    for match in re.finditer(r'font-size:11pt[^>]*>(.*?)<', html):
-        full_line = match.group(1).strip()
-        parts = full_line.split(" - ", 1)
-        company = parts[0].strip()
-        title = parts[1].strip() if len(parts) > 1 else full_line
-        if company:
-            experience_titles.append({"company": company, "title": title})
-
-    return main_title, experience_titles
+    tailoring_session = crud.save_title_suggestions(session, session_id, suggestions)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return JSONResponse({"status": "ok"})
 
 
 @router.post("/session/{session_id}/suggest-titles")
@@ -414,20 +428,10 @@ def _run_suggest_titles(session_id: int) -> dict:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
 
-        main_title, experience_titles = _extract_titles(tailoring_session.working_html or "")
+        targets = build_title_targets(tailoring_session.working_html or "", tailoring_session.blocks or [])
+        suggestions = suggest_title_changes(get_llm_provider(), targets, job.raw_text)
 
-        provider = get_llm_provider()
-        from core.gap_analysis.pipeline import suggest_titles
-
-        suggestions = suggest_titles(provider, main_title, experience_titles, job.raw_text)
-
-        current_by_company = {e["company"]: e["title"] for e in experience_titles}
-        for suggestion in suggestions:
-            if suggestion["kind"] == "main":
-                suggestion["current"] = main_title
-            else:
-                suggestion["current"] = current_by_company.get(suggestion["company"], "")
-
+        crud.save_title_suggestions(session, session_id, suggestions)
         return {"suggestions": suggestions}
     finally:
         session.close()
@@ -436,37 +440,76 @@ def _run_suggest_titles(session_id: int) -> dict:
 @router.post("/session/{session_id}/apply-title")
 def apply_title(
     session_id: int,
+    key: str = Form(...),
+    line: int = Form(0),
     current_text: str = Form(...),
     new_text: str = Form(...),
-    kind: str = Form("main"),
-    company: str = Form(""),
     session: Session = Depends(get_session),
 ):
     tailoring_session = crud.get_tailoring_session(session, session_id)
     if tailoring_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    blocks = tailoring_session.blocks or []
+    block = _find_block(blocks, key)
+    if block is None or block["kind"] not in TITLE_KINDS:
+        raise HTTPException(status_code=404, detail="Title block not found")
+
     html = tailoring_session.working_html or ""
+    fragments = block_fragments(html, block)
+    if not fragments:
+        raise HTTPException(status_code=409, detail="Title block is empty")
 
-    if kind == "experience" and company.strip():
-        import re
-
-        pattern = re.compile(
-            r'(font-size:11pt[^>]*>\s*' + re.escape(company.strip()) + r'\s*-\s*)'
-            + re.escape(current_text)
-            + r'(\s*<)'
-        )
-        if not pattern.search(html):
-            raise HTTPException(status_code=409, detail="Original title line not found for this company")
-        new_html = pattern.sub(lambda m: m.group(1) + new_text + m.group(2), html, count=1)
+    if block["kind"] == "title_main" and 0 <= line < len(fragments):
+        candidate_indexes = [line]
     else:
+        candidate_indexes = list(range(len(fragments)))
+
+    new_fragments = list(fragments)
+    applied = False
+    for index in candidate_indexes:
         try:
-            new_html = apply_fragment(html, current_text, new_text)
-        except ValueError as error:
-            raise HTTPException(status_code=409, detail=str(error))
+            new_fragments[index] = apply_fragment(fragments[index], current_text, new_text)
+            applied = True
+            break
+        except ValueError:
+            continue
+    if not applied:
+        raise HTTPException(status_code=409, detail="Title text not found in the resume")
+
+    try:
+        new_html, new_block = replace_block_elements(html, block, new_fragments)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
 
     crud.update_working_html(session, session_id, new_html)
-    return JSONResponse({"html": new_html})
+    crud.set_session_blocks(session, session_id, _replace_block(blocks, new_block))
+
+    matched = None
+    remaining = []
+    for suggestion in tailoring_session.title_suggestions or []:
+        is_match = (
+            matched is None
+            and suggestion.get("key") == key
+            and suggestion.get("current") == current_text
+            and (suggestion.get("kind") != "main" or suggestion.get("line") == line)
+        )
+        if is_match:
+            matched = suggestion
+        else:
+            remaining.append(suggestion)
+    if matched is not None:
+        crud.save_title_suggestions(session, session_id, remaining)
+
+    crud.mark_block_edited(session, session_id, key, "\n".join(fragments), title_suggestion=matched)
+    refreshed = crud.get_tailoring_session(session, session_id)
+    return JSONResponse(
+        {
+            "html": strip_marks(new_html),
+            "blocks": refreshed.blocks or [],
+            "edited_blocks": refreshed.edited_blocks or {},
+        }
+    )
 
 
 @router.post("/gap-items/{gap_item_id}/toggle-location")
@@ -479,7 +522,44 @@ def toggle_gap_item_location(
     if item is None:
         raise HTTPException(status_code=404, detail="Gap item not found")
     return JSONResponse(
-        {"status": "ok", "assigned_field_paths": item.assigned_field_paths or [], "item_status": item.status}
+        {
+            "status": "ok",
+            "assigned_field_paths": item.assigned_field_paths or [],
+            "disabled_field_paths": item.disabled_field_paths or [],
+            "item_status": item.status,
+        }
+    )
+
+
+@router.post("/gap-items/{gap_item_id}/toggle-disabled")
+def toggle_gap_item_disabled(
+    gap_item_id: int,
+    field_path: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    item = crud.toggle_gap_item_disabled(session, gap_item_id, field_path)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Gap item not found")
+    return JSONResponse({"status": "ok", "disabled_field_paths": item.disabled_field_paths or []})
+
+
+@router.post("/gap-items/{gap_item_id}/move-location")
+def move_gap_item_location(
+    gap_item_id: int,
+    from_field_path: str = Form(...),
+    to_field_path: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    item = crud.move_gap_item_location(session, gap_item_id, from_field_path, to_field_path)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Gap item not found")
+    return JSONResponse(
+        {
+            "status": "ok",
+            "assigned_field_paths": item.assigned_field_paths or [],
+            "disabled_field_paths": item.disabled_field_paths or [],
+            "item_status": item.status,
+        }
     )
 
 
@@ -518,48 +598,118 @@ def _run_generate_block(session_id: int, field_path: str) -> dict:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
 
-        blocks = extract_ordered_blocks(tailoring_session.working_html or "")
-        block = next((b for b in blocks if b["field_path"] == field_path), None)
-        if block is None or not block["body_text"]:
-            raise HTTPException(status_code=400, detail="Section is empty or not found in the resume")
+        blocks = tailoring_session.blocks or []
+        block = _find_block(blocks, field_path)
+        if block is None or block["kind"] in TITLE_KINDS:
+            raise ValueError("Block not found")
+
+        html = tailoring_session.working_html or ""
+        originals = block_fragments(html, block)
+        if not originals:
+            raise ValueError("Block is empty")
 
         items = crud.list_gap_items_for_session(session, session_id)
         included_texts = [
             item.text
             for item in items
-            if item.status in ("match", "can_add") and field_path in (item.assigned_field_paths or [])
+            if item.status in ("match", "can_add")
+            and field_path in (item.assigned_field_paths or [])
+            and field_path not in (item.disabled_field_paths or [])
+        ]
+        included_texts += [
+            item.text
+            for item in items
+            if item.status in ("miss", "over")
+            and field_path in (item.assigned_field_paths or [])
+            and field_path not in (item.disabled_field_paths or [])
         ]
         keep_texts = [
             item.text
             for item in items
-            if item.status == "over" and item.recommend_keep and field_path in (item.original_field_path or "")
+            if item.status == "over" and item.recommend_keep and item.original_field_path == field_path
         ]
         comment = (tailoring_session.block_comments or {}).get(field_path, "")
 
-        provider = get_llm_provider()
-
-        from core.gap_analysis.block_generation import generate_block_content
-
-        result = generate_block_content(
-            provider,
-            resume_html=tailoring_session.working_html or "",
-            job_posting_text=job.raw_text,
-            field_path=field_path,
-            current_text=block["body_text"],
-            included_items=included_texts,
-            comment=comment,
-            keep_items=keep_texts,
+        fragments = generate_block_fragments(
+            get_llm_provider(),
+            originals,
+            block["label"],
+            html_to_text(strip_marks(html)),
+            job.raw_text,
+            included_texts,
+            keep_texts,
+            comment,
         )
 
-        if not result["new_text"]:
-            raise HTTPException(status_code=502, detail="No content returned by the model")
+        if fragments == originals:
+            return {"unchanged": True}
 
-        new_html = apply_fragment(tailoring_session.working_html or "", block["body_text"], result["new_text"])
+        new_html, new_block = replace_block_elements(html, block, fragments)
+        updated_blocks = _replace_block(blocks, new_block)
         crud.update_working_html(session, session_id, new_html)
+        crud.set_session_blocks(session, session_id, updated_blocks)
+        crud.mark_block_edited(session, session_id, field_path, "\n".join(originals))
 
-        return {"html": strip_marks(new_html)}
+        refreshed = crud.get_tailoring_session(session, session_id)
+        return {
+            "html": strip_marks(new_html),
+            "blocks": updated_blocks,
+            "edited_blocks": refreshed.edited_blocks or {},
+        }
     finally:
         session.close()
+
+
+@router.post("/session/{session_id}/revert-block")
+def revert_block(
+    session_id: int,
+    field_path: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    tailoring_session = crud.get_tailoring_session(session, session_id)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    record = (tailoring_session.edited_blocks or {}).get(field_path)
+    if record is None:
+        raise HTTPException(status_code=400, detail="No stored original for this block")
+
+    original_html = record["original_html"] if isinstance(record, dict) else record
+    restored_suggestions = list(record.get("title_suggestions") or []) if isinstance(record, dict) else []
+
+    blocks = tailoring_session.blocks or []
+    block = _find_block(blocks, field_path)
+    if block is None:
+        raise HTTPException(status_code=409, detail="Block not found")
+
+    from core.parsing.html_blocks import split_top_level
+
+    fragments = [element["html"] for element in split_top_level(original_html)]
+    if not fragments:
+        raise HTTPException(status_code=409, detail="Stored original is empty")
+
+    try:
+        new_html, new_block = replace_block_elements(tailoring_session.working_html or "", block, fragments)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+
+    crud.update_working_html(session, session_id, new_html)
+    crud.set_session_blocks(session, session_id, _replace_block(blocks, new_block))
+    crud.unmark_block_edited(session, session_id, field_path)
+
+    if restored_suggestions:
+        current = list(crud.get_tailoring_session(session, session_id).title_suggestions or [])
+        crud.save_title_suggestions(session, session_id, current + restored_suggestions)
+
+    refreshed = crud.get_tailoring_session(session, session_id)
+    return JSONResponse(
+        {
+            "html": strip_marks(new_html),
+            "blocks": refreshed.blocks or [],
+            "edited_blocks": refreshed.edited_blocks or {},
+            "title_suggestions": refreshed.title_suggestions or [],
+        }
+    )
 
 
 @router.post("/session/{session_id}/extract-keywords")
@@ -653,7 +803,9 @@ def manual_edit(
         raise HTTPException(status_code=404, detail="Session not found")
 
     cleaned = sanitize_html(strip_marks(html_content))
-    crud.update_working_html(session, session_id, cleaned)
+    normalized, blocks = normalize_elements(cleaned, tailoring_session.blocks or [])
+    crud.update_working_html(session, session_id, normalized)
+    crud.set_session_blocks(session, session_id, blocks)
     return JSONResponse({"status": "ok"})
 
 
@@ -683,7 +835,6 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
             provider = get_llm_provider()
             keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
 
-            logger.info("[session %s] propose-soft: calling LLM (job=%s)", session_id, job.id)
             changes = propose_soft_fragment_changes(
                 provider,
                 job_posting_text=job.raw_text,
@@ -691,12 +842,8 @@ def _run_propose_soft(session_id: int, lang: str = "en") -> dict:
                 matched_factors=matched_factors,
                 keywords=_keyword_texts(keywords),
             )
-            logger.info("[session %s] propose-soft: got %s changes", session_id, len(changes))
             if not changes:
-                logger.warning(
-                    "[session %s] propose-soft: LLM returned 0 changes (check working_html and prompt output)",
-                    session_id,
-                )
+                logger.warning("[session %s] propose-soft: LLM returned 0 changes", session_id)
 
             message = crud.create_tailoring_message(
                 session, session_id, role="assistant", text=_soft_message_text(lang)
@@ -744,7 +891,6 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
             keywords = _ensure_keywords(session, tailoring_session, job, provider=provider)
             keyword_texts = _keyword_texts(keywords)
 
-            logger.info("[session %s] propose-medium: calling LLM (job=%s)", session_id, job.id)
             changes = propose_medium_fragment_changes(
                 provider,
                 job_posting_text=job.raw_text,
@@ -752,12 +898,8 @@ def _run_propose_medium(session_id: int, lang: str = "en") -> dict:
                 matched_factors=matched_factors,
                 keywords=keyword_texts,
             )
-            logger.info("[session %s] propose-medium: got %s changes", session_id, len(changes))
             if not changes:
-                logger.warning(
-                    "[session %s] propose-medium: LLM returned 0 changes (check working_html and prompt output)",
-                    session_id,
-                )
+                logger.warning("[session %s] propose-medium: LLM returned 0 changes", session_id)
 
             message = crud.create_tailoring_message(
                 session, session_id, role="assistant", text=_medium_message_text(lang)

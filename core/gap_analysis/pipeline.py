@@ -158,25 +158,17 @@ def extract_resume_items(
     resume_html: str,
     linkedin_text: str,
     extra_info: str | None,
+    blocks: list[dict] | None = None,
 ) -> list[dict]:
-    from core.gap_analysis.block_extraction import extract_ordered_blocks
+    from core.parsing.html_blocks import body_block_texts
 
-    blocks = extract_ordered_blocks(resume_html)
     all_items: list[dict] = []
 
-    summary_block = next((b for b in blocks if b["field_path"] == "summary"), None)
-    skills_block = next((b for b in blocks if b["field_path"] == "skills"), None)
-
-    if summary_block:
-        all_items.extend(_call_extract_section(provider, "Summary", summary_block["body_text"], "summary", "resume", 5))
-
-    if skills_block:
-        all_items.extend(_call_extract_section(provider, "Skills", skills_block["body_text"], "skills", "resume", 25))
-
-    for block in blocks:
-        if not block["field_path"].startswith("experience:") and not block["field_path"].startswith("section:"):
-            continue
-        all_items.extend(_call_extract_section(provider, block["label"], block["body_text"], block["field_path"], "resume", 10))
+    for block in body_block_texts(resume_html, blocks or []):
+        max_items = {"summary": 5, "skills": 25}.get(block["kind"], 10)
+        all_items.extend(
+            _call_extract_section(provider, block["label"], block["text"], block["field_path"], "resume", max_items)
+        )
 
     if linkedin_text.strip():
         all_items.extend(_call_extract_section(provider, "LinkedIn profile", linkedin_text, None, "linkedin", 20))
@@ -316,6 +308,7 @@ def run_full_gap_analysis(
     linkedin_text: str,
     extra_info: str | None,
     max_attempts: int = 3,
+    blocks: list[dict] | None = None,
 ) -> dict:
     requirements = []
     for _ in range(max_attempts):
@@ -323,7 +316,7 @@ def run_full_gap_analysis(
         if requirements:
             break
 
-    resume_items = extract_resume_items(provider, resume_html, linkedin_text, extra_info)
+    resume_items = extract_resume_items(provider, resume_html, linkedin_text, extra_info, blocks)
 
     gap_items = match_gap_items(provider, requirements, resume_items)
 

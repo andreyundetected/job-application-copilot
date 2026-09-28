@@ -81,3 +81,57 @@ def update_extracted_keywords(
     session.commit()
     session.refresh(tailoring_session)
     return tailoring_session
+
+
+def mark_block_edited(
+    session: Session,
+    tailoring_session_id: int,
+    field_path: str,
+    original_html: str,
+    title_suggestion: dict | None = None,
+) -> TailoringSession | None:
+    tailoring_session = session.get(TailoringSession, tailoring_session_id)
+    if tailoring_session is None:
+        return None
+    current = dict(tailoring_session.edited_blocks or {})
+    existing = current.get(field_path)
+    if existing is None:
+        record = {"original_html": original_html, "title_suggestions": []}
+    elif isinstance(existing, dict):
+        record = dict(existing)
+    else:
+        record = {"original_html": existing, "title_suggestions": []}
+    suggestions = list(record.get("title_suggestions") or [])
+    if title_suggestion is not None:
+        suggestions.append(title_suggestion)
+    record["title_suggestions"] = suggestions
+    current[field_path] = record
+    tailoring_session.edited_blocks = current
+    session.commit()
+    session.refresh(tailoring_session)
+    return tailoring_session
+
+
+def unmark_block_edited(session: Session, tailoring_session_id: int, field_path: str) -> TailoringSession | None:
+    tailoring_session = session.get(TailoringSession, tailoring_session_id)
+    if tailoring_session is None:
+        return None
+    current = dict(tailoring_session.edited_blocks or {})
+    if field_path in current:
+        del current[field_path]
+        tailoring_session.edited_blocks = current
+        session.commit()
+        session.refresh(tailoring_session)
+    return tailoring_session
+
+
+def save_title_suggestions(
+    session: Session, tailoring_session_id: int, suggestions: list
+) -> TailoringSession | None:
+    tailoring_session = session.get(TailoringSession, tailoring_session_id)
+    if tailoring_session is None:
+        return None
+    tailoring_session.title_suggestions = suggestions
+    session.commit()
+    session.refresh(tailoring_session)
+    return tailoring_session

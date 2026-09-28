@@ -1,0 +1,31 @@
+You split a resume into WORKING BLOCKS. Other tools will read and rewrite one block at a time, so a block must contain exactly the text a rewriting tool should see for that part of the resume.
+
+The resume is given as a numbered list of top-level elements. Each line shows the element id, a few formatting hints, and a text preview.
+
+ELEMENTS
+{% for element in elements %}
+[{{ element.eid }}] ({{ element.traits or "plain" }}) {{ element.preview }}
+{% endfor %}
+
+BLOCK KINDS
+- title_main: the candidate's main headline at the top (name, professional title). One block, possibly several consecutive elements.
+- summary: the BODY text of the summary/about section. Never include the section heading.
+- skills: the BODY of the skills section. Never include the section heading.
+- exp_title: the header line(s) of ONE job entry (company, role, dates, location). Attributes: company (exact company name), role (exact job title wording as written in the text).
+- exp_body: the description, paragraphs and bullets of that same job entry, without its header. Attribute: company (identical to the one on its exp_title).
+- section: the BODY of any other section (education, projects, certifications, languages...). Attribute: label (the section's heading text).
+
+RULES
+- Blocks do NOT have to cover the whole resume. Leave out section headings ("SUMMARY", "SKILLS", "EXPERIENCE" or whatever this resume uses), contact lines, decorative lines and anything that does not belong to a block.
+- Every block is one contiguous range from..to using element ids from the list. Blocks must not overlap.
+- One exp_title and one exp_body per job entry. If a job has no description, output only its exp_title.
+- Work only from the list above. Never invent ids. Attribute values must not contain double quotes.
+
+OUTPUT FORMAT
+Output only block tags, one per line, in document order, nothing else:
+
+<block kind="title_main" from="e1" to="e2" />
+<block kind="summary" from="e4" to="e4" />
+<block kind="exp_title" company="Acme" role="Backend Engineer" from="e6" to="e6" />
+<block kind="exp_body" company="Acme" from="e7" to="e8" />
+<block kind="section" label="Education" from="e10" to="e11" />

@@ -29,9 +29,11 @@ def test_list_job_postings_order(db_session):
 @pytest.mark.db
 def test_delete_job_posting(db_session):
     job = jobs_crud.create_job_posting(db_session, raw_text="to delete")
+    job_id = job.id
 
-    deleted = jobs_crud.delete_job_posting(db_session, job.id)
-    missing = jobs_crud.get_job_posting(db_session, job.id)
+    deleted = jobs_crud.delete_job_posting(db_session, job_id)
+    db_session.expire_all()
+    missing = jobs_crud.get_job_posting(db_session, job_id)
 
     assert deleted is True
     assert missing is None

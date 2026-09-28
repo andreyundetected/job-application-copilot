@@ -43,11 +43,13 @@ def test_run_tracked_task_records_failure(db_session, monkeypatch):
 
     deadline = time.time() + 5
     while time.time() < deadline:
+        db_session.expire_all()
         task = task_statuses_crud.get_task_status(db_session, task_id)
         if task.status == "failed":
             break
         time.sleep(0.02)
 
+    db_session.expire_all()
     task = task_statuses_crud.get_task_status(db_session, task_id)
     assert task.status == "failed"
     assert "Sample failure" in task.error

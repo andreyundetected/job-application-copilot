@@ -70,12 +70,13 @@ main {
 .resume-doc mark { background-color: rgba(250, 204, 21, 0.35); border-radius: 2px; }
 .resume-doc mark.approved-mark { background-color: rgba(91, 141, 239, 0.28); cursor: pointer; }
 .resume-doc mark.approved-mark:hover { background-color: rgba(91, 141, 239, 0.48); }
-.resume-doc p { margin: 2px 0; line-height: 1.4; }
-.resume-doc ul { margin: 2px 0 8px; padding-left: 20px; }
+.resume-doc p { margin: 3px 0; line-height: 1.4; }
+.resume-doc ul { margin: 3px 0 8px; padding-left: 20px; }
 .resume-doc li { margin: 1px 0; line-height: 1.4; }
-.resume-doc p[style*="font-size:16pt"] { margin-bottom: 2px; }
-.resume-doc p[style*="font-size:12pt"] { margin-top: 16px; margin-bottom: 6px; }
-.resume-doc p[style*="font-size:11pt"] { margin-top: 10px; margin-bottom: 1px; }
+
+.resume-doc [data-blk] { border-radius: 3px; transition: background-color 0.15s ease, box-shadow 0.15s ease; }
+.resume-doc .blk-hot { background-color: rgba(91, 141, 239, 0.18); }
+.resume-doc .blk-edited { box-shadow: inset 3px 0 0 var(--score-high); }
 
 .history-btn { background-color: var(--bg-input) !important; color: var(--text-secondary) !important; border: 1px solid var(--border) !important; width: 38px; height: 38px; padding: 0 !important; margin-top: 0 !important; border-radius: var(--radius-sm) !important; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .history-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -107,27 +108,38 @@ main {
 .style-toolbar .toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
 .revert-popover {
-    position: absolute;
+    position: fixed;
     display: none;
     z-index: 200;
     background: var(--bg-elevated);
     border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
-    max-width: 280px;
+    width: 280px;
+    max-width: 90vw;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     font-size: 12.5px;
 }
 .revert-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600; }
-.revert-popover-text { color: var(--text-secondary); text-decoration: line-through; margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; font-weight: 400; }
+.revert-popover-text { color: var(--text-secondary); margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; font-weight: 400; max-height: 140px; overflow-y: auto; word-break: break-word; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.revert-popover-text::-webkit-scrollbar { width: 6px; }
+.revert-popover-text::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
 .revert-popover-btn { margin-top: 0; padding: 5px 10px; font-size: 12px; width: 100%; }
 
-/* persistent block highlight, wraps whole section */
-.resume-block-wrap { border-radius: 4px; transition: background-color 0.15s ease, outline-color 0.15s ease; outline: 1px solid transparent; margin: 0 -6px; padding: 0 6px; }
-.resume-block-wrap.mapped { background-color: rgba(91, 141, 239, 0.04); }
-.resume-block-wrap.mapped.hot { background-color: rgba(91, 141, 239, 0.16); outline-color: rgba(91, 141, 239, 0.4); }
+.edited-title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--score-high);
+    background: var(--score-high-soft);
+    border-radius: 999px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
 
-/* ---- Gaps panel ---- */
 .gap-run-btn { width: 100%; margin-top: 0 !important; background: linear-gradient(135deg, var(--accent), #8b5cf6); border: none; color: white; font-weight: 600; }
 .gap-progress-line { font-size: 11.5px; color: var(--text-secondary); margin: 8px 0 0; text-align: center; }
 .gap-error-line { font-size: 11.5px; color: var(--score-low); background: var(--score-low-soft); border-radius: var(--radius-sm); padding: 8px 10px; }
@@ -149,11 +161,10 @@ main {
 .gap-chip.status-can_add { border-color: rgba(91, 141, 239, 0.4); }
 .gap-chip.status-can_add.placed { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .gap-chip.status-match { background-color: var(--score-high-soft); border-color: transparent; color: var(--score-high); }
-.gap-chip.status-miss { background-color: var(--score-mid-soft); border-color: transparent; color: var(--score-mid); cursor: default; }
-.gap-chip.status-over { background-color: var(--bg-input); border-color: var(--border); color: var(--text-tertiary); cursor: default; opacity: 0.85; }
-.gap-chip.status-over .over-keep-tag { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 5px; border-radius: 4px; }
-.gap-chip.status-over.keep .over-keep-tag { background: var(--score-high-soft); color: var(--score-high); }
-.gap-chip.status-over.drop .over-keep-tag { background: var(--score-low-soft); color: var(--score-low); }
+.gap-chip.status-miss { background-color: var(--score-mid-soft); border-color: transparent; color: var(--score-mid); }
+.gap-chip.status-over { background-color: var(--bg-input); border-color: var(--border); color: var(--text-tertiary); opacity: 0.85; }
+.gap-chip.status-over.in-generation { opacity: 1; }
+.gap-chip.in-generation { box-shadow: 0 0 0 2px var(--score-high) inset; }
 .gap-chip-check { width: 10px; height: 10px; flex-shrink: 0; opacity: 0; }
 .gap-chip.placed .gap-chip-check { opacity: 1; }
 .gap-empty-hint { font-size: 11.5px; color: var(--text-tertiary); padding: 4px 0; }
@@ -161,6 +172,7 @@ main {
 .gap-location-popover {
     position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); flex-direction: column; gap: 2px; min-width: 200px;
+    max-height: 320px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent;
 }
 .gap-location-popover.open { display: flex; }
 .gap-location-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); padding: 4px 8px 6px; }
@@ -171,47 +183,72 @@ main {
 .gap-location-option.selected .custom-checkbox-box { background-color: var(--accent); border-color: var(--accent); }
 .gap-location-option.selected .custom-checkbox-box svg { opacity: 1; transform: scale(1); }
 
-/* ---- Schema panel ---- */
 .title-block { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .title-block-heading { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 8px; }
-.title-suggestion-row { background-color: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 8px 9px; margin-bottom: 6px; font-size: 11.5px; }
-.title-suggestion-company { font-size: 9.5px; color: var(--text-tertiary); margin-bottom: 3px; }
-.title-suggestion-current { color: var(--text-tertiary); text-decoration: line-through; margin-bottom: 2px; }
-.title-suggestion-new { color: var(--accent); margin-bottom: 6px; }
-.title-suggestion-buttons { display: flex; gap: 6px; }
-.title-suggestion-buttons button { margin-top: 0; padding: 4px 9px; font-size: 11px; }
-.title-suggestion-unchanged { font-size: 11px; color: var(--text-tertiary); }
-
-.schema-block { margin-bottom: 12px; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background-color: var(--bg-input); transition: border-color 0.15s ease, background-color 0.15s ease; }
-.schema-block.drag-over { border-color: var(--accent); background-color: var(--accent-soft); }
-.schema-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.schema-block-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-.schema-block-gen-btn { background: none; border: 1px solid var(--border); color: var(--accent); font-size: 10.5px; padding: 3px 8px; border-radius: var(--radius-sm); cursor: pointer; }
-.schema-block-gen-btn:hover { border-color: var(--accent); background-color: var(--accent-soft); }
-.schema-block-gen-btn.generating { opacity: 0.5; cursor: wait; }
-.schema-block-items { display: flex; flex-wrap: wrap; gap: 4px; }
-.schema-block-item-chip {
-    font-size: 10.5px; padding: 3px 8px; border-radius: 999px; background-color: var(--bg-elevated);
-    color: var(--text-secondary); border: 1px solid var(--border); cursor: grab; display: inline-flex; align-items: center; gap: 4px;
-    border-left: 3px solid var(--border);
+.title-suggestion-row {
+    background: linear-gradient(135deg, var(--accent-soft), rgba(139, 92, 246, 0.08));
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 10px 11px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    transition: box-shadow 0.15s ease;
 }
-.schema-block-item-chip.is-plain { cursor: default; }
-.schema-block-item-chip.is-kept { border-left-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
-.schema-block-item-chip.is-new { border-left-color: var(--accent); background-color: var(--accent-soft); color: var(--accent); }
-.schema-block-item-remove { cursor: pointer; font-weight: 700; opacity: 0.7; }
+.title-suggestion-row.hot-title-row { box-shadow: 0 0 0 2px var(--accent) inset; }
+.title-suggestion-company { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-tertiary); margin-bottom: 6px; }
+.title-suggestion-diff { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.title-suggestion-current { display: flex; align-items: baseline; gap: 6px; color: var(--text-tertiary); }
+.title-suggestion-current .diff-tag { font-size: 9px; font-weight: 700; }
+.title-suggestion-current .diff-text { text-decoration: line-through; }
+.title-suggestion-new { display: flex; align-items: baseline; gap: 6px; color: var(--text-primary); font-weight: 600; }
+.title-suggestion-new .diff-tag { font-size: 9px; font-weight: 700; color: var(--score-high); }
+.title-suggestion-buttons { display: flex; gap: 6px; }
+.title-suggestion-buttons button { margin-top: 0; padding: 5px 10px; font-size: 11px; }
+
+.schema-block {
+    margin-bottom: 14px; padding: 12px 12px 11px; border-radius: var(--radius);
+    border: 1px solid var(--border); background-color: var(--bg-input);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.schema-block.drag-over { border-color: var(--accent); background-color: var(--accent-soft); }
+.schema-block.edited-block { border-color: rgba(74, 222, 128, 0.4); }
+
+.schema-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.schema-block-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.schema-block-gen-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-soft); border: 1px solid transparent; color: var(--accent);
+    font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.schema-block-gen-btn:hover { border-color: var(--accent); }
+.schema-block-gen-btn.generating { opacity: 0.55; cursor: wait; }
+
+.schema-kw-group { margin-bottom: 8px; }
+.schema-kw-group:last-of-type { margin-bottom: 0; }
+.schema-kw-group-label {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-tertiary); margin-bottom: 5px; display: block;
+}
+.schema-block-items { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.schema-block-item-chip {
+    font-size: 11px; font-weight: 500; padding: 4px 9px; border-radius: 999px;
+    color: var(--text-secondary); border: 1px solid var(--border); background-color: var(--bg-elevated);
+    cursor: grab; display: inline-flex; align-items: center; gap: 5px;
+    transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.schema-block-item-chip:active { cursor: grabbing; }
+.schema-block-item-chip.is-plain { cursor: pointer; border-style: dashed; color: var(--text-tertiary); }
+.schema-block-item-chip.is-plain:hover { border-color: var(--accent); color: var(--accent); }
+.schema-block-item-chip.is-plain.is-highlighted { border-style: solid; border-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
+.schema-block-item-chip.is-kept { border-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
+.schema-block-item-chip.is-new { border-color: var(--accent); background-color: var(--accent-soft); color: var(--accent); }
+.schema-block-item-chip.is-disabled { border-color: var(--border); background-color: var(--bg-elevated); color: var(--text-tertiary); opacity: 0.55; text-decoration: line-through; }
+.schema-block-item-remove { cursor: pointer; font-weight: 700; opacity: 0.6; line-height: 1; }
 .schema-block-item-remove:hover { opacity: 1; }
 
-.schema-original-toggle {
-    display: flex; align-items: center; gap: 5px; width: 100%; background: none; border: none;
-    color: var(--text-tertiary); font-size: 10.5px; padding: 6px 0 2px; cursor: pointer; text-align: left;
-}
-.schema-original-toggle:hover { color: var(--text-secondary); }
-.schema-original-chevron { width: 10px; height: 10px; transition: transform 0.15s ease; }
-.schema-original-toggle.collapsed .schema-original-chevron { transform: rotate(0deg); }
-.schema-original-toggle:not(.collapsed) .schema-original-chevron { transform: rotate(90deg); }
-.schema-original-body { overflow: hidden; max-height: 500px; margin-top: 5px; transition: max-height 0.2s ease; }
-.schema-original-body.collapsed { max-height: 0; margin-top: 0; }
-.schema-block-add-wrap { position: relative; margin: 8px 0 6px; }
+.schema-block-add-wrap { position: relative; margin: 10px 0 8px; }
 .schema-block-add-row {
     display: flex; align-items: center; gap: 8px; background-color: var(--bg-elevated);
     border: 1px solid var(--border); border-radius: 999px; padding: 3px 4px 3px 14px;
@@ -228,20 +265,28 @@ main {
     transition: background-color 0.12s ease, transform 0.12s ease;
 }
 .schema-block-add-btn:hover { background-color: var(--accent-hover); transform: scale(1.06); }
-.schema-block-add-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
 .schema-add-suggestions {
     position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
     border-radius: var(--radius); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); padding: 6px;
     max-height: 220px; overflow-y: auto; flex-direction: column; gap: 1px; min-width: 200px;
+    scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent;
 }
+.schema-add-suggestions::-webkit-scrollbar { width: 6px; }
+.schema-add-suggestions::-webkit-scrollbar-track { background: transparent; }
+.schema-add-suggestions::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
 .schema-add-suggestions.open { display: flex; }
 .schema-add-suggestion-item {
     padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-secondary);
     cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease;
 }
 .schema-add-suggestion-item:hover { background-color: var(--bg-input); color: var(--text-primary); }
-.schema-block-comment { width: 100%; font-size: 11.5px; min-height: 40px; padding: 6px 8px; }
+
+.schema-block-comment-wrap { margin-top: 8px; }
+.schema-block-comment {
+    width: 100%; font-size: 11.5px; min-height: 38px; padding: 7px 9px;
+    background-color: var(--bg-elevated); border-color: var(--border);
+}
 .schema-empty-hint { font-size: 11.5px; color: var(--text-tertiary); }
 </style>
 
@@ -314,6 +359,12 @@ main {
     <button type="button" class="btn revert-popover-btn" id="revert-popover-btn">{{ t.revert_button }}</button>
 </div>
 
+<div class="revert-popover" id="block-revert-popover">
+    <div class="revert-popover-label">{{ t.revert_original_label }}</div>
+    <div class="revert-popover-text" id="block-revert-popover-text"></div>
+    <button type="button" class="btn revert-popover-btn" id="block-revert-popover-btn">{{ t.revert_button }}</button>
+</div>
+
 <div class="gap-location-popover" id="gap-location-popover"></div>
 
 <script>
@@ -321,14 +372,15 @@ main {
     window.addEventListener("pageshow", (event) => { if (event.persisted) window.location.reload(); });
 
     const SESSION_ID = {{ session_id }};
+    const TITLE_KINDS = ["title_main", "exp_title"];
     const resumeDoc = document.getElementById("resume-doc");
     const toolbarEl = document.getElementById("style-toolbar");
 
-    // ============================================================
-    // Manual editor: text formatting toolbar, undo/redo, autosave
-    // (kept fully separate from the gaps/schema logic below so
-    // nothing there can break it)
-    // ============================================================
+    let blocksState = {{ blocks | tojson }};
+    let eidToBlock = {};
+    let gapState = { ready: false, items: [], blockComments: {}, blockOrder: [], resumeItems: [], editedBlocks: {} };
+    let titleSuggestions = null;
+
     let saveTimeout = null;
     let savedRange = null;
     let currentAlignState = "left";
@@ -341,6 +393,56 @@ main {
     let isApplyingHistory = false;
     const undoBtn = document.getElementById("btn-undo");
     const redoBtn = document.getElementById("btn-redo");
+
+    function attrEscape(value) {
+        return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    }
+
+    function rebuildElementMap() {
+        eidToBlock = {};
+        blocksState.forEach((block) => block.element_ids.forEach((eid) => { eidToBlock[eid] = block.field_path; }));
+    }
+
+    function stripTransient(root) {
+        root.querySelectorAll("[data-blk]").forEach((el) => {
+            el.removeAttribute("data-blk");
+            [...el.classList].filter((name) => name.startsWith("blk-")).forEach((name) => el.classList.remove(name));
+            if (!el.getAttribute("class")) el.removeAttribute("class");
+        });
+    }
+
+    function fixElementIds() {
+        const seen = new Set();
+        let previousPath = null;
+        [...resumeDoc.children].forEach((el) => {
+            let eid = el.getAttribute("data-eid");
+            if (!eid || seen.has(eid)) {
+                eid = "e" + Math.random().toString(16).slice(2, 10);
+                el.setAttribute("data-eid", eid);
+                if (previousPath) eidToBlock[eid] = previousPath;
+            }
+            seen.add(eid);
+            previousPath = eidToBlock[eid] || null;
+        });
+    }
+
+    function decorateBlocks() {
+        stripTransient(resumeDoc);
+        [...resumeDoc.children].forEach((el) => {
+            const path = eidToBlock[el.getAttribute("data-eid")];
+            if (!path) return;
+            el.setAttribute("data-blk", path);
+            el.classList.add("blk-mapped");
+            if (Object.prototype.hasOwnProperty.call(gapState.editedBlocks || {}, path)) el.classList.add("blk-edited");
+        });
+    }
+
+    function stripMarksFromClone() {
+        const clone = resumeDoc.cloneNode(true);
+        clone.querySelectorAll("mark[data-change-id]").forEach((mark) => mark.replaceWith(...mark.childNodes));
+        stripTransient(clone);
+        return clone.innerHTML;
+    }
 
     function updateHistoryButtons() {
         undoBtn.disabled = undoStack.length < 2;
@@ -362,9 +464,18 @@ main {
         resumeDoc.innerHTML = html;
         decorateBlocks();
         bindMarkHoverHandlers();
-        bindBlockHoverSync();
         if (opts.persist !== false) persistRawHtml(stripMarksFromClone());
         if (opts.snapshot !== false) pushHistorySnapshot();
+        updateWordCount();
+        renderSchemaPane();
+    }
+
+    async function restoreHistory(html) {
+        resumeDoc.innerHTML = html;
+        decorateBlocks();
+        bindMarkHoverHandlers();
+        await persistRawHtml(stripMarksFromClone());
+        updateHistoryButtons();
         updateWordCount();
         renderSchemaPane();
     }
@@ -372,18 +483,9 @@ main {
     async function undoHistory() {
         if (isApplyingHistory || undoStack.length < 2) return;
         isApplyingHistory = true;
-        const current = undoStack.pop();
-        redoStack.push(current);
-        const target = undoStack[undoStack.length - 1];
-        resumeDoc.innerHTML = target;
-        decorateBlocks();
-        bindMarkHoverHandlers();
-        bindBlockHoverSync();
-        await persistRawHtml(stripMarksFromClone());
+        redoStack.push(undoStack.pop());
+        await restoreHistory(undoStack[undoStack.length - 1]);
         isApplyingHistory = false;
-        updateHistoryButtons();
-        updateWordCount();
-        renderSchemaPane();
     }
 
     async function redoHistory() {
@@ -391,15 +493,8 @@ main {
         isApplyingHistory = true;
         const snapshot = redoStack.pop();
         undoStack.push(snapshot);
-        resumeDoc.innerHTML = snapshot;
-        decorateBlocks();
-        bindMarkHoverHandlers();
-        bindBlockHoverSync();
-        await persistRawHtml(stripMarksFromClone());
+        await restoreHistory(snapshot);
         isApplyingHistory = false;
-        updateHistoryButtons();
-        updateWordCount();
-        renderSchemaPane();
     }
 
     async function flushPendingSave() { clearTimeout(saveTimeout); await persistDoc(); }
@@ -417,15 +512,6 @@ main {
         if (e.shiftKey) redoHistory(); else undoHistory();
     });
 
-    function stripMarksFromClone() {
-        const clone = resumeDoc.cloneNode(true);
-        clone.querySelectorAll("mark[data-change-id]").forEach((mark) => mark.replaceWith(...mark.childNodes));
-        clone.querySelectorAll(".resume-block-wrap").forEach((wrap) => {
-            wrap.replaceWith(...wrap.childNodes);
-        });
-        return clone.innerHTML;
-    }
-
     async function persistRawHtml(html) {
         const formData = new FormData();
         formData.append("html_content", html);
@@ -433,6 +519,8 @@ main {
     }
 
     async function persistDoc() {
+        fixElementIds();
+        decorateBlocks();
         await persistRawHtml(stripMarksFromClone());
         if (!isApplyingHistory) pushHistorySnapshot();
     }
@@ -441,6 +529,34 @@ main {
 
     resumeDoc.addEventListener("input", () => { scheduleSave(); updateWordCount(); });
     resumeDoc.addEventListener("blur", () => { clearTimeout(saveTimeout); persistDoc(); });
+
+    function positionPopoverNearRect(panelEl, rect) {
+        panelEl.style.visibility = "hidden";
+        panelEl.style.display = "block";
+        const panelRect = panelEl.getBoundingClientRect();
+        const margin = 8;
+
+        let left = rect.left;
+        if (left + panelRect.width > window.innerWidth - margin) {
+            left = Math.max(margin, window.innerWidth - panelRect.width - margin);
+        }
+
+        let top = rect.top - panelRect.height - 10;
+        if (top < margin) top = rect.bottom + 10;
+        if (top + panelRect.height > window.innerHeight - margin) {
+            top = Math.max(margin, window.innerHeight - panelRect.height - margin);
+        }
+
+        panelEl.style.left = `${left}px`;
+        panelEl.style.top = `${top}px`;
+        panelEl.style.visibility = "visible";
+    }
+
+    function stripHtmlToText(html) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html || "";
+        return (tmp.innerText || tmp.textContent || "").trim();
+    }
 
     const revertPopover = document.getElementById("revert-popover");
     const revertPopoverText = document.getElementById("revert-popover-text");
@@ -459,13 +575,7 @@ main {
         clearTimeout(revertHideTimeout);
         currentRevertMark = mark;
         revertPopoverText.textContent = mark.dataset.originalText || "";
-        revertPopover.style.display = "block";
-        const rect = mark.getBoundingClientRect();
-        const popRect = revertPopover.getBoundingClientRect();
-        let top = window.scrollY + rect.top - popRect.height - 10;
-        if (top < window.scrollY + 4) top = window.scrollY + rect.bottom + 10;
-        revertPopover.style.top = `${top}px`;
-        revertPopover.style.left = `${window.scrollX + rect.left}px`;
+        positionPopoverNearRect(revertPopover, mark.getBoundingClientRect());
     }
 
     function scheduleHideRevertPopover() {
@@ -647,158 +757,130 @@ main {
         downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.value}`;
     });
 
-    // ============================================================
-    // Block detection & persistent highlighting
-    // Each resume block = one header paragraph (Summary/Skills/
-    // Company-Role line) plus every sibling until the next header,
-    // wrapped in a .resume-block-wrap[data-field-path] div.
-    // ============================================================
-    function decorateBlocks() {
-        resumeDoc.querySelectorAll(".resume-block-wrap").forEach((wrap) => {
-            wrap.replaceWith(...wrap.childNodes);
-        });
+    const blockRevertPopover = document.getElementById("block-revert-popover");
+    const blockRevertPopoverText = document.getElementById("block-revert-popover-text");
+    const blockRevertPopoverBtn = document.getElementById("block-revert-popover-btn");
+    let blockRevertHideTimeout = null;
+    let currentBlockRevertPath = null;
 
-        const children = [...resumeDoc.childNodes];
-        let currentWrap = null;
-        let currentPath = null;
-
-        function headerFieldPath(el) {
-            if (!el || el.nodeType !== 1) return null;
-            const text = el.textContent.trim();
-            const upper = text.toUpperCase();
-            if (upper === "SUMMARY") return "summary";
-            if (upper === "SKILLS") return "skills";
-            if (el.matches && el.matches('p[style*="font-size:11pt"]')) {
-                return `experience: ${text.split(" - ")[0].trim()}`;
-            }
-            if (el.matches && el.matches('p[style*="font-size:12pt"]') && text) {
-                return `section: ${text}`;
-            }
-            return null;
-        }
-
-        function isSectionHeader(el) {
-            return el.nodeType === 1 && el.matches && el.matches('p[style*="font-size:12pt"]');
-        }
-
-        children.forEach((node) => {
-            const path = headerFieldPath(node);
-            const isHeader = isSectionHeader(node);
-
-            if (path) {
-                currentWrap = document.createElement("div");
-                currentWrap.className = "resume-block-wrap mapped";
-                currentWrap.dataset.fieldPath = path;
-                currentPath = path;
-                node.replaceWith(currentWrap);
-                currentWrap.appendChild(node);
-            } else if (isHeader) {
-                currentWrap = null;
-                currentPath = null;
-            } else if (currentWrap && currentPath) {
-                currentWrap.appendChild(node);
-            }
-        });
+    function showBlockRevertPopover(el, fieldPath) {
+        clearTimeout(blockRevertHideTimeout);
+        currentBlockRevertPath = fieldPath;
+        const record = gapState.editedBlocks[fieldPath];
+        const originalHtml = record && typeof record === "object" ? record.original_html : record;
+        blockRevertPopoverText.textContent = stripHtmlToText(originalHtml);
+        positionPopoverNearRect(blockRevertPopover, el.getBoundingClientRect());
     }
 
-    let hoverSourceLock = null;
+    function scheduleHideBlockRevertPopover() {
+        clearTimeout(blockRevertHideTimeout);
+        blockRevertHideTimeout = setTimeout(() => { blockRevertPopover.style.display = "none"; currentBlockRevertPath = null; }, 220);
+    }
 
-    function setBlockHot(fieldPath, on, opts) {
-        opts = opts || {};
-        resumeDoc.querySelectorAll(`.resume-block-wrap[data-field-path="${cssEscape(fieldPath)}"]`).forEach((el) => {
-            el.classList.toggle("hot", on);
-            if (on && opts.scrollResume) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    blockRevertPopover.addEventListener("mouseenter", () => clearTimeout(blockRevertHideTimeout));
+    blockRevertPopover.addEventListener("mouseleave", scheduleHideBlockRevertPopover);
+
+    blockRevertPopoverBtn.addEventListener("click", async () => {
+        if (!currentBlockRevertPath) return;
+        const fieldPath = currentBlockRevertPath;
+        blockRevertPopover.style.display = "none";
+        await flushPendingSave();
+        const response = await fetch(`/tailor/session/${SESSION_ID}/revert-block`, {
+            method: "POST",
+            body: new URLSearchParams({ field_path: fieldPath }),
         });
-        document.querySelectorAll(`.schema-block[data-field-path="${cssEscape(fieldPath)}"]`).forEach((el) => {
-            el.classList.toggle("drag-over", on);
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            showToast(data.detail || "Revert failed", "danger");
+            return;
+        }
+        const data = await response.json();
+        gapState.editedBlocks = data.edited_blocks || {};
+        blocksState = data.blocks || blocksState;
+        rebuildElementMap();
+        if (data.title_suggestions) titleSuggestions = data.title_suggestions;
+        setResumeHtml(data.html, { persist: false });
+        showToast("Откачено к оригиналу", "success");
+    });
+
+    function setBlockHot(path, on, opts) {
+        opts = opts || {};
+        const els = [...resumeDoc.querySelectorAll(`[data-blk="${attrEscape(path)}"]`)];
+        els.forEach((el) => el.classList.toggle("blk-hot", on));
+        if (on && opts.scrollResume && els[0]) els[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelectorAll(".schema-block, .title-suggestion-row").forEach((el) => {
+            if (el.dataset.fieldPath !== path) return;
+            el.classList.toggle(el.classList.contains("schema-block") ? "drag-over" : "hot-title-row", on);
             if (on && opts.scrollSchema) el.scrollIntoView({ behavior: "smooth", block: "center" });
         });
     }
 
-    function cssEscape(value) {
-        return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+    let hoverPath = null;
+
+    function updateResumeHover(target) {
+        const el = target.closest ? target.closest("[data-eid]") : null;
+        const path = el && resumeDoc.contains(el) ? el.getAttribute("data-blk") : null;
+        if (path === hoverPath) return;
+
+        if (hoverPath) setBlockHot(hoverPath, false, {});
+        hoverPath = path;
+        if (path) setBlockHot(path, true, { scrollSchema: true });
+
+        if (path && gapState.editedBlocks && gapState.editedBlocks[path] !== undefined) {
+            showBlockRevertPopover(el, path);
+        } else {
+            scheduleHideBlockRevertPopover();
+        }
     }
 
-    function bindBlockHoverSync() {
-        resumeDoc.querySelectorAll(".resume-block-wrap[data-field-path]").forEach((wrap) => {
-            const fieldPath = wrap.dataset.fieldPath;
-            wrap.addEventListener("mouseenter", () => {
-                if (hoverSourceLock) return;
-                hoverSourceLock = "resume";
-                setBlockHot(fieldPath, true, { scrollSchema: true });
-            });
-            wrap.addEventListener("mouseleave", () => {
-                setBlockHot(fieldPath, false, {});
-                hoverSourceLock = null;
-            });
-        });
-    }
+    resumeDoc.addEventListener("mousemove", (e) => updateResumeHover(e.target));
+    resumeDoc.addEventListener("mouseleave", () => {
+        if (hoverPath) setBlockHot(hoverPath, false, {});
+        hoverPath = null;
+        scheduleHideBlockRevertPopover();
+    });
 
-    // ============================================================
-    // Gaps + Schema panels
-    // ============================================================
     const paneGaps = document.getElementById("pane-gaps");
     const paneSchema = document.getElementById("pane-schema");
     const gapLocationPopover = document.getElementById("gap-location-popover");
 
-    let gapState = { ready: false, items: [], blockComments: {}, blockOrder: [], resumeItems: [] };
-    let titleSuggestions = null;
-
-    function experienceCompanyOptions() {
-        const options = [];
-        resumeDoc.querySelectorAll('.resume-block-wrap[data-field-path^="experience:"]').forEach((el) => {
-            const path = el.dataset.fieldPath;
-            if (!options.some((o) => o.value === path)) {
-                options.push({ value: path, label: fieldPathLabel(path) });
-            }
-        });
-        return options;
-    }
-
-    function genericSectionOptions() {
-        const options = [];
-        resumeDoc.querySelectorAll('.resume-block-wrap[data-field-path^="section:"]').forEach((el) => {
-            const path = el.dataset.fieldPath;
-            if (!options.some((o) => o.value === path)) {
-                options.push({ value: path, label: fieldPathLabel(path) });
-            }
-        });
-        return options;
+    function bodyBlocks() {
+        return blocksState.filter((block) => !TITLE_KINDS.includes(block.kind));
     }
 
     function allLocationOptions() {
-        if (gapState.blockOrder.length) {
-            return gapState.blockOrder.map((path) => ({ value: path, label: fieldPathLabel(path) }));
-        }
-        return [{ value: "summary", label: "Summary" }, { value: "skills", label: "Skills" }, ...experienceCompanyOptions(), ...genericSectionOptions()];
+        return bodyBlocks().map((block) => ({ value: block.field_path, label: block.label || block.field_path }));
     }
 
     function fieldPathLabel(path) {
-        if (!path) return "";
-        if (path.startsWith("experience:")) return path.replace("experience:", "").trim();
-        if (path === "summary") return "Summary";
-        if (path === "skills") return "Skills";
-        return path;
+        const block = blocksState.find((item) => item.field_path === path);
+        return block ? (block.label || path) : path;
+    }
+
+    function isActivelyInGeneration(item) {
+        const assigned = item.assigned_field_paths || [];
+        const disabled = new Set(item.disabled_field_paths || []);
+        return assigned.some((p) => !disabled.has(p));
     }
 
     function renderGapChip(item) {
         const chip = document.createElement("span");
         chip.className = `gap-chip status-${item.status}`;
+        if (isActivelyInGeneration(item)) chip.classList.add("in-generation");
         chip.dataset.gapItemId = item.id;
+        chip.draggable = true;
+        chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/gap-item-id", String(item.id)));
 
         if (item.status === "miss") {
             chip.innerHTML = `<span class="gap-chip-text">? ${item.text}</span>`;
         } else if (item.status === "over") {
-            chip.classList.add(item.recommend_keep ? "keep" : "drop");
-            chip.innerHTML = `<span class="gap-chip-text">${item.text}</span><span class="over-keep-tag">${item.recommend_keep ? "оставить" : "убрать"}</span>`;
+            chip.innerHTML = `<span class="gap-chip-text">${item.text}</span>`;
         } else {
             const placed = (item.assigned_field_paths || []).length > 0;
             if (placed) chip.classList.add("placed");
-            chip.draggable = true;
             const locations = (item.assigned_field_paths || []).map(fieldPathLabel).join(", ");
             chip.innerHTML = `<svg class="gap-chip-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="gap-chip-text">${item.text}${locations ? " · " + locations : ""}</span>`;
             chip.addEventListener("click", (e) => openLocationPopover(e, item));
-            chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/gap-item-id", String(item.id)));
         }
         return chip;
     }
@@ -861,18 +943,45 @@ main {
         });
         const data = await response.json();
         item.assigned_field_paths = data.assigned_field_paths;
-        if (data.item_status) item.status = data.item_status;
+        item.disabled_field_paths = data.disabled_field_paths;
         renderGapPanel();
         renderSchemaPane();
     }
 
-    document.addEventListener("click", (e) => { if (!gapLocationPopover.contains(e.target) && !e.target.closest(".gap-chip")) gapLocationPopover.classList.remove("open"); });
-    document.addEventListener("scroll", () => gapLocationPopover.classList.remove("open"), true);
+    async function moveGapItemLocation(item, fromFieldPath, toFieldPath) {
+        const response = await fetch(`/tailor/gap-items/${item.id}/move-location`, {
+            method: "POST",
+            body: new URLSearchParams({ from_field_path: fromFieldPath, to_field_path: toFieldPath }),
+        });
+        const data = await response.json();
+        item.assigned_field_paths = data.assigned_field_paths;
+        item.disabled_field_paths = data.disabled_field_paths;
+        renderGapPanel();
+        renderSchemaPane();
+    }
 
-    function renderGapSection(title, items, cssClass, collapsedByDefault) {
+    async function toggleGapItemDisabled(item, fieldPath) {
+        const response = await fetch(`/tailor/gap-items/${item.id}/toggle-disabled`, {
+            method: "POST",
+            body: new URLSearchParams({ field_path: fieldPath }),
+        });
+        const data = await response.json();
+        item.disabled_field_paths = data.disabled_field_paths;
+        renderSchemaPane();
+    }
+
+    document.addEventListener("click", (e) => { if (!gapLocationPopover.contains(e.target) && !e.target.closest(".gap-chip")) gapLocationPopover.classList.remove("open"); });
+    document.addEventListener("scroll", (e) => {
+        if (gapLocationPopover.contains(e.target)) return;
+        gapLocationPopover.classList.remove("open");
+    }, true);
+
+    const gapSectionCollapsedState = { miss: false, can_add: false, match: true, over: true };
+
+    function renderGapSection(key, title, items, cssClass) {
         const section = document.createElement("div");
         section.className = "gap-section";
-        if (collapsedByDefault) section.classList.add("collapsed");
+        if (gapSectionCollapsedState[key]) section.classList.add("collapsed");
 
         const header = document.createElement("div");
         header.className = "gap-section-header";
@@ -883,7 +992,10 @@ main {
                 <svg class="gap-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </span>
         `;
-        header.addEventListener("click", () => section.classList.toggle("collapsed"));
+        header.addEventListener("click", () => {
+            gapSectionCollapsedState[key] = !gapSectionCollapsedState[key];
+            section.classList.toggle("collapsed");
+        });
 
         const body = document.createElement("div");
         body.className = "gap-section-body";
@@ -914,15 +1026,10 @@ main {
             return;
         }
 
-        const missItems = gapState.items.filter((i) => i.status === "miss");
-        const canAddItems = gapState.items.filter((i) => i.status === "can_add");
-        const matchItems = gapState.items.filter((i) => i.status === "match");
-        const overItems = gapState.items.filter((i) => i.status === "over");
-
-        paneGaps.appendChild(renderGapSection("Miss", missItems, "miss", false));
-        paneGaps.appendChild(renderGapSection("Можно добавить", canAddItems, "", false));
-        paneGaps.appendChild(renderGapSection("Match", matchItems, "", true));
-        paneGaps.appendChild(renderGapSection("Over", overItems, "", true));
+        paneGaps.appendChild(renderGapSection("miss", "Miss", gapState.items.filter((i) => i.status === "miss"), "miss"));
+        paneGaps.appendChild(renderGapSection("can_add", "Можно добавить", gapState.items.filter((i) => i.status === "can_add"), ""));
+        paneGaps.appendChild(renderGapSection("match", "Match", gapState.items.filter((i) => i.status === "match"), ""));
+        paneGaps.appendChild(renderGapSection("over", "Over", gapState.items.filter((i) => i.status === "over"), ""));
     }
 
     async function runGapAnalysis() {
@@ -971,8 +1078,15 @@ main {
         gapState.blockComments = data.block_comments || {};
         gapState.blockOrder = data.block_order || [];
         gapState.resumeItems = data.resume_items || [];
+        gapState.editedBlocks = data.edited_blocks || {};
+        blocksState = data.blocks || blocksState;
+        rebuildElementMap();
+        const hasNeverFetchedTitles = data.title_suggestions === null || data.title_suggestions === undefined;
+        titleSuggestions = data.title_suggestions || [];
+        decorateBlocks();
         renderGapPanel();
         renderSchemaPane();
+        if (gapState.ready && hasNeverFetchedTitles) fetchTitleSuggestions();
     }
 
     async function fetchTitleSuggestions() {
@@ -981,20 +1095,21 @@ main {
         pollTaskStatus([data.task_id], (tasks) => {
             const task = tasks[0];
             if (task.status === "done") {
-                titleSuggestions = task.result.suggestions.filter((s) => s.suggested !== s.current);
+                titleSuggestions = task.result.suggestions;
                 renderSchemaPane();
             }
         });
     }
 
     async function applyTitleSuggestion(suggestion) {
+        await flushPendingSave();
         const response = await fetch(`/tailor/session/${SESSION_ID}/apply-title`, {
             method: "POST",
             body: new URLSearchParams({
+                key: suggestion.key,
+                line: String(suggestion.line || 0),
                 current_text: suggestion.current,
                 new_text: suggestion.suggested,
-                kind: suggestion.kind,
-                company: suggestion.company || "",
             }),
         });
         if (!response.ok) {
@@ -1002,17 +1117,23 @@ main {
             return;
         }
         const data = await response.json();
-        setResumeHtml(data.html, { persist: false });
+        gapState.editedBlocks = data.edited_blocks || {};
+        blocksState = data.blocks || blocksState;
+        rebuildElementMap();
         titleSuggestions = titleSuggestions.filter((s) => s !== suggestion);
-        renderSchemaPane();
+        setResumeHtml(data.html, { persist: false });
         showToast("Тайтл обновлён", "success");
     }
 
-    // ---- Schema panel ----
+    function persistTitleSuggestions() {
+        fetch(`/tailor/session/${SESSION_ID}/title-suggestions`, {
+            method: "POST",
+            body: new URLSearchParams({ suggestions_json: JSON.stringify(titleSuggestions || []) }),
+        });
+    }
+
     function itemsForBlock(fieldPath) {
-        return gapState.items.filter(
-            (i) => (i.status === "match" || i.status === "can_add") && (i.assigned_field_paths || []).includes(fieldPath)
-        );
+        return gapState.items.filter((i) => (i.assigned_field_paths || []).includes(fieldPath));
     }
 
     function originalTextsForBlock(fieldPath) {
@@ -1022,65 +1143,65 @@ main {
             .filter((text, index, arr) => arr.indexOf(text) === index);
     }
 
-    function unplacedGapTexts() {
-        return gapState.items
-            .filter((i) => (i.status === "can_add" || i.status === "miss") && !(i.assigned_field_paths || []).length)
-            .map((i) => i.text);
+    function allKnownKeywordTexts() {
+        const set = new Set();
+        gapState.items.forEach((i) => set.add(i.text));
+        gapState.resumeItems.forEach((i) => set.add(i.text));
+        return [...set];
     }
 
     function renderSchemaBlock(fieldPath) {
         const block = document.createElement("div");
         block.className = "schema-block";
+        const isEdited = Object.prototype.hasOwnProperty.call(gapState.editedBlocks || {}, fieldPath);
+        if (isEdited) block.classList.add("edited-block");
         block.dataset.fieldPath = fieldPath;
 
-        const items = itemsForBlock(fieldPath);
-        const alreadyHere = items.filter((i) => i.original_field_path === fieldPath);
-        const toAdd = items.filter((i) => i.original_field_path !== fieldPath);
+        const originalTexts = originalTextsForBlock(fieldPath);
+        const originalTextsLower = new Set(originalTexts.map((t) => t.toLowerCase()));
+        const genItems = itemsForBlock(fieldPath);
+        const genItemTextsLower = new Set(genItems.map((i) => i.text.toLowerCase()));
 
-        const knownTexts = new Set([...alreadyHere, ...toAdd].map((i) => i.text.toLowerCase()));
-        const originalOnly = originalTextsForBlock(fieldPath).filter((t) => !knownTexts.has(t.toLowerCase()));
+        const originalChipsHtml = originalTexts
+            .map((text) => {
+                const inGeneration = genItemTextsLower.has(text.toLowerCase());
+                const cls = `schema-block-item-chip is-plain${inGeneration ? " is-highlighted" : ""}`;
+                return `<span class="${cls}" data-plain-text="${text.replace(/"/g, "&quot;")}" data-field-path="${fieldPath}"><span>${text}</span></span>`;
+            })
+            .join("");
 
-        function activeChipsHtml(list, variant) {
+        function activeChipsHtml(list) {
             return list
-                .map(
-                    (i) => `<span class="schema-block-item-chip ${variant}" draggable="true" data-gap-item-id="${i.id}">${i.text}<span class="schema-block-item-remove" data-gap-item-id="${i.id}">&times;</span></span>`
-                )
+                .map((i) => {
+                    const isDisabled = (i.disabled_field_paths || []).includes(fieldPath);
+                    const variant = originalTextsLower.has(i.text.toLowerCase()) ? "is-kept" : "is-new";
+                    const cls = `schema-block-item-chip ${variant}${isDisabled ? " is-disabled" : ""}`;
+                    return `<span class="${cls}" draggable="true" data-gap-item-id="${i.id}" data-toggle-disabled="1"><span>${i.text}</span><span class="schema-block-item-remove" data-gap-item-id="${i.id}">&times;</span></span>`;
+                })
                 .join("");
         }
 
-        const originalChipsHtml = originalOnly.map((text) => `<span class="schema-block-item-chip is-plain">${text}</span>`).join("");
-        const activeCount = alreadyHere.length + toAdd.length;
-        const totalCount = activeCount + originalOnly.length;
-
         block.innerHTML = `
             <div class="schema-block-header">
-                <span class="schema-block-title">${fieldPathLabel(fieldPath)}</span>
+                <span class="schema-block-title">${fieldPathLabel(fieldPath)}${isEdited ? '<span class="edited-title-badge">✎ изменено</span>' : ""}</span>
                 <button type="button" class="schema-block-gen-btn" data-field-path="${fieldPath}">Сгенерировать</button>
             </div>
-            ${activeCount ? `<div class="schema-block-items">${activeChipsHtml(alreadyHere, "is-kept")}${activeChipsHtml(toAdd, "is-new")}</div>` : ""}
-            ${!totalCount ? `<div class="schema-block-items"><span class="gap-empty-hint">пусто</span></div>` : ""}
-            ${originalOnly.length ? `
-            <button type="button" class="schema-original-toggle collapsed" data-field-path="${fieldPath}">
-                <svg class="schema-original-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                В оригинале (${originalOnly.length})
-            </button>
-            <div class="schema-original-body collapsed"><div class="schema-block-items">${originalChipsHtml}</div></div>
-            ` : ""}
+            ${originalChipsHtml ? `<div class="schema-kw-group"><span class="schema-kw-group-label">Оригинал в блоке</span><div class="schema-block-items">${originalChipsHtml}</div></div>` : ""}
+            ${genItems.length ? `<div class="schema-kw-group"><span class="schema-kw-group-label">В генерации</span><div class="schema-block-items">${activeChipsHtml(genItems)}</div></div>` : ""}
+            ${!originalTexts.length && !genItems.length ? `<div class="schema-block-items"><span class="gap-empty-hint">пусто</span></div>` : ""}
             <div class="schema-block-add-wrap">
                 <div class="schema-block-add-row">
-                    <input type="text" class="schema-block-add-input" autocomplete="off" placeholder="Добавить скилл..." data-field-path="${fieldPath}">
+                    <input type="text" class="schema-block-add-input" autocomplete="off" placeholder="Добавить кейворд..." data-field-path="${fieldPath}">
                     <button type="button" class="schema-block-add-btn" data-field-path="${fieldPath}">+</button>
                 </div>
             </div>
-            <textarea class="schema-block-comment" data-field-path="${fieldPath}" placeholder="Комментарий к блоку...">${gapState.blockComments[fieldPath] || ""}</textarea>
+            <div class="schema-block-comment-wrap">
+                <textarea class="schema-block-comment" data-field-path="${fieldPath}" placeholder="Комментарий к блоку...">${gapState.blockComments[fieldPath] || ""}</textarea>
+            </div>
         `;
 
-        block.addEventListener("mouseenter", () => {
-            if (hoverSourceLock) return;
-            hoverSourceLock = "schema";
-            setBlockHot(fieldPath, true, { scrollResume: true });
-        });
-        block.addEventListener("mouseleave", () => { setBlockHot(fieldPath, false, {}); hoverSourceLock = null; });
+        block.addEventListener("mouseenter", () => setBlockHot(fieldPath, true, { scrollResume: true }));
+        block.addEventListener("mouseleave", () => setBlockHot(fieldPath, false, {}));
 
         block.addEventListener("dragover", (e) => { e.preventDefault(); block.classList.add("drag-over"); });
         block.addEventListener("dragleave", () => block.classList.remove("drag-over"));
@@ -1088,10 +1209,15 @@ main {
             e.preventDefault();
             block.classList.remove("drag-over");
             const gapItemId = e.dataTransfer.getData("text/gap-item-id");
+            const sourceFieldPath = e.dataTransfer.getData("text/source-field-path");
             if (!gapItemId) return;
             const item = gapState.items.find((i) => String(i.id) === gapItemId);
             if (!item) return;
-            if (!(item.assigned_field_paths || []).includes(fieldPath)) {
+            if ((item.assigned_field_paths || []).includes(fieldPath)) return;
+
+            if (sourceFieldPath && sourceFieldPath !== fieldPath && (item.assigned_field_paths || []).includes(sourceFieldPath)) {
+                await moveGapItemLocation(item, sourceFieldPath, fieldPath);
+            } else {
                 await toggleGapItemLocation(item, fieldPath);
             }
         });
@@ -1114,18 +1240,24 @@ main {
             titleSuggestions.forEach((s) => {
                 const row = document.createElement("div");
                 row.className = "title-suggestion-row";
+                row.dataset.fieldPath = s.key;
                 row.innerHTML = `
                     ${s.kind === "experience" ? `<div class="title-suggestion-company">${s.company}</div>` : ""}
-                    <div class="title-suggestion-current">${s.current}</div>
-                    <div class="title-suggestion-new">${s.suggested}</div>
+                    <div class="title-suggestion-diff">
+                        <div class="title-suggestion-current"><span class="diff-tag">было</span><span class="diff-text">${s.current}</span></div>
+                        <div class="title-suggestion-new"><span class="diff-tag">станет</span><span>${s.suggested}</span></div>
+                    </div>
                     <div class="title-suggestion-buttons">
                         <button type="button" class="btn apply-title-btn">Применить</button>
                         <button type="button" class="btn-ghost btn dismiss-title-btn">Пропустить</button>
                     </div>
                 `;
+                row.addEventListener("mouseenter", () => setBlockHot(s.key, true, { scrollResume: true }));
+                row.addEventListener("mouseleave", () => setBlockHot(s.key, false, {}));
                 row.querySelector(".apply-title-btn").addEventListener("click", () => applyTitleSuggestion(s));
                 row.querySelector(".dismiss-title-btn").addEventListener("click", () => {
                     titleSuggestions = titleSuggestions.filter((x) => x !== s);
+                    persistTitleSuggestions();
                     renderSchemaPane();
                 });
                 titleBlock.appendChild(row);
@@ -1133,7 +1265,7 @@ main {
             paneSchema.appendChild(titleBlock);
         }
 
-        const order = gapState.blockOrder.length ? gapState.blockOrder : ["summary", "skills", ...experienceCompanyOptions().map((o) => o.value), ...genericSectionOptions().map((o) => o.value)];
+        const order = gapState.blockOrder.length ? gapState.blockOrder : bodyBlocks().map((b) => b.field_path);
         order.forEach((path) => paneSchema.appendChild(renderSchemaBlock(path)));
     }
 
@@ -1143,13 +1275,17 @@ main {
     let activeAddInput = null;
 
     function renderAddSuggestions(inputEl) {
+        const fieldPath = inputEl.dataset.fieldPath;
         const query = inputEl.value.trim().toLowerCase();
-        const matches = unplacedGapTexts().filter((t) => !query || t.toLowerCase().includes(query));
+        const alreadyInBlock = new Set(itemsForBlock(fieldPath).map((i) => i.text.toLowerCase()));
+        const matches = allKnownKeywordTexts().filter(
+            (t) => !alreadyInBlock.has(t.toLowerCase()) && (!query || t.toLowerCase().includes(query))
+        );
 
         if (!matches.length) { schemaAddSuggestions.classList.remove("open"); return; }
 
         schemaAddSuggestions.innerHTML = "";
-        matches.slice(0, 20).forEach((text) => {
+        matches.slice(0, 30).forEach((text) => {
             const item = document.createElement("div");
             item.className = "schema-add-suggestion-item";
             item.textContent = text;
@@ -1178,14 +1314,31 @@ main {
     document.addEventListener("click", (e) => {
         if (!schemaAddSuggestions.contains(e.target) && e.target !== activeAddInput) schemaAddSuggestions.classList.remove("open");
     });
-    document.addEventListener("scroll", () => schemaAddSuggestions.classList.remove("open"), true);
+    document.addEventListener("scroll", (e) => {
+        if (schemaAddSuggestions.contains(e.target)) return;
+        schemaAddSuggestions.classList.remove("open");
+    }, true);
+
+    async function addCustomItem(text, fieldPath, isOriginal) {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items/custom`, {
+            method: "POST",
+            body: new URLSearchParams({ text, field_path: fieldPath, is_original: isOriginal ? "true" : "" }),
+        });
+        const data = await response.json();
+        const existingIndex = gapState.items.findIndex((i) => i.id === data.item.id);
+        if (existingIndex >= 0) gapState.items[existingIndex] = data.item;
+        else gapState.items.push(data.item);
+        renderGapPanel();
+        renderSchemaPane();
+    }
 
     paneSchema.addEventListener("click", async (e) => {
         if (e.target.classList.contains("schema-block-gen-btn")) {
-            const fieldPath = e.target.dataset.fieldPath;
+            const button = e.target;
+            const fieldPath = button.dataset.fieldPath;
             await flushPendingSave();
-            e.target.classList.add("generating");
-            e.target.textContent = "...";
+            button.classList.add("generating");
+            button.textContent = "...";
 
             const response = await fetch(`/tailor/session/${SESSION_ID}/generate-block`, {
                 method: "POST",
@@ -1195,12 +1348,21 @@ main {
 
             pollTaskStatus([data.task_id], (tasks) => {
                 const task = tasks[0];
-                e.target.classList.remove("generating");
-                e.target.textContent = "Сгенерировать";
                 if (task.status === "done") {
+                    button.classList.remove("generating");
+                    button.textContent = "Сгенерировать";
+                    if (task.result.unchanged) {
+                        showToast("Без изменений", "info");
+                        return;
+                    }
+                    gapState.editedBlocks = task.result.edited_blocks || {};
+                    blocksState = task.result.blocks || blocksState;
+                    rebuildElementMap();
                     setResumeHtml(task.result.html, { persist: false });
                     showToast("Готово", "success");
                 } else if (task.status === "failed") {
+                    button.classList.remove("generating");
+                    button.textContent = "Сгенерировать";
                     showToast(`Ошибка: ${task.error}`, "danger");
                 }
             });
@@ -1209,46 +1371,41 @@ main {
 
         if (e.target.classList.contains("schema-block-add-btn")) {
             const fieldPath = e.target.dataset.fieldPath;
-            const input = paneSchema.querySelector(`.schema-block-add-input[data-field-path="${cssEscape(fieldPath)}"]`);
+            const input = paneSchema.querySelector(`.schema-block-add-input[data-field-path="${attrEscape(fieldPath)}"]`);
             const text = input.value.trim();
             if (!text) return;
-
-            const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items/custom`, {
-                method: "POST",
-                body: new URLSearchParams({ text, field_path: fieldPath }),
-            });
-            const data = await response.json();
-            const existingIndex = gapState.items.findIndex((i) => i.id === data.item.id);
-            if (existingIndex >= 0) gapState.items[existingIndex] = data.item;
-            else gapState.items.push(data.item);
-
+            const isOriginal = originalTextsForBlock(fieldPath).some((t) => t.toLowerCase() === text.toLowerCase());
             input.value = "";
-            renderGapPanel();
-            renderSchemaPane();
+            await addCustomItem(text, fieldPath, isOriginal);
             return;
         }
 
         if (e.target.classList.contains("schema-block-item-remove")) {
-            const gapItemId = e.target.dataset.gapItemId;
-            const item = gapState.items.find((i) => String(i.id) === gapItemId);
+            const item = gapState.items.find((i) => String(i.id) === e.target.dataset.gapItemId);
             if (!item) return;
-            const fieldPath = e.target.closest(".schema-block").dataset.fieldPath;
-            await toggleGapItemLocation(item, fieldPath);
+            await toggleGapItemLocation(item, e.target.closest(".schema-block").dataset.fieldPath);
             return;
         }
 
-        if (e.target.closest(".schema-original-toggle")) {
-            const btn = e.target.closest(".schema-original-toggle");
-            const fieldPath = btn.dataset.fieldPath;
-            const body = btn.nextElementSibling;
-            btn.classList.toggle("collapsed");
-            body.classList.toggle("collapsed");
+        const activeChip = e.target.closest('.schema-block-item-chip[data-toggle-disabled="1"]');
+        if (activeChip) {
+            const item = gapState.items.find((i) => String(i.id) === activeChip.dataset.gapItemId);
+            if (!item) return;
+            await toggleGapItemDisabled(item, activeChip.closest(".schema-block").dataset.fieldPath);
+            return;
+        }
+
+        const plainChip = e.target.closest(".schema-block-item-chip.is-plain");
+        if (plainChip) {
+            await addCustomItem(plainChip.dataset.plainText, plainChip.dataset.fieldPath, true);
         }
     });
 
     paneSchema.addEventListener("dragstart", (e) => {
-        if (!e.target.classList.contains("schema-block-item-chip")) return;
-        e.dataTransfer.setData("text/gap-item-id", e.target.dataset.gapItemId);
+        const chip = e.target.closest(".schema-block-item-chip");
+        if (!chip || !chip.dataset.gapItemId) return;
+        e.dataTransfer.setData("text/gap-item-id", chip.dataset.gapItemId);
+        e.dataTransfer.setData("text/source-field-path", chip.closest(".schema-block").dataset.fieldPath);
     });
 
     let commentSaveTimeout = null;
@@ -1266,10 +1423,9 @@ main {
         }, 700);
     });
 
-    // ---- init ----
+    rebuildElementMap();
     decorateBlocks();
     bindMarkHoverHandlers();
-    bindBlockHoverSync();
     pushHistorySnapshot();
     updateHistoryButtons();
     updateWordCount();

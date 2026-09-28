@@ -273,6 +273,280 @@
     </div>
 </div>
 
+{% if active_resume %}
+<div class="settings-card" id="blocks-card">
+    <div class="settings-card-header">
+        <div class="settings-card-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <h2>{{ t.blocks_title }}</h2>
+        </div>
+        <span class="settings-card-meta" id="blocks-status"></span>
+    </div>
+    <p class="settings-card-hint">{{ t.blocks_hint }}</p>
+
+    <div class="blocks-toolbar">
+        <button type="button" class="btn btn-ghost" id="blocks-detect-btn" style="margin-top:0;">{{ t.blocks_detect_button }}</button>
+    </div>
+
+    <div class="blocks-layout">
+        <div class="blocks-elements" id="blocks-elements"></div>
+        <div class="blocks-side">
+            <div class="blocks-panel">
+                <div class="blocks-panel-title"><span id="blocks-selected-count">0</span> {{ t.blocks_selected }}</div>
+                <div class="blocks-form">
+                    <select id="blocks-kind-select"></select>
+                    <input type="text" id="blocks-name-input" placeholder="{{ t.blocks_name_placeholder }}">
+                    <input type="text" id="blocks-role-input" placeholder="{{ t.blocks_role_placeholder }}">
+                    <button type="button" class="btn" id="blocks-create-btn" style="margin-top:0;">{{ t.blocks_create }}</button>
+                </div>
+                <div class="blocks-form">
+                    <select id="blocks-target-select"></select>
+                    <button type="button" class="btn btn-ghost" id="blocks-add-btn" style="margin-top:0;">{{ t.blocks_add_to }}</button>
+                </div>
+                <button type="button" class="btn btn-ghost" id="blocks-unassign-btn" style="margin-top:0;">{{ t.blocks_unassign }}</button>
+            </div>
+            <div class="blocks-list" id="blocks-list"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.blocks-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.blocks-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .blocks-layout { grid-template-columns: 1fr; } }
+.blocks-elements { max-height: 560px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-input); scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.blocks-row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px; user-select: none; }
+.blocks-row:last-child { border-bottom: none; }
+.blocks-row:hover { background: var(--bg-elevated); }
+.blocks-row.selected { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.blocks-row-tag { font-size: 10px; font-weight: 700; border-radius: 6px; padding: 3px 6px; align-self: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-tertiary); border: 1px dashed var(--border); }
+.blocks-row-text { color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+.blocks-side { display: flex; flex-direction: column; gap: 12px; }
+.blocks-panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-input); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.blocks-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); }
+.blocks-form { display: flex; flex-direction: column; gap: 6px; }
+.blocks-form select, .blocks-form input { margin-top: 0; }
+.blocks-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.blocks-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--bg-input); display: flex; flex-direction: column; gap: 6px; }
+.blocks-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.blocks-item-path { font-size: 10.5px; color: var(--text-tertiary); word-break: break-all; }
+.blocks-item select, .blocks-item input { margin-top: 0; font-size: 12px; padding: 6px 8px; }
+.blocks-item-delete { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; line-height: 1; }
+.blocks-item-delete:hover { color: var(--score-low); }
+</style>
+
+<script>
+(function () {
+    const T = {{ t | tojson }};
+    const RESUME_ID = {{ active_resume.id }};
+    const PALETTE = ["#5b8def", "#4ade80", "#facc15", "#f87171", "#a78bfa", "#fb923c", "#2dd4bf", "#f472b6"];
+    const KINDS = ["title_main", "summary", "skills", "exp_title", "exp_body", "section"];
+
+    let elements = [];
+    let blocks = [];
+    let selected = new Set();
+    let lastIndex = null;
+
+    const elementsEl = document.getElementById("blocks-elements");
+    const listEl = document.getElementById("blocks-list");
+    const statusEl = document.getElementById("blocks-status");
+    const kindSelect = document.getElementById("blocks-kind-select");
+    const nameInput = document.getElementById("blocks-name-input");
+    const roleInput = document.getElementById("blocks-role-input");
+    const targetSelect = document.getElementById("blocks-target-select");
+
+    function kindLabel(kind) { return T["blocks_kind_" + kind] || kind; }
+    function escapeHtml(value) { return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+    function randomId() { return "b" + Math.random().toString(16).slice(2, 10); }
+    function colorFor(blockId) {
+        const index = blocks.findIndex((b) => b.id === blockId);
+        return PALETTE[index % PALETTE.length];
+    }
+    function blockOf(eid) { return blocks.find((b) => b.element_ids.includes(eid)); }
+
+    kindSelect.innerHTML = KINDS.map((kind) => `<option value="${kind}">${escapeHtml(kindLabel(kind))}</option>`).join("");
+
+    function renderElements() {
+        elementsEl.innerHTML = "";
+        if (!elements.length) {
+            elementsEl.innerHTML = `<div class="blocks-row"><span></span><span class="blocks-row-text">${escapeHtml(T.blocks_no_elements)}</span></div>`;
+            return;
+        }
+        elements.forEach((element, index) => {
+            const block = blockOf(element.eid);
+            const row = document.createElement("div");
+            row.className = "blocks-row" + (selected.has(element.eid) ? " selected" : "");
+            row.dataset.index = index;
+            const tag = block
+                ? `<span class="blocks-row-tag" style="color:${colorFor(block.id)};border:1px solid ${colorFor(block.id)};background:${colorFor(block.id)}22;">${escapeHtml(kindLabel(block.kind))}${block.label ? " · " + escapeHtml(block.label) : ""}</span>`
+                : `<span class="blocks-row-tag">—</span>`;
+            row.innerHTML = `${tag}<span class="blocks-row-text">${escapeHtml(element.text)}</span>`;
+            elementsEl.appendChild(row);
+        });
+        document.getElementById("blocks-selected-count").textContent = selected.size;
+    }
+
+    function renderList() {
+        listEl.innerHTML = "";
+        blocks.forEach((block) => {
+            const item = document.createElement("div");
+            item.className = "blocks-item";
+            item.dataset.blockId = block.id;
+            const isExp = block.kind === "exp_title" || block.kind === "exp_body";
+            const nameValue = isExp ? block.company : block.label;
+            item.innerHTML = `
+                <div class="blocks-item-head">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colorFor(block.id)};flex-shrink:0;"></span>
+                    <select class="blocks-item-kind">${KINDS.map((k) => `<option value="${k}" ${k === block.kind ? "selected" : ""}>${escapeHtml(kindLabel(k))}</option>`).join("")}</select>
+                    <button type="button" class="blocks-item-delete">&times;</button>
+                </div>
+                <input type="text" class="blocks-item-name" value="${escapeHtml(nameValue)}" placeholder="${escapeHtml(T.blocks_name_placeholder)}">
+                ${block.kind === "exp_title" ? `<input type="text" class="blocks-item-role" value="${escapeHtml(block.role)}" placeholder="${escapeHtml(T.blocks_role_placeholder)}">` : ""}
+                <span class="blocks-item-path">${escapeHtml(block.field_path || "")} · ${block.element_ids.length}</span>
+            `;
+            listEl.appendChild(item);
+        });
+        targetSelect.innerHTML = `<option value="">${escapeHtml(T.blocks_pick_block)}</option>` +
+            blocks.map((b) => `<option value="${b.id}">${escapeHtml(kindLabel(b.kind))} · ${escapeHtml(b.label)}</option>`).join("");
+    }
+
+    function renderAll() { renderElements(); renderList(); }
+
+    async function save() {
+        const payload = blocks.filter((b) => b.element_ids.length);
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`, {
+            method: "POST",
+            body: new URLSearchParams({ blocks_json: JSON.stringify(payload) }),
+        });
+        if (!response.ok) { showToast("Error", "danger"); return; }
+        const data = await response.json();
+        blocks = data.blocks;
+        statusEl.textContent = `${T.blocks_saved} · ${blocks.length}`;
+        renderAll();
+    }
+
+    function removeFromBlocks(eids) {
+        blocks.forEach((b) => { b.element_ids = b.element_ids.filter((eid) => !eids.includes(eid)); });
+        blocks = blocks.filter((b) => b.element_ids.length);
+    }
+
+    elementsEl.addEventListener("click", (event) => {
+        const row = event.target.closest(".blocks-row");
+        if (!row || row.dataset.index === undefined) return;
+        const index = parseInt(row.dataset.index, 10);
+        const eid = elements[index].eid;
+        if (event.shiftKey && lastIndex !== null) {
+            const [low, high] = [Math.min(lastIndex, index), Math.max(lastIndex, index)];
+            for (let i = low; i <= high; i++) selected.add(elements[i].eid);
+        } else if (selected.has(eid)) {
+            selected.delete(eid);
+        } else {
+            selected.add(eid);
+        }
+        lastIndex = index;
+        renderElements();
+    });
+
+    document.getElementById("blocks-create-btn").addEventListener("click", async () => {
+        if (!selected.size) return;
+        const kind = kindSelect.value;
+        const name = nameInput.value.trim();
+        const eids = [...selected];
+        removeFromBlocks(eids);
+        const isExp = kind === "exp_title" || kind === "exp_body";
+        blocks.push({
+            id: randomId(),
+            kind,
+            label: isExp ? "" : name,
+            company: isExp ? name : "",
+            role: kind === "exp_title" ? roleInput.value.trim() : "",
+            element_ids: eids,
+            field_path: "",
+        });
+        selected = new Set();
+        nameInput.value = "";
+        roleInput.value = "";
+        await save();
+    });
+
+    document.getElementById("blocks-add-btn").addEventListener("click", async () => {
+        const targetId = targetSelect.value;
+        if (!selected.size || !targetId) return;
+        const eids = [...selected];
+        removeFromBlocks(eids);
+        const target = blocks.find((b) => b.id === targetId);
+        if (!target) return;
+        target.element_ids = [...target.element_ids, ...eids];
+        selected = new Set();
+        await save();
+    });
+
+    document.getElementById("blocks-unassign-btn").addEventListener("click", async () => {
+        if (!selected.size) return;
+        removeFromBlocks([...selected]);
+        selected = new Set();
+        await save();
+    });
+
+    listEl.addEventListener("click", async (event) => {
+        if (!event.target.classList.contains("blocks-item-delete")) return;
+        const blockId = event.target.closest(".blocks-item").dataset.blockId;
+        blocks = blocks.filter((b) => b.id !== blockId);
+        await save();
+    });
+
+    listEl.addEventListener("change", async (event) => {
+        const item = event.target.closest(".blocks-item");
+        if (!item) return;
+        const block = blocks.find((b) => b.id === item.dataset.blockId);
+        if (!block) return;
+        if (event.target.classList.contains("blocks-item-kind")) {
+            block.kind = event.target.value;
+        } else if (event.target.classList.contains("blocks-item-name")) {
+            if (block.kind === "exp_title" || block.kind === "exp_body") block.company = event.target.value.trim();
+            else block.label = event.target.value.trim();
+        } else if (event.target.classList.contains("blocks-item-role")) {
+            block.role = event.target.value.trim();
+        }
+        await save();
+    });
+
+    document.getElementById("blocks-detect-btn").addEventListener("click", async () => {
+        const button = document.getElementById("blocks-detect-btn");
+        button.disabled = true;
+        statusEl.textContent = T.blocks_detecting;
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks/detect`, { method: "POST" });
+        if (!response.ok) { button.disabled = false; return; }
+        const data = await response.json();
+        pollTaskStatus([data.task_id], async (tasks) => {
+            const task = tasks[0];
+            if (task.status === "done") {
+                button.disabled = false;
+                await load();
+                statusEl.textContent = T.blocks_detected_done;
+            } else if (task.status === "failed") {
+                button.disabled = false;
+                statusEl.textContent = task.error;
+            }
+        });
+    });
+
+    async function load() {
+        const response = await fetch(`/settings/resume/${RESUME_ID}/blocks`);
+        if (!response.ok) return;
+        const data = await response.json();
+        elements = data.elements;
+        blocks = data.blocks;
+        selected = new Set();
+        statusEl.textContent = data.detected ? `${blocks.length}` : T.blocks_not_detected;
+        renderAll();
+    }
+
+    load();
+})();
+</script>
+{% endif %}
+
 <!-- LINKEDIN -->
 <div class="settings-card">
     <div class="settings-card-header">

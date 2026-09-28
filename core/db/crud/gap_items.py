@@ -12,6 +12,7 @@ def bulk_create_gap_items(session: Session, session_id: int, items: list[dict]) 
             text=item["text"],
             category=item.get("category"),
             status=item["status"],
+            origin_status=item["status"],
             priority=item.get("priority"),
             source=item.get("source"),
             original_field_path=item.get("original_field_path"),
@@ -43,13 +44,17 @@ def clear_gap_items_for_session(session: Session, session_id: int) -> None:
     session.commit()
 
 
-def create_custom_gap_item(session: Session, session_id: int, text: str, field_path: str) -> GapItem:
+def create_custom_gap_item(
+    session: Session, session_id: int, text: str, field_path: str, original_field_path: str | None = None
+) -> GapItem:
     item = GapItem(
         session_id=session_id,
         text=text,
         category="skill",
         status="can_add",
+        origin_status="can_add",
         source="profile",
+        original_field_path=original_field_path,
         assigned_field_paths=[field_path],
         included=True,
     )
@@ -60,6 +65,10 @@ def create_custom_gap_item(session: Session, session_id: int, text: str, field_p
 
 
 def toggle_gap_item_location(session: Session, gap_item_id: int, field_path: str) -> GapItem | None:
+    """Toggles whether this gap item is assigned to (i.e. slated for generation
+    in) field_path. Never changes item.status - status reflects the gap
+    analysis category (miss/can_add/match/over) and stays fixed once set, so a
+    miss stays visible under Miss even after being placed into a block."""
     item = session.get(GapItem, gap_item_id)
     if item is None:
         return None
@@ -70,8 +79,51 @@ def toggle_gap_item_location(session: Session, gap_item_id: int, field_path: str
         current.append(field_path)
     item.assigned_field_paths = current
     item.included = len(current) > 0
-    if item.status == "miss" and current:
-        item.status = "can_add"
+
+    disabled = list(item.disabled_field_paths or [])
+    if field_path in disabled:
+        disabled.remove(field_path)
+        item.disabled_field_paths = disabled
+
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+def toggle_gap_item_disabled(session: Session, gap_item_id: int, field_path: str) -> GapItem | None:
+    item = session.get(GapItem, gap_item_id)
+    if item is None:
+        return None
+    disabled = list(item.disabled_field_paths or [])
+    if field_path in disabled:
+        disabled.remove(field_path)
+    else:
+        disabled.append(field_path)
+    item.disabled_field_paths = disabled
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+def move_gap_item_location(
+    session: Session, gap_item_id: int, from_field_path: str, to_field_path: str
+) -> GapItem | None:
+    item = session.get(GapItem, gap_item_id)
+    if item is None:
+        return None
+    current = list(item.assigned_field_paths or [])
+    if from_field_path in current:
+        current.remove(from_field_path)
+    if to_field_path not in current:
+        current.append(to_field_path)
+    item.assigned_field_paths = current
+    item.included = len(current) > 0
+
+    disabled = list(item.disabled_field_paths or [])
+    if from_field_path in disabled:
+        disabled.remove(from_field_path)
+        item.disabled_field_paths = disabled
+
     session.commit()
     session.refresh(item)
     return item

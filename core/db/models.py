@@ -30,6 +30,7 @@ class ResumeVersion(Base):
     content_html: Mapped[str] = mapped_column(Text, nullable=True)
     label: Mapped[str] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    blocks: Mapped[list] = mapped_column(JSON, nullable=True)
 
     evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="resume_version"
@@ -243,6 +244,10 @@ class TailoringSession(Base):
     block_comments: Mapped[dict] = mapped_column(JSON, nullable=True)
     gap_analysis_ready: Mapped[bool] = mapped_column(Boolean, default=False)
     resume_items: Mapped[list] = mapped_column(JSON, nullable=True)
+    edited_block_paths: Mapped[list] = mapped_column(JSON, nullable=True)
+    edited_blocks: Mapped[dict] = mapped_column(JSON, nullable=True)
+    title_suggestions: Mapped[list] = mapped_column(JSON, nullable=True)
+    blocks: Mapped[list] = mapped_column(JSON, nullable=True)
 
     messages: Mapped[list["TailoringMessage"]] = relationship(back_populates="session")
     changes: Mapped[list["TailoringChange"]] = relationship(back_populates="session")
@@ -272,6 +277,8 @@ class GapItem(Base):
     suggested_reason: Mapped[str] = mapped_column(Text, nullable=True)
     assigned_field_path: Mapped[str] = mapped_column(String(255), nullable=True)
     assigned_field_paths: Mapped[list] = mapped_column(JSON, nullable=True)
+    disabled_field_paths: Mapped[list] = mapped_column(JSON, nullable=True)
+    origin_status: Mapped[str] = mapped_column(String(16), nullable=True)
     recommend_keep: Mapped[bool] = mapped_column(Boolean, nullable=True)
     included: Mapped[bool] = mapped_column(Boolean, default=False)
 

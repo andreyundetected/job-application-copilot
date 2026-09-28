@@ -8,6 +8,62 @@ _SIZE_RE = re.compile(r'font-size:\s*([\d.]+)pt')
 _BOLD_RE = re.compile(r'font-weight:\s*bold')
 
 
+def extract_block_body_spans(html: str) -> list[dict]:
+    blocks: list[dict] = []
+    current = None
+
+    for match in _TAG_RE.finditer(html or ""):
+        fragment = match.group(0)
+        tag = match.group(1).lower()
+
+        if tag == "ul":
+            if current is not None:
+                if current["start"] is None:
+                    current["start"] = match.start()
+                current["end"] = match.end()
+            continue
+
+        style_match = _STYLE_RE.search(fragment[: fragment.find(">") + 1])
+        style = style_match.group(1) if style_match else ""
+        size_match = _SIZE_RE.search(style)
+        size = float(size_match.group(1)) if size_match else None
+        is_bold = bool(_BOLD_RE.search(style))
+        text = html_to_text(fragment).strip()
+
+        if size == 16:
+            continue
+
+        if size == 12 and is_bold and text:
+            if current is not None:
+                blocks.append(current)
+            upper = text.upper()
+            if upper == "SUMMARY":
+                field_path = "summary"
+            elif upper == "SKILLS":
+                field_path = "skills"
+            else:
+                field_path = f"section: {text}"
+            current = {"field_path": field_path, "start": None, "end": None}
+            continue
+
+        if size == 11 and is_bold and text:
+            if current is not None:
+                blocks.append(current)
+            company = text.split(" - ")[0].strip()
+            current = {"field_path": f"experience: {company}", "start": None, "end": None}
+            continue
+
+        if current is not None:
+            if current["start"] is None:
+                current["start"] = match.start()
+            current["end"] = match.end()
+
+    if current is not None:
+        blocks.append(current)
+
+    return [b for b in blocks if b["start"] is not None]
+
+
 def extract_ordered_blocks(html: str) -> list[dict]:
     blocks: list[dict] = []
     current = None

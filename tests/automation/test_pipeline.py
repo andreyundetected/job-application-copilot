@@ -220,6 +220,7 @@ def test_maybe_auto_answer_base_questions_creates_application_and_answers(monkey
 
     resumes_crud.create_resume_version(db_session, source_type="resume", raw_text="resume text", is_active=True)
     candidate_profile_crud.upsert_candidate_profile(db_session, full_name="Sample Candidate")
+    automation_settings_crud.upsert_automation_settings(db_session, auto_questions_master_enabled=True)
     base_questions_crud.create_automation_base_question(db_session, "Write a cover letter for this role")
 
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="automation")
@@ -362,7 +363,7 @@ def test_process_search_result_auto_applies_permitted_soft_changes(monkeypatch, 
         is_active=True,
     )
     automation_settings_crud.upsert_automation_settings(
-        db_session, min_score_to_proceed=6, max_score_to_archive=3
+        db_session, min_score_to_proceed=6, max_score_to_archive=3, auto_tailor_master_enabled=True
     )
     tailoring_permissions_crud.set_tailoring_permission(
         db_session, level="soft", change_type="skills", auto_apply=True
@@ -412,7 +413,7 @@ def test_process_search_result_leaves_non_permitted_soft_changes_pending(monkeyp
         is_active=True,
     )
     automation_settings_crud.upsert_automation_settings(
-        db_session, min_score_to_proceed=6, max_score_to_archive=3
+        db_session, min_score_to_proceed=6, max_score_to_archive=3, auto_tailor_master_enabled=True
     )
     # "soft" needs to be active (at least one permitted change_type) for the level
     # to run at all, but the change proposed below is a *different* type ("title"),
@@ -583,6 +584,7 @@ def test_maybe_auto_tailor_uses_injected_permission_source(monkeypatch, db_sessi
         db_session, source_type="resume", raw_text="resume text", content_html="<p>Old Skills Line</p>", is_active=True
     )
     job = jobs_crud.create_job_posting(db_session, raw_text="job text")
+    automation_settings_crud.upsert_automation_settings(db_session, auto_tailor_master_enabled=True)
 
     calls = {"level_has_auto_apply": 0, "is_auto_apply": 0}
 
@@ -631,6 +633,7 @@ def test_maybe_auto_tailor_uses_injected_permission_source(monkeypatch, db_sessi
 @pytest.mark.automation
 def test_maybe_auto_answer_base_questions_uses_injected_source(monkeypatch, db_session):
     job = jobs_crud.create_job_posting(db_session, raw_text="job text", source="manual")
+    automation_settings_crud.upsert_automation_settings(db_session, auto_questions_master_enabled=True)
 
     called_with = []
 
