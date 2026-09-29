@@ -71,7 +71,7 @@ class RecruiteeExtractor(BaseATSExtractor):
             if not offer_id or not offer_slug:
                 continue
             url = f"https://{slug}.recruitee.com/o/{offer_slug}"
-            posted_at = parse_iso_datetime(offer.get("created_at") or offer.get("published_at"))
+            posted_at = parse_iso_datetime(offer.get("published_at") or offer.get("created_at"))
             results.append(
                 {"external_id": str(offer_id), "url": url, "title": offer.get("title", ""), "posted_at": posted_at}
             )

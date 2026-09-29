@@ -54,6 +54,9 @@ _stats = {
     "screening_done": False,
     "last_pass_duration_seconds": None,
     "collection_started_at": None,
+    "full_scan_checked": 0,
+    "full_scan_total": 0,
+    "full_scan_done": False,
 }
 
 _tier_deltas: dict[int, list[float]] = {}
@@ -136,6 +139,9 @@ def reset_run():
                 "screening_done": False,
                 "last_pass_duration_seconds": None,
                 "collection_started_at": None,
+                "full_scan_checked": 0,
+                "full_scan_total": 0,
+                "full_scan_done": False,
             }
         )
         _tier_deltas.clear()
@@ -214,6 +220,31 @@ def get_ats_checked_counts() -> dict[str, int]:
 def mark_collection_done() -> None:
     with _lock:
         _stats["collection_done"] = True
+
+
+def set_full_scan_total(total: int) -> None:
+    with _lock:
+        _stats["full_scan_total"] = total
+        _stats["full_scan_checked"] = 0
+        _stats["full_scan_done"] = False
+
+
+def add_full_scan_checked(count: int) -> None:
+    if not count:
+        return
+    with _lock:
+        _stats["full_scan_checked"] += count
+
+
+def mark_full_scan_done() -> None:
+    with _lock:
+        _stats["full_scan_done"] = True
+
+
+def note_company_checked() -> None:
+    with _lock:
+        if _stats["phase"] == "full_scan":
+            _stats["full_scan_checked"] += 1
 
 
 def set_screening_total(total: int) -> None:

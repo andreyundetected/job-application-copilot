@@ -146,7 +146,7 @@ def test_extract_job_text_personio(monkeypatch):
 
     def fake_get(xml_url, params=None, timeout=None):
         assert xml_url == "https://examplecorp.jobs.personio.de/xml"
-        assert params == {"language": "en"}
+        assert params == {}
         return _FakeResponse(200, content=_PERSONIO_XML)
 
     monkeypatch.setattr(requests, "get", fake_get)
@@ -165,7 +165,7 @@ def test_extract_job_text_personio_falls_back_without_language(monkeypatch):
 
     def fake_get(xml_url, params=None, timeout=None):
         calls.append(params)
-        if params == {"language": "en"}:
+        if params == {}:
             return _FakeResponse(200, content=b"<workzag-jobs></workzag-jobs>")
         return _FakeResponse(200, content=_PERSONIO_XML)
 
@@ -173,7 +173,7 @@ def test_extract_job_text_personio_falls_back_without_language(monkeypatch):
 
     result = ats.extract_job_text(url)
 
-    assert calls == [{"language": "en"}, {}]
+    assert calls == [{}, {"language": "en"}]
     assert "Sample Backend Engineer" in result
 
 
@@ -274,11 +274,13 @@ def test_extract_job_text_bamboohr(monkeypatch):
             200,
             {
                 "result": {
-                    "jobOpeningName": "Sample Product Manager",
-                    "departmentLabel": "Product",
-                    "locationLabel": "Remote",
-                    "employmentStatusLabel": "Full-Time",
-                    "description": "<p>Sample job description.</p>",
+                    "jobOpening": {
+                        "jobOpeningName": "Sample Product Manager",
+                        "departmentLabel": "Product",
+                        "location": {"city": "Berlin", "state": None, "addressCountry": "Germany"},
+                        "employmentStatusLabel": "Full-Time",
+                        "description": "<p>Sample job description.</p>",
+                    }
                 }
             },
         )

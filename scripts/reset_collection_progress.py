@@ -18,7 +18,6 @@ def main():
         updated_companies = session.query(DiscoveredCompany).update(
             {
                 DiscoveredCompany.last_checked_at: None,
-                DiscoveredCompany.next_check_at: None,
                 DiscoveredCompany.last_activity_at: None,
                 DiscoveredCompany.has_ever_had_postings: False,
                 DiscoveredCompany.is_deleted: False,

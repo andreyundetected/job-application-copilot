@@ -31,17 +31,17 @@ class PersonioExtractor(BaseATSExtractor):
             except ET.ParseError:
                 return None
 
-        root = _fetch({"language": "en"})
-        positions = root.findall("position") if root is not None else []
-
-        if not positions:
-            root = _fetch({})
+        position = None
+        for params in ({}, {"language": "en"}):
+            root = _fetch(params)
             positions = root.findall("position") if root is not None else []
+            candidate = next((p for p in positions if (p.findtext("id") or "").strip() == job_id), None)
+            if candidate is None:
+                continue
+            position = candidate
+            if position.findall("./jobDescriptions/jobDescription"):
+                break
 
-        if not positions:
-            return None
-
-        position = next((p for p in positions if (p.findtext("id") or "").strip() == job_id), None)
         if position is None:
             return None
 

@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 LIVE_QUANTILE_COUNT = 7
 EMPTY_GROUP_INDEX = LIVE_QUANTILE_COUNT
+CYCLE_STEPS = 2 ** (LIVE_QUANTILE_COUNT - 1)
 
 _step_counter = 0
 
@@ -39,22 +40,20 @@ def interleave_by_ats(companies: list) -> list:
     return result
 
 
-def fetch_quantile_companies(quantile_index: int, batch_size: int) -> list:
+def fetch_quantile_companies(quantile_index: int) -> list:
     session = DiscoverySessionLocal()
     try:
-        companies = discovery_crud.list_companies_in_rank_quantile(
-            session, quantile_index, LIVE_QUANTILE_COUNT, batch_size
-        )
+        companies = discovery_crud.list_companies_in_rank_quantile(session, quantile_index, LIVE_QUANTILE_COUNT)
     finally:
         session.close()
 
     return interleave_by_ats(companies)
 
 
-def fetch_empty_group_companies(batch_size: int) -> list:
+def fetch_empty_group_companies() -> list:
     session = DiscoverySessionLocal()
     try:
-        companies = discovery_crud.list_companies_without_postings(session, batch_size)
+        companies = discovery_crud.list_companies_without_postings(session)
     finally:
         session.close()
 

@@ -11,6 +11,8 @@
     "pause_button": "Пауза",
     "skip_wayback_button": "Пропустить wayback",
     "run_without_wayback_button": "Запустить без wayback",
+    "run_full_scan_button": "Просканировать всё сначала",
+    "stage_full_scan_label": "Полный скан всех компаний",
     "phase_idle": "Простой",
 
     "stage_wayback_label": "Поиск компаний",

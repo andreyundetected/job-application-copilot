@@ -15,6 +15,7 @@ from core.discovery.backlog import run_backlog_pass, run_catch_up_pass
 from core.discovery.poll_cycle import (
     PASS_GAP_SECONDS,
     run_empty_group_sweep,
+    run_full_scan,
     run_initial_collection,
     run_one_live_quantile_cycle,
 )
@@ -262,8 +263,8 @@ def discovery_live_stats():
     )
 
 
-def _run_discovery_bootstrap(backlog_hours: int) -> None:
-    logger.info("[bootstrap] run started")
+def _run_discovery_bootstrap(backlog_hours: int, full_scan: bool = False) -> None:
+    logger.info("[bootstrap] run started (full_scan=%s)", full_scan)
 
     if run_control.should_skip_wayback():
         logger.info("[bootstrap] wayback skipped by request")
@@ -282,11 +283,21 @@ def _run_discovery_bootstrap(backlog_hours: int) -> None:
         logger.info("[bootstrap] cancelled after initial collection")
         return
 
+    if full_scan:
+        run_control.set_phase("full_scan")
+
     if backlog_hours and backlog_hours > 0:
         logger.info("[bootstrap] running backlog pass (%sh)", backlog_hours)
         run_backlog_pass(backlog_hours)
     else:
         logger.info("[bootstrap] backlog pass skipped (no age limit set)")
+
+    if full_scan:
+        logger.info("[bootstrap] running full scan of all live companies")
+        run_full_scan()
+        if run_control.is_cancelled():
+            logger.info("[bootstrap] cancelled after full scan")
+            return
 
     logger.info("[bootstrap] entering continuous listening loop")
     cycle_count = 0
@@ -317,7 +328,7 @@ def _run_discovery_bootstrap(backlog_hours: int) -> None:
 
 
 @router.post("/discovery/start")
-def start_discovery(skip_wayback: str = Form("")):
+def start_discovery(skip_wayback: str = Form(""), full_scan: str = Form("")):
     discovery_session = DiscoverySessionLocal()
     try:
         settings = discovery_crud.update_settings(discovery_session, enabled=True)
@@ -330,7 +341,7 @@ def start_discovery(skip_wayback: str = Form("")):
         run_control.request_skip_wayback()
     else:
         run_control.request_skip_wayback_if_recent()
-    submit_task(_run_discovery_bootstrap, backlog_hours)
+    submit_task(_run_discovery_bootstrap, backlog_hours, full_scan == "true")
 
     return JSONResponse({"status": "ok", "enabled": True})
 
@@ -408,6 +419,9 @@ def discovery_status():
             "collection_checked": stats["collection_checked"],
             "collection_total": stats["collection_total"],
             "collection_done": stats["collection_done"],
+            "full_scan_checked": stats["full_scan_checked"],
+            "full_scan_total": stats["full_scan_total"],
+            "full_scan_done": stats["full_scan_done"],
             "screening_checked": stats["screening_checked"],
             "screening_total": stats["screening_total"],
             "screening_done": stats["screening_done"],

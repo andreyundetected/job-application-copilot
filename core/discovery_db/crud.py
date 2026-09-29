@@ -38,9 +38,6 @@ def mark_wayback_run(session: Session) -> None:
 
 
 def bulk_upsert_companies(session: Session, ats_name: str, slugs: list[str]) -> int:
-    """Inserts only slugs not already known for this ATS - never touches an
-    existing company's next_check_at/last_activity_at, since that would reset
-    its adaptive polling schedule."""
     existing = {
         row[0]
         for row in session.query(DiscoveredCompany.slug).filter(DiscoveredCompany.ats_name == ats_name).all()
@@ -57,7 +54,6 @@ def bulk_upsert_companies(session: Session, ats_name: str, slugs: list[str]) -> 
                 active=True,
                 first_seen_at=now,
                 last_activity_at=now,
-                next_check_at=now,
             )
         )
         existing.add(slug)
@@ -98,91 +94,6 @@ def count_unchecked_companies(session: Session) -> int:
         )
         .count()
     )
-
-
-def list_due_companies_prioritized_balanced(
-    session: Session, now: datetime.datetime, limit: int, ats_names: list[str]
-) -> list[DiscoveredCompany]:
-    if not ats_names:
-        return []
-    per_domain = max(1, limit // len(ats_names))
-    result: list[DiscoveredCompany] = []
-    for ats_name in ats_names:
-        rows = (
-            session.query(DiscoveredCompany)
-            .filter(
-                DiscoveredCompany.active.is_(True),
-                DiscoveredCompany.is_deleted.is_(False),
-                DiscoveredCompany.last_checked_at.isnot(None),
-                DiscoveredCompany.has_ever_had_postings.is_(True),
-                DiscoveredCompany.next_check_at <= now,
-                DiscoveredCompany.ats_name == ats_name,
-            )
-            .order_by(DiscoveredCompany.next_check_at.asc())
-            .limit(per_domain)
-            .all()
-        )
-        result.extend(rows)
-    return result[:limit]
-
-
-def list_due_companies_in_tier_balanced(
-    session: Session, now: datetime.datetime, tier_index: int, limit: int, ats_names: list[str]
-) -> list[DiscoveredCompany]:
-    from core.discovery.interval import tier_bounds
-
-    lower, upper = tier_bounds(tier_index, now)
-    if not ats_names:
-        return []
-
-    per_domain = max(1, limit // len(ats_names))
-    result: list[DiscoveredCompany] = []
-    for ats_name in ats_names:
-        base = session.query(DiscoveredCompany).filter(
-            DiscoveredCompany.active.is_(True),
-            DiscoveredCompany.is_deleted.is_(False),
-            DiscoveredCompany.has_ever_had_postings.is_(True),
-            DiscoveredCompany.next_check_at <= now,
-            DiscoveredCompany.ats_name == ats_name,
-        )
-
-        dated_query = base.filter(DiscoveredCompany.last_activity_at.isnot(None), DiscoveredCompany.last_activity_at <= upper)
-        if lower is not None:
-            dated_query = dated_query.filter(DiscoveredCompany.last_activity_at > lower)
-        dated_rows = dated_query.limit(per_domain).all()
-
-        undated_rows = base.filter(
-            DiscoveredCompany.last_activity_at.is_(None), DiscoveredCompany.assigned_tier == tier_index
-        ).limit(per_domain).all()
-
-        result.extend((dated_rows + undated_rows)[:per_domain])
-    return result[:limit]
-
-
-def list_due_empty_companies_balanced(
-    session: Session, now: datetime.datetime, limit: int, ats_names: list[str]
-) -> list[DiscoveredCompany]:
-    if not ats_names:
-        return []
-    per_domain = max(1, limit // len(ats_names))
-    result: list[DiscoveredCompany] = []
-    for ats_name in ats_names:
-        rows = (
-            session.query(DiscoveredCompany)
-            .filter(
-                DiscoveredCompany.active.is_(True),
-                DiscoveredCompany.is_deleted.is_(False),
-                DiscoveredCompany.last_checked_at.isnot(None),
-                DiscoveredCompany.has_ever_had_postings.is_(False),
-                DiscoveredCompany.next_check_at <= now,
-                DiscoveredCompany.ats_name == ats_name,
-            )
-            .order_by(DiscoveredCompany.next_check_at.asc())
-            .limit(per_domain)
-            .all()
-        )
-        result.extend(rows)
-    return result[:limit]
 
 
 def count_all_active_companies(session: Session) -> int:
@@ -243,18 +154,13 @@ def count_companies_since(session: Session, since: datetime.datetime) -> int:
     return session.query(DiscoveredCompany).filter(DiscoveredCompany.first_seen_at >= since).count()
 
 
-def list_companies_in_rank_quantile(
-    session: Session, quantile_index: int, quantile_count: int, limit: int
-) -> list[DiscoveredCompany]:
-    now = datetime.datetime.utcnow()
-
+def list_ranked_live_companies(session: Session) -> list[DiscoveredCompany]:
     live_companies = (
         session.query(DiscoveredCompany)
         .filter(
             DiscoveredCompany.active.is_(True),
             DiscoveredCompany.is_deleted.is_(False),
             DiscoveredCompany.has_ever_had_postings.is_(True),
-            DiscoveredCompany.next_check_at <= now,
         )
         .all()
     )
@@ -285,7 +191,13 @@ def list_companies_in_rank_quantile(
     scored += [(_percentile(i, len(undated)), 1, company) for i, company in enumerate(undated)]
     scored.sort(key=lambda entry: (entry[0], entry[1]))
 
-    ranked = [company for _, _, company in scored]
+    return [company for _, _, company in scored]
+
+
+def list_companies_in_rank_quantile(
+    session: Session, quantile_index: int, quantile_count: int, limit: int | None = None
+) -> list[DiscoveredCompany]:
+    ranked = list_ranked_live_companies(session)
 
     total = len(ranked)
     if total == 0:
@@ -293,11 +205,12 @@ def list_companies_in_rank_quantile(
 
     start = (total * quantile_index) // quantile_count
     end = (total * (quantile_index + 1)) // quantile_count
-    return ranked[start:end][:limit]
+    selected = ranked[start:end]
+    return selected if limit is None else selected[:limit]
 
 
-def list_companies_without_postings(session: Session, limit: int) -> list[DiscoveredCompany]:
-    return (
+def list_companies_without_postings(session: Session, limit: int | None = None) -> list[DiscoveredCompany]:
+    query = (
         session.query(DiscoveredCompany)
         .filter(
             DiscoveredCompany.active.is_(True),
@@ -305,9 +218,10 @@ def list_companies_without_postings(session: Session, limit: int) -> list[Discov
             DiscoveredCompany.has_ever_had_postings.is_(False),
         )
         .order_by(DiscoveredCompany.id.asc())
-        .limit(limit)
-        .all()
     )
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def count_rank_quantile_stats(session: Session) -> dict:
@@ -357,7 +271,6 @@ def get_quantile_sizes(session: Session, quantile_count: int) -> list[int]:
 def mark_company_checked(
     session: Session,
     company_id: int,
-    next_check_at: datetime.datetime,
     had_new_activity: bool,
     failed: bool = False,
     has_postings: bool | None = None,
@@ -369,7 +282,6 @@ def mark_company_checked(
         return
     now = datetime.datetime.utcnow()
     company.last_checked_at = now
-    company.next_check_at = next_check_at
     if last_activity_at is not None:
         company.last_activity_at = last_activity_at
     if has_postings:

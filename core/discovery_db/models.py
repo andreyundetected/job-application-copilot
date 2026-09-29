@@ -28,9 +28,6 @@ class DiscoveredCompany(DiscoveryBase):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     first_seen_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
     last_checked_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
-    next_check_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.utcnow, index=True
-    )
     consecutive_failures: Mapped[int] = mapped_column(Integer, default=0)
 
     last_activity_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)

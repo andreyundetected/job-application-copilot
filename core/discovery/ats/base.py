@@ -21,6 +21,8 @@ def parse_iso_datetime(value) -> "_dt.datetime | None":
             return None
         if text.isdigit():
             return parse_iso_datetime(int(text))
+        if text.upper().endswith(" UTC"):
+            text = text[:-4].strip()
         try:
             return _dt.datetime.fromisoformat(text.replace("Z", "+00:00")).replace(tzinfo=None)
         except ValueError:
@@ -46,8 +48,13 @@ class BaseATSExtractor(ABC):
     #: and captures whatever identifiers extract() needs (board token, job id...)
     url_pattern: re.Pattern
 
+    supports_posted_at_lookup: bool = False
+
     def matches(self, url: str) -> bool:
         return bool(self.url_pattern.search(url))
+
+    def fetch_posted_at(self, slug: str, external_id: str) -> "_dt.datetime | None":
+        return None
 
     @abstractmethod
     def extract(self, url: str) -> str | None:

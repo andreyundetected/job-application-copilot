@@ -1,3 +1,4 @@
+import html as html_module
 import re
 
 import requests
@@ -27,7 +28,7 @@ class GreenhouseExtractor(BaseATSExtractor):
         data = response.json()
         title = data.get("title", "")
         location = (data.get("location") or {}).get("name", "")
-        body_text = html_to_text(data.get("content", ""))
+        body_text = html_to_text(html_module.unescape(data.get("content", "")))
 
         return "\n\n".join(part for part in [title, location, body_text] if part)
 
@@ -45,9 +46,9 @@ class GreenhouseExtractor(BaseATSExtractor):
         results = []
         for job in jobs:
             job_id = job.get("id")
-            url = job.get("absolute_url", "")
-            if not job_id or not url:
+            if not job_id:
                 continue
+            url = f"https://job-boards.greenhouse.io/{slug}/jobs/{job_id}"
             posted_at = parse_iso_datetime(job.get("updated_at"))
             results.append(
                 {"external_id": str(job_id), "url": url, "title": job.get("title", ""), "posted_at": posted_at}

@@ -11,6 +11,8 @@
     "pause_button": "Pause",
     "skip_wayback_button": "Skip wayback",
     "run_without_wayback_button": "Run without wayback",
+    "run_full_scan_button": "Scan everything first",
+    "stage_full_scan_label": "Full scan of all companies",
     "phase_idle": "Idle",
 
     "stage_wayback_label": "Discovering companies",

@@ -318,6 +318,7 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
         <div class="hero-actions">
             <button type="button" class="btn-ghost btn" id="btn-skip-wayback" style="display:none;">{{ t.skip_wayback_button }}</button>
             <button type="button" class="btn-ghost btn" id="btn-run-without-wayback" style="{% if discovery_enabled %}display:none;{% endif %}">{{ t.run_without_wayback_button }}</button>
+            <button type="button" class="btn-ghost btn" id="btn-run-full-scan" style="{% if discovery_enabled %}display:none;{% endif %}">{{ t.run_full_scan_button }}</button>
         </div>
     </div>
 
@@ -326,6 +327,8 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
         <span class="hero-track-arrow">→</span>
         <div class="hero-track-seg" data-stage="collecting"><span class="seg-dot"></span><span>{{ t.stage_collecting_label }}</span></div>
         <span class="hero-track-arrow">→</span>
+        <div class="hero-track-seg" data-stage="full_scan" data-fullscan-track style="display:none;"><span class="seg-dot"></span><span>{{ t.stage_full_scan_label }}</span></div>
+        <span class="hero-track-arrow" data-fullscan-track style="display:none;">→</span>
         <div class="hero-track-seg" data-stage="listening"><span class="seg-dot"></span><span>{{ t.stage_listening_label }}</span></div>
     </div>
 
@@ -339,6 +342,12 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
         <div class="progress-row-header"><span class="progress-row-label">{{ t.stage_collecting_label }}</span><span class="progress-row-percent" id="collection-percent">–</span></div>
         <div class="progress-track"><div class="progress-fill" id="collection-fill" style="width:0%;"></div></div>
         <div class="progress-row-count" id="collection-count"></div>
+    </div>
+
+    <div class="hero-detail" id="hero-detail-full_scan" style="display:none;">
+        <div class="progress-row-header"><span class="progress-row-label">{{ t.stage_full_scan_label }}</span><span class="progress-row-percent" id="fullscan-percent">–</span></div>
+        <div class="progress-track"><div class="progress-fill" id="fullscan-fill" style="width:0%;"></div></div>
+        <div class="progress-row-count" id="fullscan-count"></div>
     </div>
 
     <div class="hero-detail" id="hero-detail-listening" style="display:none;">
@@ -758,13 +767,15 @@ function applyListeningState(listening) {
     heroPhaseDot.classList.toggle("on", listening);
     runBtnIcon.style.display = listening ? "none" : "inline-block";
     document.getElementById("btn-run-without-wayback").style.display = listening ? "none" : "inline-flex";
+    document.getElementById("btn-run-full-scan").style.display = listening ? "none" : "inline-flex";
 }
 
-async function startDiscovery(skipWayback) {
+async function startDiscovery(skipWayback, fullScan) {
     runBtn.disabled = true;
     runBtnSpinner.style.display = "inline-block";
     const formData = new FormData();
     formData.append("skip_wayback", skipWayback ? "true" : "");
+    formData.append("full_scan", fullScan ? "true" : "");
     const response = await fetch("/automation/discovery/start", { method: "POST", body: formData });
     runBtn.disabled = false;
     runBtnSpinner.style.display = "none";
@@ -773,7 +784,8 @@ async function startDiscovery(skipWayback) {
     applyListeningState(data.enabled);
     runBtnLabel.textContent = data.enabled ? I18N.pause_button : I18N.run_button;
 }
-document.getElementById("btn-run-without-wayback").addEventListener("click", () => startDiscovery(true));
+document.getElementById("btn-run-without-wayback").addEventListener("click", () => startDiscovery(true, false));
+document.getElementById("btn-run-full-scan").addEventListener("click", () => startDiscovery(false, true));
 
 runBtn.addEventListener("click", async () => {
     if (!discoveryListening) { await startDiscovery(false); return; }
@@ -826,8 +838,8 @@ function renderRadar(currentTier, tierFoundCounts) {
     });
 }
 
-const STAGE_ORDER = ["wayback", "collecting", "listening"];
-const STAGE_TEXT = { wayback: I18N.stage_wayback_label, collecting: I18N.stage_collecting_label, listening: I18N.stage_listening_label, idle: I18N.phase_idle };
+const STAGE_ORDER = ["wayback", "collecting", "full_scan", "listening"];
+const STAGE_TEXT = { wayback: I18N.stage_wayback_label, collecting: I18N.stage_collecting_label, full_scan: I18N.stage_full_scan_label, listening: I18N.stage_listening_label, idle: I18N.phase_idle };
 let lastRenderedPhase = null;
 
 function renderStage(phase) {
@@ -845,7 +857,7 @@ function renderStage(phase) {
         else if (index === currentIndex) segEl.classList.add("active");
     });
 
-    ["wayback", "collecting", "listening", "idle"].forEach((name) => {
+    ["wayback", "collecting", "full_scan", "listening", "idle"].forEach((name) => {
         document.getElementById(`hero-detail-${name}`).style.display = name === phase ? "block" : "none";
     });
     if (currentIndex === -1) document.getElementById("hero-detail-idle").style.display = "block";
@@ -879,6 +891,10 @@ function refreshDiscoveryStatus() {
             const waybackDone = data.wayback_ats_total > 0 && data.wayback_ats_done >= data.wayback_ats_total;
             updateProgressRow("wayback", data.wayback_ats_done, data.wayback_ats_total, waybackDone, data.phase === "wayback" && !waybackDone);
             updateProgressRow("collection", data.collection_checked, data.collection_total, data.collection_done);
+            updateProgressRow("fullscan", data.full_scan_checked, data.full_scan_total, data.full_scan_done, data.phase === "full_scan" && data.full_scan_total === 0);
+            const showFullScan = data.phase === "full_scan" || data.full_scan_total > 0;
+            document.querySelectorAll("[data-fullscan-track]").forEach((el) => { el.style.display = showFullScan ? "" : "none"; });
+            document.getElementById("btn-run-full-scan").style.display = data.enabled ? "none" : "inline-flex";
 
             if (!runBtn.disabled) {
                 applyListeningState(data.enabled);

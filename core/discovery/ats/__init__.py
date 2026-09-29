@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 _REGISTRY: dict[str, BaseATSExtractor] = {}
 
+MIN_JOB_TEXT_CHARS = 200
+
+
+def is_usable_job_text(text: str | None) -> bool:
+    return text is not None and len(text.strip()) >= MIN_JOB_TEXT_CHARS
+
 
 def _discover() -> None:
     for _, module_name, _ in pkgutil.iter_modules(__path__):
@@ -75,6 +81,12 @@ def extract_job_text_with_extractor(ats_name: str, url: str) -> str | None:
         return None
     try:
         result = extractor.extract(url)
+        if result is not None and not result.strip():
+            logger.warning(
+                "extract_job_text_with_extractor: %s extractor returned blank text for url=%s, treating as failed",
+                ats_name, url,
+            )
+            return None
         if result is None:
             logger.warning(
                 "extract_job_text_with_extractor: %s extractor could not get job text for url=%s (see specific reason logged above)",

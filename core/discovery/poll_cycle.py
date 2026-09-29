@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 import config
 from core.discovery import run_control
 from core.discovery.ats import all_extractors
-from core.discovery.interval import TIER_INTERVALS, bucket_index_for_age
 from core.discovery.posting_batch import add_posting
 from core.discovery.rate_limiter import throttle
 from core.discovery_db import crud as discovery_crud
@@ -29,7 +28,6 @@ def _check_one_company(company_id: int, ats_name: str, slug: str) -> list[int]:
             logger.warning("[poll] no extractor for ats_name=%s (company_id=%s)", ats_name, company_id)
             return []
 
-        now = datetime.datetime.utcnow()
         failed = False
         is_deleted = False
         had_new_activity = False
@@ -56,6 +54,15 @@ def _check_one_company(company_id: int, ats_name: str, slug: str) -> list[int]:
             new_postings = [p for p in postings if p["external_id"] not in existing_ids]
 
             for posting in new_postings:
+                if posting.get("posted_at") is None and extractor.supports_posted_at_lookup:
+                    try:
+                        throttle(ats_name)
+                        posting["posted_at"] = extractor.fetch_posted_at(slug, posting["external_id"])
+                    except Exception as error:
+                        logger.warning(
+                            "[poll] %s/%s: posted_at lookup failed for %s: %s",
+                            ats_name, slug, posting["external_id"], error,
+                        )
                 created = discovery_crud.create_discovered_posting(session, company_id, posting)
                 if created is None:
                     continue
@@ -78,22 +85,13 @@ def _check_one_company(company_id: int, ats_name: str, slug: str) -> list[int]:
 
         if new_ids:
             run_control.add_new_postings(len(new_ids))
-
-        prior_checked_at = company.last_checked_at if company else None
-
-        if last_activity_at is not None:
-            tier_index = bucket_index_for_age(now - last_activity_at)
-        else:
-            tier_index = company.assigned_tier if company and company.assigned_tier is not None else len(TIER_INTERVALS) - 1
-        next_check_at = now + TIER_INTERVALS[tier_index]
-
-        if prior_checked_at is not None:
-            run_control.record_check_delta(tier_index, (now - prior_checked_at).total_seconds())
+            current_tier = run_control.get_current_tier()
+            if current_tier is not None:
+                run_control.add_tier_found(current_tier, len(new_ids))
 
         discovery_crud.mark_company_checked(
             session,
             company_id,
-            next_check_at=next_check_at,
             had_new_activity=had_new_activity,
             failed=failed,
             has_postings=has_postings,
@@ -101,6 +99,7 @@ def _check_one_company(company_id: int, ats_name: str, slug: str) -> list[int]:
             last_activity_at=last_activity_at,
         )
         run_control.add_ats_checked(ats_name)
+        run_control.note_company_checked()
         return new_ids
     finally:
         session.close()
@@ -189,55 +188,74 @@ def run_initial_collection() -> int:
 
 
 def run_one_live_quantile_cycle() -> int:
-    from core.discovery.quantile_queue import LIVE_QUANTILE_COUNT, fetch_quantile_companies, pick_next_quantile
+    from core.discovery.quantile_queue import CYCLE_STEPS, fetch_quantile_companies, pick_next_quantile
 
     run_control.set_phase("listening")
     cycle_started_at = datetime.datetime.utcnow()
     all_new_ids: list[int] = []
-    steps_processed = 0
-    empty_since = {i: None for i in range(LIVE_QUANTILE_COUNT)}
-    quantile_step_started_at: dict[int, datetime.datetime] = {}
+    visited: set[int] = set()
 
-    while not run_control.is_cancelled():
-        if all(empty_since.get(i) is not None for i in range(LIVE_QUANTILE_COUNT)):
+    for _ in range(CYCLE_STEPS):
+        if run_control.is_cancelled():
             break
 
         quantile_index = pick_next_quantile()
-        if empty_since.get(quantile_index) is not None:
-            continue
-
         run_control.set_current_tier(quantile_index)
-        if quantile_index not in quantile_step_started_at:
+        if quantile_index not in visited:
+            visited.add(quantile_index)
             run_control.reset_tier_found(quantile_index)
             run_control.reset_tier_processed(quantile_index)
-            quantile_step_started_at[quantile_index] = datetime.datetime.utcnow()
 
-        batch_companies = fetch_quantile_companies(quantile_index, config.DISCOVERY_POLL_BATCH_SIZE)
-        if not batch_companies:
-            empty_since[quantile_index] = datetime.datetime.utcnow()
-            started = quantile_step_started_at.pop(quantile_index, None)
-            if started:
-                run_control.record_quantile_pass_duration(quantile_index, (datetime.datetime.utcnow() - started).total_seconds())
-            logger.info("[poll] quantile %s fully drained", quantile_index)
+        step_started_at = datetime.datetime.utcnow()
+        companies = fetch_quantile_companies(quantile_index)
+        if not companies:
             continue
 
-        batch = _company_tuples(batch_companies)
-        steps_processed += 1
-        new_ids = _run_batch(batch)
+        new_ids = _run_batch(_company_tuples(companies))
         all_new_ids.extend(new_ids)
-        run_control.add_tier_found(quantile_index, len(new_ids))
-        run_control.add_tier_processed(quantile_index, len(batch))
+        run_control.add_tier_processed(quantile_index, len(companies))
+        run_control.record_quantile_pass_duration(
+            quantile_index, (datetime.datetime.utcnow() - step_started_at).total_seconds()
+        )
+        logger.info(
+            "[poll] quantile %s: checked %s companies, %s new postings",
+            quantile_index, len(companies), len(new_ids),
+        )
 
     cycle_duration = (datetime.datetime.utcnow() - cycle_started_at).total_seconds()
     run_control.set_last_pass_duration(cycle_duration)
 
-    if steps_processed:
-        logger.info(
-            "[poll] live quantile cycle done: %s queue steps, %s new postings, took %.1fs",
-            steps_processed, len(all_new_ids), cycle_duration,
-        )
+    logger.info(
+        "[poll] live cycle done: %s new postings, took %.1fs", len(all_new_ids), cycle_duration
+    )
 
     return len(all_new_ids)
+
+
+def run_full_scan() -> int:
+    run_control.set_phase("full_scan")
+    run_control.set_current_tier(None)
+
+    session = DiscoverySessionLocal()
+    try:
+        companies = discovery_crud.list_ranked_live_companies(session)
+    finally:
+        session.close()
+
+    run_control.set_full_scan_total(len(companies))
+    logger.info("[full-scan] starting: %s companies", len(companies))
+
+    started = datetime.datetime.utcnow()
+    new_ids = _run_batch(_company_tuples(companies))
+
+    if not run_control.is_cancelled():
+        run_control.mark_full_scan_done()
+        logger.info(
+            "[full-scan] done: %s new postings, took %.1fs",
+            len(new_ids), (datetime.datetime.utcnow() - started).total_seconds(),
+        )
+
+    return len(new_ids)
 
 
 def run_empty_group_sweep() -> int:
@@ -246,18 +264,12 @@ def run_empty_group_sweep() -> int:
     run_control.set_current_tier(EMPTY_GROUP_INDEX)
     run_control.reset_tier_found(EMPTY_GROUP_INDEX)
     started = datetime.datetime.utcnow()
-    all_new_ids: list[int] = []
 
-    while not run_control.is_cancelled():
-        batch_companies = fetch_empty_group_companies(config.DISCOVERY_POLL_BATCH_SIZE)
-        if not batch_companies:
-            break
-
-        batch = _company_tuples(batch_companies)
-        new_ids = _run_batch(batch)
-        all_new_ids.extend(new_ids)
-        run_control.add_tier_found(EMPTY_GROUP_INDEX, len(new_ids))
+    new_ids: list[int] = []
+    companies = fetch_empty_group_companies()
+    if companies and not run_control.is_cancelled():
+        new_ids = _run_batch(_company_tuples(companies))
 
     run_control.record_quantile_pass_duration(EMPTY_GROUP_INDEX, (datetime.datetime.utcnow() - started).total_seconds())
-    logger.info("[poll] empty-group sweep done: %s new postings", len(all_new_ids))
-    return len(all_new_ids)
+    logger.info("[poll] empty-group sweep done: %s companies, %s new postings", len(companies), len(new_ids))
+    return len(new_ids)

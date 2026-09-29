@@ -6,7 +6,7 @@ from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_aut
 from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery import run_control
-from core.discovery.ats import extract_job_text_with_extractor
+from core.discovery.ats import extract_job_text_with_extractor, is_usable_job_text
 from core.evaluator.persist import apply_quick_meta, store_evaluation
 from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, quick_extract_job_posting
 from core.discovery_db import crud as discovery_crud
@@ -67,7 +67,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
         return True
 
     job_text = extract_job_text_with_extractor(ats_name, url)
-    if job_text is None:
+    if not is_usable_job_text(job_text):
         logger.warning("[discovery] posting %s: scrape failed (url=%s, ats=%s)", discovered_posting_id, url, ats_name)
         return False
 

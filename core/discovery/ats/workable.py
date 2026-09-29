@@ -39,10 +39,24 @@ class WorkableExtractor(BaseATSExtractor):
             return None
 
         title = matching.get("title", "")
-        location = matching.get("location") or {}
-        location_str = location.get("location_str") or ", ".join(
-            part for part in [location.get("city"), location.get("country")] if part
+        location = matching.get("location")
+        if not isinstance(location, dict):
+            location = {}
+        top_level_location = ", ".join(
+            part for part in [matching.get("city"), matching.get("state"), matching.get("country")] if part
         )
+        location_str = (
+            location.get("location_str")
+            or ", ".join(part for part in [location.get("city"), location.get("country")] if part)
+            or top_level_location
+        )
+        header_parts = [
+            location_str,
+            "remote" if matching.get("telecommuting") else None,
+            matching.get("employment_type"),
+            matching.get("department"),
+        ]
+        header_line = " / ".join(str(part) for part in header_parts if part)
 
         body_text = "\n\n".join(
             html_to_text(part)
@@ -55,7 +69,7 @@ class WorkableExtractor(BaseATSExtractor):
             if part
         )
 
-        return "\n\n".join(part for part in [title, location_str, body_text] if part)
+        return "\n\n".join(part for part in [title, header_line, body_text] if part)
 
     def list_active_postings(self, slug: str) -> list[dict] | None:
         api_url = f"https://apply.workable.com/api/v1/widget/accounts/{slug}"

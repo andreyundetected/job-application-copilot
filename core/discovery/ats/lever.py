@@ -12,14 +12,15 @@ class LeverExtractor(BaseATSExtractor):
     name = "lever"
     site_filter_domains = ["jobs.lever.co"]
     url_pattern = _URL_RE
+    api_base = "https://api.lever.co/v0/postings"
 
     def extract(self, url: str) -> str | None:
-        match = _URL_RE.search(url)
+        match = self.url_pattern.search(url)
         if not match:
             return None
         site_slug, posting_id = match.groups()
 
-        api_url = f"https://api.lever.co/v0/postings/{site_slug}/{posting_id}"
+        api_url = f"{self.api_base}/{site_slug}/{posting_id}"
         response = requests.get(api_url, params={"mode": "json"}, timeout=20)
         if response.status_code != 200:
             return None
@@ -53,7 +54,7 @@ class LeverExtractor(BaseATSExtractor):
         return "\n\n".join(part for part in parts if part)
 
     def list_active_postings(self, slug: str) -> list[dict] | None:
-        api_url = f"https://api.lever.co/v0/postings/{slug}"
+        api_url = f"{self.api_base}/{slug}"
         response = requests.get(api_url, params={"mode": "json"}, timeout=20)
         if response.status_code in (404, 410):
             return None
