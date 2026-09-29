@@ -41,7 +41,7 @@ class _FakeLLMProvider:
             "total_tokens": 15,
         }
 
-    def call(self, system_prompt, user_prompt):
+    def call(self, system_prompt, user_prompt, **kwargs):
         return ""
 
 

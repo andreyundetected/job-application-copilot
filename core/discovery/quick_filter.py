@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+import config
 from core.parsing.html_like_parser import parse_html_like
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -57,6 +58,7 @@ def quick_filter_search_results(
             "more thorough evaluator."
         ),
         user_prompt=prompt,
+        temperature=config.EVALUATOR_TEMPERATURE,
     )
 
     parsed = parse_html_like(raw_response)

@@ -11,6 +11,7 @@ class BaseLLMProvider(ABC):
         user_prompt: str,
         max_tokens: int | None = None,
         reasoning_effort: str | None = None,
+        temperature: float | None = None,
     ) -> str:
         raise NotImplementedError
 

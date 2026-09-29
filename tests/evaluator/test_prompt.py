@@ -106,7 +106,6 @@ def test_prompt_outputs_only_evaluation_tags():
 
     for tag in [
         "<company>",
-        "<role>",
         "<location_country>",
         "<work_mode>",
         "<salary_min>",

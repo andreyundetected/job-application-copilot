@@ -8,7 +8,7 @@ class _FakeProvider:
         self.response_text = response_text
         self.last_user_prompt = None
 
-    def call(self, system_prompt: str, user_prompt: str) -> str:
+    def call(self, system_prompt: str, user_prompt: str, **kwargs) -> str:
         self.last_user_prompt = user_prompt
         return self.response_text
 

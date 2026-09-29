@@ -33,6 +33,9 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 
 TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
 
+_evaluator_temperature_raw = os.getenv("EVALUATOR_TEMPERATURE", "0").strip()
+EVALUATOR_TEMPERATURE = float(_evaluator_temperature_raw) if _evaluator_temperature_raw else None
+
 SERPENT_API_KEY = os.getenv("SERPENT_API_KEY", "")
 SERPENT_BASE_URL = os.getenv("SERPENT_BASE_URL", "https://apiserpent.com/api/search/quick")
 

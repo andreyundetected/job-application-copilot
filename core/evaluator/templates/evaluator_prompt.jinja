@@ -76,11 +76,11 @@ Result: one <req> tag per requirement in the format: requirement | candidate evi
 
 STAGE 4 - PREPARATION
 Thinking: the slowest central requirement decides the bucket. Three or more "days" gaps together make it "weeks". Check whether the main programming language is covered. Check the bucket against the role and level caps from stage 2, and remember the score is limited by whichever is lower.
-Result: <prep> one of: ready / days / weeks / month / months / impossible </prep>
+Result: <bucket> one of: ready / days / weeks / month / months / impossible </bucket>
 
 STAGE 5 - SCORE
 Thinking: pick the exact number inside the bucket range, closer to the top when the gaps are minor and the role matches well, closer to the bottom when several gaps pile up. Apply any scoring factors. Apply the role and level caps. If a blocker was triggered, the score is 0.
-Result: <con> and <pro> bullets, then <score>.
+Result: one <con> tag per con, one <pro> tag per pro, then <score>. Each <con> and <pro> holds exactly one plain-text sentence and no other tags inside.
 - Cons: only real problems: any requirement with match weeks, month, months or impossible, a triggered blocker, a role or level mismatch. Never list a "days" gap. If there is nothing serious, write no cons.
 - Pros: what matches well.
 - Each bullet is one sentence, at most 15 words, at most 4 bullets per list.
@@ -90,7 +90,7 @@ JOB POSTING
 {{ job_posting_text }}
 
 OUTPUT FORMAT
-Respond using only the following tags, in this exact order, with no extra text outside them and no markdown inside them.
+Respond using only the following tags, in this exact order, with no extra text outside them and no markdown inside them. Every tag is opened once and closed once with the same name. Never put a tag inside a tag of the same name. Never use any tag that is not listed here.
 
 <reasoning>
 <blockers_thinking>...</blockers_thinking>
@@ -108,11 +108,11 @@ Respond using only the following tags, in this exact order, with no extra text o
 <req>requirement | candidate evidence | match: ...</req>
 </requirements>
 <prep_thinking>...</prep_thinking>
-<prep>...</prep>
+<bucket>...</bucket>
 <score_thinking>...</score_thinking>
 </reasoning>
-<con>One short bullet with a real problem. Repeat once per bullet, and output no con tag if there is nothing serious.</con>
-<pro>One short bullet with something that matches well. Repeat once per bullet.</pro>
+<con>One sentence with a real problem, plain text only. Repeat the whole tag once per problem, and output no con tag if there is nothing serious.</con>
+<pro>One sentence with something that matches well, plain text only. Repeat the whole tag once per point.</pro>
 {% if scoring_factors %}
 <matched_factor id="the exact numeric id from the scoring factors list">A brief note on how this factor applies to this posting</matched_factor>
 Output one <matched_factor> tag for every scoring factor that actually applies. Skip factors that do not apply. Never invent ids.

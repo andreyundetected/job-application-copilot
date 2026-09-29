@@ -20,10 +20,13 @@ class FreeLLMAPIProvider(BaseLLMProvider):
         user_prompt: str,
         max_tokens: int | None = None,
         reasoning_effort: str | None = None,
+        temperature: float | None = None,
     ) -> str:
         base_kwargs = {}
         if max_tokens is not None:
             base_kwargs["max_tokens"] = max_tokens
+        if temperature is not None:
+            base_kwargs["temperature"] = temperature
 
         messages = [
             {"role": "system", "content": system_prompt},

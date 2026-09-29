@@ -1,3 +1,6 @@
+import re
+
+import config
 from core.evaluator.prompt import render_evaluator_prompt, render_quick_extract_prompt
 from core.parsing.html_like_parser import parse_html_like
 
@@ -88,8 +91,44 @@ def _build_matched_factors(parsed: dict, scoring_factors: list[dict]) -> list[di
     return matched
 
 
-def _clean_bullets(values: list) -> list[str]:
-    return [value.strip() for value in values if isinstance(value, str) and value.strip()]
+_SCORE_RE = re.compile(r"<score>\s*(-?\d+)\s*</score>")
+_REASONING_RE = re.compile(r"<reasoning>(.*?)</reasoning>", re.DOTALL)
+_FACTOR_RE = re.compile(r'<matched_factor\s+id="(\d+)"[^>]*>(.*?)</matched_factor>', re.DOTALL)
+_BULLET_RE = re.compile(r"<bullet>(.*?)</bullet>", re.DOTALL)
+_ANY_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _extract_score(raw_response: str) -> int | None:
+    matches = _SCORE_RE.findall(raw_response)
+    if not matches:
+        return None
+    return max(0, min(10, int(matches[-1])))
+
+
+def _extract_reasoning(raw_response: str) -> str | None:
+    match = _REASONING_RE.search(raw_response)
+    if match is None:
+        return None
+    return match.group(1).strip()
+
+
+def _extract_factor_notes(raw_response: str) -> dict:
+    return {
+        "matched_factor": [
+            {"id": factor_id, "text": " ".join(note.split())}
+            for factor_id, note in _FACTOR_RE.findall(raw_response)
+        ]
+    }
+
+
+def _extract_bullets(raw_response: str, tag: str) -> list[str]:
+    bullets = []
+    for inner in re.findall(rf"<{tag}>(.*?)</{tag}>", raw_response, re.DOTALL):
+        for candidate in _BULLET_RE.findall(inner) or [inner]:
+            text = " ".join(_ANY_TAG_RE.sub(" ", candidate).split())
+            if text:
+                bullets.append(text)
+    return bullets
 
 
 def evaluate_job_posting(
@@ -119,17 +158,17 @@ def evaluate_job_posting(
     raw_response = provider.call(
         system_prompt="You are a strict, consistent job-fit evaluator.",
         user_prompt=prompt,
+        temperature=config.EVALUATOR_TEMPERATURE,
     )
 
-    parsed = parse_html_like(raw_response)
-    score = _parse_score(_first_or_none(parsed, "score"))
+    score = _extract_score(raw_response)
 
     return {
-        "reasoning": _first_or_none(parsed, "reasoning"),
+        "reasoning": _extract_reasoning(raw_response),
         "score": score,
-        "matched_factors": _build_matched_factors(parsed, scoring_factors),
-        "cons": _clean_bullets(parsed.get("con", [])),
-        "pros": _clean_bullets(parsed.get("pro", [])),
+        "matched_factors": _build_matched_factors(_extract_factor_notes(raw_response), scoring_factors),
+        "cons": _extract_bullets(raw_response, "con"),
+        "pros": _extract_bullets(raw_response, "pro"),
         "verdict": bool(score) and score > 0,
         "raw_response": raw_response,
     }
@@ -141,6 +180,7 @@ def quick_extract_job_posting(provider, job_posting_text: str) -> dict:
     raw_response = provider.call(
         system_prompt="You extract short literal facts from a job posting as fast as possible.",
         user_prompt=prompt,
+        temperature=config.EVALUATOR_TEMPERATURE,
     )
 
     parsed = parse_html_like(raw_response)

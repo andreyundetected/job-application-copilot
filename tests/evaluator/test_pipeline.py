@@ -9,7 +9,7 @@ class _FakeProvider:
         self.last_system_prompt = None
         self.last_user_prompt = None
 
-    def call(self, system_prompt: str, user_prompt: str) -> str:
+    def call(self, system_prompt: str, user_prompt: str, **kwargs) -> str:
         self.last_system_prompt = system_prompt
         self.last_user_prompt = user_prompt
         return self.response_text
