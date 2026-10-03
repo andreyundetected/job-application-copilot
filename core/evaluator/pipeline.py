@@ -1,6 +1,7 @@
 import re
 
 import config
+from core.evaluator.checks import parse_blocker_checks
 from core.evaluator.prompt import render_evaluator_prompt, render_quick_extract_prompt
 from core.parsing.html_like_parser import parse_html_like
 
@@ -141,6 +142,7 @@ def evaluate_job_posting(
     contacts: list[str] | None = None,
     extra_info: str | None = None,
     language: str = "en",
+    reasoning_effort: str | None = "off",
 ) -> dict:
     scoring_factors = scoring_factors or []
 
@@ -159,9 +161,11 @@ def evaluate_job_posting(
         system_prompt="You are a strict, consistent job-fit evaluator.",
         user_prompt=prompt,
         temperature=config.EVALUATOR_TEMPERATURE,
+        reasoning_effort=reasoning_effort,
     )
 
     score = _extract_score(raw_response)
+    triggered_blockers = parse_blocker_checks(raw_response, blockers)
 
     return {
         "reasoning": _extract_reasoning(raw_response),
@@ -169,7 +173,8 @@ def evaluate_job_posting(
         "matched_factors": _build_matched_factors(_extract_factor_notes(raw_response), scoring_factors),
         "cons": _extract_bullets(raw_response, "con"),
         "pros": _extract_bullets(raw_response, "pro"),
-        "verdict": bool(score) and score > 0,
+        "verdict": bool(score) and score > 0 and not triggered_blockers,
+        "triggered_blockers": triggered_blockers,
         "raw_response": raw_response,
     }
 

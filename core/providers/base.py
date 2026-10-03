@@ -32,7 +32,12 @@ class BaseLLMProvider(ABC):
         if details is not None:
             reasoning_tokens = getattr(details, "reasoning_tokens", None)
 
+        cost = getattr(usage, "cost", None)
+        if cost is None and hasattr(usage, "model_dump"):
+            cost = usage.model_dump().get("cost")
+
         return {
+            "cost": cost,
             "model": getattr(response, "model", None),
             "input_tokens": getattr(usage, "prompt_tokens", None),
             "output_tokens": getattr(usage, "completion_tokens", None),

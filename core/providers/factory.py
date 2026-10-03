@@ -1,13 +1,15 @@
 from core.providers.base import BaseLLMProvider
-from core.providers.freellmapi import FreeLLMAPIProvider
+from core.providers.freellmapi_provider import FreeLLMAPIProvider
 from core.providers.openai_provider import OpenAIProvider
 from core.providers.gemini_provider import GeminiProvider
+from core.providers.openrouter_provider import OpenRouterProvider
 import config
 
 _PROVIDERS = {
     "freellmapi": FreeLLMAPIProvider,
     "openai": OpenAIProvider,
     "gemini": GeminiProvider,
+    "openrouter": OpenRouterProvider,
 }
 
 

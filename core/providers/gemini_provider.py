@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from core.providers.base import BaseLLMProvider
 import config
@@ -9,6 +9,8 @@ class GeminiProvider(BaseLLMProvider):
         self.client = OpenAI(
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
             api_key=config.GEMINI_API_KEY,
+            timeout=60.0,
+            max_retries=1,
         )
         self.model = config.GEMINI_MODEL
 
@@ -41,11 +43,9 @@ class GeminiProvider(BaseLLMProvider):
                     **base_kwargs,
                 )
             except Exception:
-                # Whatever model answered this "auto" request may not support
-                # (or may reject as an unknown field) reasoning_effort - fall
-                # back to a plain call rather than hard-failing the request.
                 response = None
 
+        used_fallback = response is None
         if response is None:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -54,6 +54,7 @@ class GeminiProvider(BaseLLMProvider):
             )
 
         self.last_usage = self._extract_usage(response)
+        self.last_usage["fallback"] = used_fallback
         content = response.choices[0].message.content
         reasoning = getattr(response.choices[0].message, "reasoning", None) or getattr(
             response.choices[0].message, "reasoning_content", None

@@ -233,7 +233,7 @@ def update_discovery_settings(
 
 @router.get("/discovery/live-stats")
 def discovery_live_stats():
-    from core.discovery.posting_batch import pending_count
+    from core.discovery.posting_batch import get_state, pending_count
 
     discovery_session = DiscoverySessionLocal()
     try:
@@ -251,6 +251,10 @@ def discovery_live_stats():
             "batch_force_flush_size": settings.batch_force_flush_size,
             "batch_last_flush_at": batch_stats["last_flush_at"],
             "pending_count": pending_count(),
+            "batch_loop_alive": get_state()["loop_alive"],
+            "batch_flush_running": get_state()["flush_running"],
+            "batch_seconds_until_flush": get_state()["seconds_until_flush"],
+            "batch_last_error": get_state()["last_error"],
             "batch_evaluating": batch_stats["evaluating_batch"],
             "last_batch_size": batch_stats["last_batch_size"],
             "last_batch_skipped": batch_stats["last_batch_skipped"],

@@ -1110,6 +1110,8 @@ function renderResult(result, jobId) {
 
     const prosHtml = (result.pros || []).map((pro) => `<li>${pro}</li>`).join("");
     const consHtml = (result.cons || []).map((con) => `<li>${con}</li>`).join("");
+    const prepHtml = result.prep_label ? `<p class="salary-line">⏱ ${I18N.prep_ready_prefix} <b>${result.prep_label}</b></p>` : "";
+    const blockersHtml = renderBlockerDetails(result.blockers || []);
 
     resultContainer.innerHTML = `
         <div class="result-card">
@@ -1126,6 +1128,8 @@ function renderResult(result, jobId) {
                 ${result.salary.is_estimate ? `<span class="badge badge-estimate">${I18N.estimated_salary_label}</span>` : ""}
             </div>
             <p class="salary-line">${result.salary.original_text || ""}</p>
+            ${prepHtml}
+            ${blockersHtml}
             ${matchedFactorsHtml}
             <div class="pros-cons-grid">
                 <div><h3>${I18N.pros}</h3><ul class="pros">${prosHtml}</ul></div>

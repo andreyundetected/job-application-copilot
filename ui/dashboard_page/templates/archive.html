@@ -19,9 +19,9 @@
 
 <div class="job-grid" id="archive-grid">
     {% for card in cards %}
-    <div class="job-card" data-job-id="{{ card.job_id }}">
+    <div class="job-card{% if card.blockers %} job-card-blocked{% endif %}" data-job-id="{{ card.job_id }}">
         <div class="job-card-top">
-            <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}">
+            <div class="job-card-score {% if card.score is none %}score-mid{% elif card.score >= 7 %}score-high{% elif card.score >= 4 %}score-mid{% else %}score-low{% endif %}" title="{{ card.prep_label or '' }}">
                 {{ card.score if card.score is not none else "?" }}
             </div>
         </div>
@@ -30,6 +30,8 @@
             {% if card.location %}<span class="badge">{{ card.location }}</span>{% endif %}
             {% if card.work_mode %}<span class="badge badge-work-mode">{{ card.work_mode }}</span>{% endif %}
         </div>
+
+        <div class="job-card-blockers bk-strip" data-blockers='{{ card.blockers | tojson }}'></div>
 
         <div class="job-card-bottom">
             <div class="job-card-company">{{ card.company }}</div>

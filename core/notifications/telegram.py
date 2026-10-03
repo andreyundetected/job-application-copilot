@@ -23,7 +23,9 @@ def _send_raw(token: str, chat_id: str, text: str) -> None:
         logger.warning("[telegram] sendMessage request failed: %s", error)
 
 
-def notify_job_evaluated(company: str | None, role: str | None, score: int | None, job_id: int) -> None:
+def notify_job_evaluated(
+    company: str | None, role: str | None, score: int | None, job_id: int, blocked: bool = False
+) -> None:
     session = SessionLocal()
     try:
         settings = crud.get_app_settings(session)
@@ -35,7 +37,7 @@ def notify_job_evaluated(company: str | None, role: str | None, score: int | Non
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
         return
 
-    if settings.telegram_notify_only_successful and (score is None or score <= 0):
+    if settings.telegram_notify_only_successful and (score is None or score <= 0 or blocked):
         return
 
     if settings.telegram_notify_min_score is not None and (score is None or score < settings.telegram_notify_min_score):
@@ -45,4 +47,6 @@ def notify_job_evaluated(company: str | None, role: str | None, score: int | Non
         f"🆕 Новая вакансия оценена: <b>{score if score is not None else '?'}</b>\n"
         f"{company or 'Unknown company'} — {role or 'Unknown role'}"
     )
+    if blocked:
+        text += "\n🚫 Сработали блокеры"
     _send_raw(settings.telegram_bot_token, settings.telegram_chat_id, text)

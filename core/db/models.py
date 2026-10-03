@@ -136,6 +136,7 @@ class Evaluation(Base):
     fit_score: Mapped[int] = mapped_column(Integer, nullable=True)
     fit_bullets: Mapped[dict] = mapped_column(JSON, nullable=True)
     checked_keywords: Mapped[dict] = mapped_column(JSON, nullable=True)
+    triggered_blockers: Mapped[list] = mapped_column(JSON, nullable=True)
 
     job_posting: Mapped["JobPosting"] = relationship(back_populates="evaluations")
     resume_version: Mapped["ResumeVersion"] = relationship(

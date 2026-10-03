@@ -5,7 +5,10 @@ from core.discovery_db.models import DiscoveryBase
 import config
 
 discovery_engine = create_engine(
-    config.DISCOVERY_DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30}
+    config.DISCOVERY_DATABASE_URL,
+    connect_args={"check_same_thread": False, "timeout": 30},
+    pool_size=config.DISCOVERY_POLL_MAX_WORKERS + config.DISCOVERY_EVAL_MAX_WORKERS + 8,
+    max_overflow=8,
 )
 
 

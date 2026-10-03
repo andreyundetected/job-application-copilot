@@ -21,6 +21,8 @@
         {% endif %}
     </div>
 
+    {% if prep_label %}<p class="salary-line">⏱ {{ t.prep_ready_prefix }} <b>{{ prep_label }}</b></p>{% endif %}
+
     <div class="badge-row">
         {% if location %}<span class="badge">{{ location }}</span>{% endif %}
         {% if work_mode %}<span class="badge badge-work-mode">{{ t["work_mode_" + work_mode] if ("work_mode_" + work_mode) in t else work_mode }}</span>{% endif %}
@@ -34,6 +36,11 @@
     <p class="salary-line">
         <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" class="accent-link">{{ t.original_posting_link }}</a>
     </p>
+    {% endif %}
+
+    {% if blockers %}
+    <script>const I18N = {{ t | tojson }};</script>
+    <div class="bk-detail-host" data-blockers='{{ blockers | tojson }}'></div>
     {% endif %}
 
     {% if matched_factors %}

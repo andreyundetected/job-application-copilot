@@ -1,6 +1,6 @@
 import pytest
 
-from core.providers.freellmapi import FreeLLMAPIProvider
+from core.providers.freellmapi_provider import FreeLLMAPIProvider
 
 
 class _FakeMessage:

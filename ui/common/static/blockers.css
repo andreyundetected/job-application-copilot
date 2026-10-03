@@ -1,0 +1,63 @@
+.bk-strip { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.bk-strip:empty { display: none; }
+
+.bk-pill {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    padding: 3px 9px 3px 4px; border-radius: 999px;
+    background-color: var(--score-low-soft); border: 1px solid rgba(248, 113, 113, 0.32);
+    color: var(--score-low); font-size: 11px; font-weight: 600; line-height: 1.3;
+    cursor: help; outline: none; transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.bk-pill:hover, .bk-pill:focus { background-color: rgba(248, 113, 113, 0.2); border-color: var(--score-low); }
+.bk-pill.more { padding: 3px 10px; background-color: var(--bg-input); color: var(--text-secondary); border-color: var(--border-hover); }
+.bk-pill-num {
+    width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    background-color: var(--score-low); color: #ffffff; font-size: 9.5px; font-weight: 800;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.bk-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+
+.job-card-blocked {
+    border-color: rgba(248, 113, 113, 0.38);
+    background-image: linear-gradient(180deg, rgba(248, 113, 113, 0.07), transparent 110px);
+}
+.job-card-blocked .job-card-score { box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 3.5px rgba(248, 113, 113, 0.55); }
+
+#bk-tip {
+    position: fixed; display: none; z-index: 900; width: 300px; max-width: 86vw;
+    background-color: var(--bg-elevated); border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: var(--radius); padding: 11px 13px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    pointer-events: none; font-size: 12px; line-height: 1.45; color: var(--text-primary);
+}
+.bk-tip-item + .bk-tip-item { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.bk-tip-title { font-weight: 700; color: var(--score-low); margin-bottom: 2px; }
+.bk-tip-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-top: 7px; }
+.bk-tip-text { color: var(--text-secondary); }
+.bk-tip-quote { font-style: italic; color: var(--text-primary); }
+
+.bk-panel {
+    margin: 16px 0 4px; padding: 14px 16px; border-radius: var(--radius-lg);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: linear-gradient(180deg, var(--score-low-soft), rgba(248, 113, 113, 0.02));
+}
+.bk-panel-head { display: flex; align-items: center; gap: 8px; }
+.bk-panel-title { font-size: 12.5px; font-weight: 700; color: var(--score-low); }
+.bk-panel-count { font-size: 10.5px; font-weight: 700; background-color: var(--score-low); color: #ffffff; border-radius: 999px; padding: 1px 8px; }
+.bk-panel-note { font-size: 11.5px; color: var(--text-tertiary); line-height: 1.5; margin: 6px 0 8px; }
+.bk-card {
+    display: flex; gap: 10px; align-items: flex-start; margin-top: 7px; padding: 9px 11px;
+    background-color: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--score-low);
+    border-radius: var(--radius-sm);
+}
+.bk-card-num { width: 20px; height: 20px; font-size: 10.5px; margin-top: 1px; }
+.bk-card-body { flex: 1; min-width: 0; }
+.bk-card-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.bk-card details { margin-top: 3px; }
+.bk-card summary { cursor: pointer; list-style: none; font-size: 11.5px; color: var(--text-tertiary); }
+.bk-card summary::-webkit-details-marker { display: none; }
+.bk-card summary::before { content: "▸ "; }
+.bk-card details[open] summary::before { content: "▾ "; }
+.bk-card summary:hover { color: var(--text-primary); }
+.bk-card-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-top: 8px; }
+.bk-card-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.bk-card-quote { margin-top: 2px; padding-left: 10px; border-left: 2px solid var(--border-hover); font-size: 12px; font-style: italic; color: var(--text-primary); line-height: 1.5; }

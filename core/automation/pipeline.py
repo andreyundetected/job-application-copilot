@@ -320,7 +320,12 @@ def _process_search_result(
         crud.update_job_pipeline_stage(session, job.id, stages.EVALUATED)
         crud.increment_run_counters(session, run_id, evaluated_count=1)
 
-        stage = _decide_stage(result["score"], settings.min_score_to_proceed, settings.max_score_to_archive)
+        stage = _decide_stage(
+            result["score"],
+            settings.min_score_to_proceed,
+            settings.max_score_to_archive,
+            bool(result.get("triggered_blockers")),
+        )
 
         if stage == stages.ARCHIVED_AUTO:
             crud.archive_job_posting(session, job.id)
@@ -386,7 +391,11 @@ def _process_results_in_parallel(
         future.result()
 
 
-def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_archive: int) -> str:
+def _decide_stage(
+    score: int | None, min_score_to_proceed: int, max_score_to_archive: int, blocked: bool = False
+) -> str:
+    if blocked:
+        return stages.ARCHIVED_AUTO
     if score is None:
         return stages.NEEDS_REVIEW
     if score <= max_score_to_archive:

@@ -18,6 +18,9 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2.6-flash")
+
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'app.db'}")
 DISCOVERY_DATABASE_URL = os.getenv(
     "DISCOVERY_DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'discovery.db'}"
@@ -53,3 +56,4 @@ DISCOVERY_POLL_TICK_SECONDS = int(os.getenv("DISCOVERY_POLL_TICK_SECONDS", "60")
 DISCOVERY_POLL_BATCH_SIZE = int(os.getenv("DISCOVERY_POLL_BATCH_SIZE", "180"))
 DISCOVERY_RATE_LIMIT_PER_SEC = float(os.getenv("DISCOVERY_RATE_LIMIT_PER_SEC", "2"))
 DISCOVERY_EVAL_MAX_WORKERS = int(os.getenv("DISCOVERY_EVAL_MAX_WORKERS", "3"))
+DISCOVERY_SCREEN_CHUNK_SIZE = int(os.getenv("DISCOVERY_SCREEN_CHUNK_SIZE", "25"))

@@ -2,7 +2,7 @@ import hashlib
 import logging
 
 from core.automation import stages
-from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_auto_tailor
+from core.automation.pipeline import _decide_stage, maybe_auto_answer_base_questions, maybe_auto_tailor
 from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery import run_control
@@ -15,16 +15,6 @@ from core.notifications.telegram import notify_job_evaluated
 from core.providers.factory import get_llm_provider
 
 logger = logging.getLogger(__name__)
-
-
-def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_archive: int) -> str:
-    if score is None:
-        return stages.NEEDS_REVIEW
-    if score <= max_score_to_archive:
-        return stages.ARCHIVED_AUTO
-    if score >= min_score_to_proceed:
-        return stages.PASSED
-    return stages.NEEDS_REVIEW
 
 
 def compute_discovery_key(ats_name: str, url: str) -> str:
@@ -137,7 +127,12 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
         crud.set_job_activity(session, job.id, None)
         crud.update_job_pipeline_stage(session, job.id, stages.EVALUATED)
 
-        stage = _decide_stage(result["score"], settings.min_score_to_proceed, settings.max_score_to_archive)
+        stage = _decide_stage(
+            result["score"],
+            settings.min_score_to_proceed,
+            settings.max_score_to_archive,
+            bool(result.get("triggered_blockers")),
+        )
         run_control.eval_finish(passed=stage == stages.PASSED, archived=stage == stages.ARCHIVED_AUTO)
 
         if stage == stages.ARCHIVED_AUTO:
@@ -151,7 +146,11 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
         notify_job_evaluated(
-            company=quick_result.get("company"), role=quick_result.get("role"), score=result["score"], job_id=job.id
+            company=quick_result.get("company"),
+            role=quick_result.get("role"),
+            score=result["score"],
+            job_id=job.id,
+            blocked=bool(result.get("triggered_blockers")),
         )
 
         return True

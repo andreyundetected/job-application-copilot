@@ -1,5 +1,6 @@
 import logging
 
+import config
 from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery.eval_executor import submit_eval_task
@@ -11,7 +12,7 @@ from core.providers.factory import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
-_BATCH_SIZE = 25
+_BATCH_SIZE = config.DISCOVERY_SCREEN_CHUNK_SIZE
 
 
 def _chunked(items, size):

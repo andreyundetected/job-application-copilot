@@ -40,6 +40,8 @@
     "batch_counter_label": "queued",
     "batch_info_sub_template": "{count} postings queued · next screening in {timer}",
     "batch_timer_paused": "paused",
+    "batch_timer_running": "screening now",
+    "batch_timer_stalled": "stalled",
     "batch_force_flush_label": "Force flush at (postings)",
     "batch_force_flush_tooltip": "If this many postings are queued before the timer runs out, screen them immediately instead of waiting - the timer then resets.",
     "batch_last_cycle_template": "Last batch: {size} screened · {proceeded} passed · {skipped} skipped",
@@ -64,7 +66,7 @@
 
     "step3_title": "Evaluation & scoring",
     "step3_subtitle": "Decide what counts as a pass",
-    "step3_hint": "Every posting - straight from the batch or discovery - gets scored against your resume, blockers and scoring factors. Below the threshold, a job is auto-archived; at or above it, it passes and moves on to tailoring and questions.",
+    "step3_hint": "Every posting - straight from the batch or discovery - gets scored against your resume, blockers and scoring factors. Below the threshold, a job is auto-archived; at or above it, it passes and moves on to tailoring and questions. A job that triggers any blocker is auto-archived regardless of its score.",
     "eval_idle_label": "Idle",
     "eval_active_label": "Evaluating {count}...",
     "eval_passed_label": "Passed",

@@ -229,4 +229,6 @@ ac.txt
 t.py
 test.py
 evaluation_debug.txt
+gap_analysis_debug.txt
 test_vacancies/
+app.log

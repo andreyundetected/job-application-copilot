@@ -15,6 +15,10 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
     datefmt="%H:%M:%S",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("app.log", encoding="utf-8"),
+    ],
 )
 logging.getLogger("core").setLevel(logging.INFO)
 from ui.automation_page.router import router as automation_router

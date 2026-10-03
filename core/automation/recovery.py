@@ -1,7 +1,7 @@
 import logging
 
 from core.automation import stages
-from core.automation.pipeline import maybe_auto_answer_base_questions, maybe_auto_tailor
+from core.automation.pipeline import _decide_stage, maybe_auto_answer_base_questions, maybe_auto_tailor
 from core.db import crud
 from core.db.session import SessionLocal
 from core.evaluator.persist import apply_quick_meta, store_evaluation
@@ -9,16 +9,6 @@ from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, qu
 from core.providers.factory import get_llm_provider
 
 logger = logging.getLogger(__name__)
-
-
-def _decide_stage(score: int | None, min_score_to_proceed: int, max_score_to_archive: int) -> str:
-    if score is None:
-        return stages.NEEDS_REVIEW
-    if score <= max_score_to_archive:
-        return stages.ARCHIVED_AUTO
-    if score >= min_score_to_proceed:
-        return stages.PASSED
-    return stages.NEEDS_REVIEW
 
 
 def retry_stuck_job(job_id: int) -> bool:
@@ -82,7 +72,12 @@ def retry_stuck_job(job_id: int) -> bool:
             crud.update_job_pipeline_stage(session, job_id, stages.EVALUATED)
 
             settings = crud.get_automation_settings(session) or crud.upsert_automation_settings(session)
-            stage = _decide_stage(result["score"], settings.min_score_to_proceed, settings.max_score_to_archive)
+            stage = _decide_stage(
+                result["score"],
+                settings.min_score_to_proceed,
+                settings.max_score_to_archive,
+                bool(result.get("triggered_blockers")),
+            )
 
             if stage == stages.ARCHIVED_AUTO:
                 crud.archive_job_posting(session, job_id)

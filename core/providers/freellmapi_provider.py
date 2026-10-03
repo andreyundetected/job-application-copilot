@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from core.providers.base import BaseLLMProvider
 import config
@@ -48,6 +48,7 @@ class FreeLLMAPIProvider(BaseLLMProvider):
                 # back to a plain call rather than hard-failing the request.
                 response = None
 
+        used_fallback = response is None
         if response is None:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -56,6 +57,7 @@ class FreeLLMAPIProvider(BaseLLMProvider):
             )
 
         self.last_usage = self._extract_usage(response)
+        self.last_usage["fallback"] = used_fallback
         content = response.choices[0].message.content
         reasoning = getattr(response.choices[0].message, "reasoning", None) or getattr(
             response.choices[0].message, "reasoning_content", None

@@ -12,6 +12,7 @@ def create_evaluation(
     fit_score: int | None = None,
     fit_bullets: dict | None = None,
     checked_keywords: dict | None = None,
+    triggered_blockers: list | None = None,
 ) -> Evaluation:
     evaluation = Evaluation(
         job_posting_id=job_posting_id,
@@ -21,6 +22,7 @@ def create_evaluation(
         fit_score=fit_score,
         fit_bullets=fit_bullets,
         checked_keywords=checked_keywords,
+        triggered_blockers=triggered_blockers,
     )
     session.add(evaluation)
     session.commit()

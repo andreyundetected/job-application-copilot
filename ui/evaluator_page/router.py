@@ -218,6 +218,7 @@ def _evaluate_and_save(
             and app_settings.pregenerate_enabled
             and score is not None
             and score >= app_settings.pregenerate_min_score
+            and not result.get("triggered_blockers")
         ):
             from ui.tailoring_page.router import pregenerate_tailoring_context
 
@@ -225,7 +226,7 @@ def _evaluate_and_save(
 
         app_settings_for_threshold = crud.get_app_settings(session)
         manual_assist_min_score = app_settings_for_threshold.manual_assist_min_score if app_settings_for_threshold else 7
-        if score is not None and score >= manual_assist_min_score:
+        if score is not None and score >= manual_assist_min_score and not result.get("triggered_blockers"):
             job = crud.get_job_posting(session, job_posting_id)
             if job is not None:
                 maybe_auto_tailor(

@@ -952,9 +952,12 @@ function refreshLiveStats() {
                 batchEvalBadge.classList.toggle("visible", data.batch_evaluating);
 
                 let timerText = I18N.batch_timer_paused;
-                if (discoveryListening && data.batch_last_flush_at) {
-                    const elapsedMs = Date.now() - new Date(data.batch_last_flush_at + "Z").getTime();
-                    const remainingSeconds = Math.max(0, Math.round(data.batch_window_minutes * 60 - elapsedMs / 1000));
+                if (!data.batch_loop_alive) {
+                    timerText = `<span class="batch-info-timer">${I18N.batch_timer_stalled}</span>`;
+                } else if (data.batch_flush_running) {
+                    timerText = `<span class="batch-info-timer">${I18N.batch_timer_running}</span>`;
+                } else if (data.batch_seconds_until_flush !== null && data.batch_seconds_until_flush !== undefined) {
+                    const remainingSeconds = data.batch_seconds_until_flush;
                     const mm = Math.floor(remainingSeconds / 60);
                     const ss = String(remainingSeconds % 60).padStart(2, "0");
                     timerText = `<span class="batch-info-timer">${mm}:${ss}</span>`;

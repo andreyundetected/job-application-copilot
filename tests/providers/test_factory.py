@@ -1,7 +1,7 @@
 import pytest
 
 from core.providers.factory import get_llm_provider
-from core.providers.freellmapi import FreeLLMAPIProvider
+from core.providers.freellmapi_provider import FreeLLMAPIProvider
 from core.providers.openai_provider import OpenAIProvider
 from core.providers.gemini_provider import GeminiProvider
 import config

@@ -1,6 +1,18 @@
+import hashlib
+from pathlib import Path
+
 from sqlalchemy.orm import Session
 
 from core.db import crud
+
+_TEMPLATE_PATH = Path(__file__).resolve().parent / "templates" / "evaluator_prompt.jinja"
+
+
+def _prompt_fingerprint() -> str:
+    try:
+        return hashlib.sha1(_TEMPLATE_PATH.read_bytes()).hexdigest()[:10]
+    except OSError:
+        return "unknown"
 
 
 def apply_quick_meta(session: Session, job_posting_id: int, quick: dict) -> None:
@@ -26,6 +38,8 @@ def build_checked_keywords(quick: dict, result: dict) -> dict:
         "salary": quick.get("salary") or {},
         "matched_factors": result["matched_factors"],
         "summary": quick.get("summary"),
+        "raw_response": result.get("raw_response"),
+        "prompt_hash": _prompt_fingerprint(),
     }
 
 
@@ -39,4 +53,5 @@ def store_evaluation(session: Session, job_posting_id: int, resume_version_id: i
         fit_score=result["score"],
         fit_bullets={"pros": result["pros"]},
         checked_keywords=build_checked_keywords(quick, result),
+        triggered_blockers=result.get("triggered_blockers") or [],
     )

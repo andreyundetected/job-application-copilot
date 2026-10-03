@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from core.currency.converter import CurrencyConversionError, convert_salary
 from core.db import crud
 from core.db.session import get_session
+from core.evaluator.scale import prep_label
 from ui.common.i18n import get_language, load_page_strings
 
 router = APIRouter(prefix="")
@@ -78,6 +79,9 @@ def _get_currency_prefs(session: Session) -> tuple[str, str]:
 def _card_data(job, preferred_currency: str, preferred_period: str) -> dict:
     card = _base_card_data(job, preferred_currency, preferred_period)
     card["applied"] = any(application.status in crud.APPLIED_STATUSES for application in job.applications)
+    latest = job.evaluations[-1] if job.evaluations else None
+    card["blockers"] = (latest.triggered_blockers or []) if latest else []
+    card["prep_label"] = prep_label(card["score"])
     return card
 
 
@@ -219,6 +223,8 @@ def job_detail_page(
             "pros": (latest_evaluation.fit_bullets or {}).get("pros", []) if latest_evaluation else [],
             "cons": (latest_evaluation.blocker_bullets or {}).get("cons", []) if latest_evaluation else [],
             "applied": crud.is_job_applied(session, job_id),
+            "blockers": (latest_evaluation.triggered_blockers or []) if latest_evaluation else [],
+            "prep_label": prep_label(latest_evaluation.fit_score) if latest_evaluation else None,
             "lang": lang,
             "t": load_page_strings("ui/dashboard_page", lang),
         },
@@ -252,6 +258,8 @@ def job_evaluation_data(job_id: int, session: Session = Depends(get_session)):
             "pros": (latest_evaluation.fit_bullets or {}).get("pros", []),
             "cons": (latest_evaluation.blocker_bullets or {}).get("cons", []),
             "summary": checked.get("summary"),
+            "blockers": latest_evaluation.triggered_blockers or [],
+            "prep_label": prep_label(latest_evaluation.fit_score),
         }
     )
 
