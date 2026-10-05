@@ -55,7 +55,8 @@ def format_usage(usage):
         return "usage n/a"
     return (
         f"in {usage.get('input_tokens')} out {usage.get('output_tokens')} "
-        f"reasoning {usage.get('reasoning_tokens')} fallback {usage.get('fallback')}"
+        f"reasoning {usage.get('reasoning_tokens')} fallback {usage.get('fallback')} "
+        f"provider {usage.get('provider')}"
     )
 
 
@@ -177,6 +178,11 @@ def execute(tasks, jobs, cases, context, workers, reasoning):
                     usage_total[key] = usage_total.get(key, 0) + value
     print(f"finished calls: {len(results)}/{len(tasks)} in {time.time() - started_all:.0f}s")
     print(f"usage: {usage_total if usage_total else 'no usage data'}")
+    provider_counts = {}
+    for result in results:
+        name = (result.get("usage") or {}).get("provider") or "?"
+        provider_counts[name] = provider_counts.get(name, 0) + 1
+    print(f"providers: {provider_counts}")
     if results and usage_total.get("output_tokens"):
         print(f"avg output tokens per call: {usage_total['output_tokens'] / len(results):.0f}")
     total_cost = usage_total.get("cost")
@@ -282,7 +288,7 @@ def main():
         job = jobs[job_id]
         mark = "!" if wrong else " "
         print(
-            f"{mark} id {job_id:>4} | label {label:>2} | runs {scores} | {info['bucket']} | "
+            f"{mark} id {job_id:>4} | label {label:>2} | runs {[(r['score'], (r['usage'] or {}).get('provider') or '?') for r in sorted(runs, key=lambda item: item['run'])]} | {info['bucket']} | "
             f"b: got {fmt_blockers(info['blockers'])} want {fmt_blockers(want)} | "
             f"{job['company'][:18]} - {job['title'][:36]} | {cases[job_id].get('note', '')[:50]}"
         )

@@ -36,7 +36,7 @@ class BaseLLMProvider(ABC):
         if cost is None and hasattr(usage, "model_dump"):
             cost = usage.model_dump().get("cost")
 
-        return {
+        result = {
             "cost": cost,
             "model": getattr(response, "model", None),
             "input_tokens": getattr(usage, "prompt_tokens", None),
@@ -44,3 +44,7 @@ class BaseLLMProvider(ABC):
             "reasoning_tokens": reasoning_tokens,
             "total_tokens": getattr(usage, "total_tokens", None),
         }
+        upstream_provider = getattr(response, "provider", None)
+        if upstream_provider is not None:
+            result["provider"] = upstream_provider
+        return result

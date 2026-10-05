@@ -102,7 +102,8 @@ def test_prompt_separates_quick_gaps_from_practice_gaps():
     prompt = _render()
 
     assert "HOW LONG A MISSING SKILL TAKES" in prompt
-    assert "Three or more rows with the same value make the bucket one step slower." in prompt
+    assert "Three or more rows with the same value" not in prompt
+    assert "A difference only in volume, load or scale is never slower than weeks." in prompt
 
 
 @pytest.mark.evaluator
@@ -121,7 +122,8 @@ def test_prompt_has_theme_language_and_years_rules():
 def test_prompt_makes_the_bucket_follow_the_slowest_row():
     prompt = _render()
 
-    assert "first copy the match value of the slowest row" in prompt
+    assert "copy the match value of the slowest row that is not optional" in prompt
+    assert "craft=X, real work=Y, floor=Z" in prompt
     assert '"day" is allowed only if every row that is not optional is exact or close' in prompt
 
 
@@ -158,6 +160,7 @@ def test_reasoning_tags_appear_in_the_required_order():
         "<role_thinking>",
         "<role>",
         "<center>",
+        "<craft>",
         "<requirements_thinking>",
         "<requirements>",
         "<prep_thinking>",
@@ -169,6 +172,16 @@ def test_reasoning_tags_appear_in_the_required_order():
 
     assert positions == sorted(positions)
     assert "<score_thinking>" not in reasoning
+
+
+@pytest.mark.evaluator
+def test_prompt_has_craft_rules_and_ignored_row_types():
+    prompt = _render()
+
+    assert "THE CRAFT OF THE ROLE" in prompt
+    assert "<craft> exactly one of: same / neighbouring / different </craft>" in prompt
+    assert "none of the following is ever written as a requirement row" in prompt
+    assert "never allowed when the craft is not same" in prompt
 
 
 @pytest.mark.evaluator

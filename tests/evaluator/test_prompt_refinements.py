@@ -44,4 +44,4 @@ def test_thinking_tags_forbid_self_corrections():
 def test_cons_never_contain_blockers_or_quick_gaps():
     prompt = _render()
 
-    assert "Never list a day or days gap. Never write a blocker as a con." in prompt
+    assert "Never list a day or days gap. Never write a blocker as a con" in prompt
