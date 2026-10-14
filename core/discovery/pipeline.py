@@ -6,6 +6,7 @@ from core.automation.pipeline import _decide_stage, maybe_auto_answer_base_quest
 from core.db import crud
 from core.db.session import SessionLocal
 from core.discovery import run_control
+from core.discovery.post_executor import submit_post_task
 from core.discovery.ats import extract_job_text_with_extractor, is_usable_job_text
 from core.evaluator.persist import apply_quick_meta, store_evaluation
 from core.evaluator.pipeline import empty_quick_result, evaluate_job_posting, quick_extract_job_posting
@@ -19,6 +20,37 @@ logger = logging.getLogger(__name__)
 
 def compute_discovery_key(ats_name: str, url: str) -> str:
     return hashlib.sha256(f"{ats_name}:{url}".encode("utf-8")).hexdigest()
+
+
+def _run_post_processing(job_id: int, job_text: str, eval_result: dict, do_tailor: bool, do_answers: bool) -> None:
+    session = SessionLocal()
+    try:
+        job = crud.get_job_posting(session, job_id)
+
+        steps = []
+        if do_tailor:
+            steps.append("tailor")
+        if do_answers:
+            steps.append("answers")
+
+        for stage in steps:
+            run_control.flow_add(stage, "queued", -1)
+            run_control.flow_add(stage, "active")
+            try:
+                if job is not None:
+                    if stage == "tailor":
+                        maybe_auto_tailor(session, None, job, job_text, eval_result)
+                    else:
+                        maybe_auto_answer_base_questions(session, None, job, job_text)
+            except Exception:
+                logger.exception("[discovery] job %s: %s step failed", job_id, stage)
+                session.rollback()
+                crud.set_job_activity(session, job_id, None)
+            finally:
+                run_control.flow_add(stage, "active", -1)
+                run_control.flow_add(stage, "done")
+    finally:
+        session.close()
 
 
 def process_discovered_posting(discovered_posting_id: int) -> bool:
@@ -104,7 +136,6 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
             logger.warning("[discovery] posting %s: quick-extract failed, leaving metadata unset: %s", discovered_posting_id, error)
             quick_result = empty_quick_result()
 
-        run_control.eval_start()
         try:
             result = evaluate_job_posting(
                 provider,
@@ -116,7 +147,7 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
                 extra_info=extra_info,
             )
         except Exception as error:
-            run_control.eval_finish(passed=False, archived=False)
+            run_control.flow_add("eval", "failed")
             logger.error("[discovery] posting %s: evaluation failed: %s", discovered_posting_id, error)
             crud.set_job_activity(session, job.id, None)
             return False
@@ -133,16 +164,25 @@ def process_discovered_posting(discovered_posting_id: int) -> bool:
             settings.max_score_to_archive,
             bool(result.get("triggered_blockers")),
         )
-        run_control.eval_finish(passed=stage == stages.PASSED, archived=stage == stages.ARCHIVED_AUTO)
-
         if stage == stages.ARCHIVED_AUTO:
+            run_control.flow_add("eval", "archived")
             crud.archive_job_posting(session, job.id)
             crud.update_job_pipeline_stage(session, job.id, stages.ARCHIVED_AUTO)
         elif stage == stages.PASSED:
+            run_control.flow_add("eval", "passed")
             crud.update_job_pipeline_stage(session, job.id, stages.PASSED)
-            maybe_auto_tailor(session, None, job, job_text, result)
-            maybe_auto_answer_base_questions(session, None, job, job_text)
+            do_tailor = bool(settings.auto_tailor_master_enabled)
+            do_answers = bool(settings.auto_questions_master_enabled) and bool(
+                crud.list_automation_base_questions(session)
+            )
+            if do_tailor:
+                run_control.flow_add("tailor", "queued")
+            if do_answers:
+                run_control.flow_add("answers", "queued")
+            if do_tailor or do_answers:
+                submit_post_task(_run_post_processing, job.id, job_text, result, do_tailor, do_answers)
         else:
+            run_control.flow_add("eval", "review")
             crud.update_job_pipeline_stage(session, job.id, stages.NEEDS_REVIEW)
 
         notify_job_evaluated(

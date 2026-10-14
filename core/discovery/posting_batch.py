@@ -112,6 +112,15 @@ def pending_count() -> int:
         return len(_pending_ids)
 
 
+def clear_pending() -> int:
+    if _flush_running:
+        return 0
+    with _lock:
+        count = len(_pending_ids)
+        _pending_ids.clear()
+    return count
+
+
 def _peek_chunk(size: int) -> list[int]:
     with _lock:
         return _pending_ids[:size]
@@ -171,11 +180,11 @@ def _flush() -> None:
 
     try:
         run_control.set_batch_evaluating(True)
-        chunk_size = max(1, config.DISCOVERY_SCREEN_CHUNK_SIZE)
+        wave_size = max(1, config.DISCOVERY_SCREEN_CHUNK_SIZE) * max(1, config.DISCOVERY_SCREEN_WORKERS)
         logger.info("[batch] flush started: %s pending postings", pending_count())
 
         while True:
-            chunk = _peek_chunk(chunk_size)
+            chunk = _peek_chunk(wave_size)
             if not chunk:
                 break
             result = quick_screen_and_dispatch(chunk)

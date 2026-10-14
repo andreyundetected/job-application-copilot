@@ -22,6 +22,7 @@ class OpenRouterProvider(BaseLLMProvider):
         reasoning_effort: str | None = None,
         temperature: float | None = None,
     ) -> str:
+        temperature, reasoning_effort = self._enforce_determinism()
         base_kwargs = {}
         if max_tokens is not None:
             base_kwargs["max_tokens"] = max_tokens

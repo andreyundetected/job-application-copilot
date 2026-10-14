@@ -20,6 +20,7 @@ def upsert_app_settings(
     telegram_notify_enabled: bool | None = None,
     telegram_notify_only_successful: bool | None = None,
     telegram_notify_min_score: int | None = None,
+    skills_popup_choice: str | None = None,
 ) -> AppSettings:
     settings_row = session.query(AppSettings).first()
 
@@ -40,6 +41,7 @@ def upsert_app_settings(
                 telegram_notify_only_successful if telegram_notify_only_successful is not None else True
             ),
             telegram_notify_min_score=telegram_notify_min_score,
+            skills_popup_choice=skills_popup_choice or None,
         )
         session.add(settings_row)
     else:
@@ -65,6 +67,8 @@ def upsert_app_settings(
             settings_row.telegram_notify_only_successful = telegram_notify_only_successful
         if telegram_notify_min_score is not None:
             settings_row.telegram_notify_min_score = telegram_notify_min_score
+        if skills_popup_choice is not None:
+            settings_row.skills_popup_choice = skills_popup_choice or None
 
     session.commit()
     session.refresh(settings_row)

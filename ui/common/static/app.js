@@ -76,6 +76,40 @@ function initCustomSelect(root, onChange) {
     });
 }
 
+function fmtPickerHtml(value, formats, up) {
+    const check = '<svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    const chevron = '<svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    const options = formats
+        .map((format) => `<button type="button" class="custom-select-option${format === value ? " selected" : ""}" data-value="${format}"><span>${format.toUpperCase()}</span>${check}</button>`)
+        .join("");
+    return `<div class="custom-select fmt-pick${up ? " up" : ""}" data-value="${value}"><button type="button" class="custom-select-trigger"><span data-select-label>${value.toUpperCase()}</span>${chevron}</button><div class="custom-select-menu">${options}</div></div>`;
+}
+
+document.addEventListener("click", (event) => {
+    const picker = event.target.closest(".fmt-pick");
+    document.querySelectorAll(".fmt-pick.open").forEach((el) => {
+        if (el !== picker) el.classList.remove("open");
+    });
+    if (!picker) return;
+
+    const option = event.target.closest(".custom-select-option");
+    if (option) {
+        const value = option.dataset.value;
+        picker.dataset.value = value;
+        picker.querySelectorAll(".custom-select-option").forEach((el) => el.classList.toggle("selected", el === option));
+        picker.querySelector("[data-select-label]").textContent = value.toUpperCase();
+        picker.classList.remove("open");
+        picker.dispatchEvent(new CustomEvent("fmtchange", { detail: value }));
+        return;
+    }
+
+    if (event.target.closest(".custom-select-trigger")) picker.classList.toggle("open");
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") document.querySelectorAll(".fmt-pick.open").forEach((el) => el.classList.remove("open"));
+});
+
 function flashSaved(el) {
     el.classList.add("visible");
     clearTimeout(el._hideTimeout);

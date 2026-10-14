@@ -1,0 +1,50 @@
+CRITICAL: Do not write any analysis or notes. Your entire response must consist of nothing but <kw ... /> lines, starting with the very first character.
+
+You read a job posting and list the keywords that a candidate's resume should contain so that recruiters' keyword searches and the ATS skill matching find it. Recruiters search by job title and hard skills: they type a title and two or three concrete skills into a search box. They ignore generic phrases.
+
+JOB POSTING
+{{ job_posting_text }}
+
+HOW MANY
+Between 8 and 20 keywords, never more than 20. If more than 20 qualify, keep the 20 that matter most: first those named in the headline, the intro and the first lines of the requirements, then those the posting repeats, then the rest. A list of tools of the same kind (for example several issue trackers or chat apps) counts as at most 3 keywords: take the first 3 named.
+
+THE SEARCH-BOX TEST (apply it to every candidate keyword before you write it)
+A keyword is a term that a candidate could write on the skills line of a resume and that a recruiter could type alone into a search box. It names a programming language, a framework, a library, a tool, a platform, a protocol, a database, a cloud service, a named technique or method (for example RAG, CI/CD, event-driven architecture), an industry domain or a certification. Everything else is not a keyword, even when the posting stresses it, except the cover-letter themes of tier P2 below:
+- duties and activities of the role: build, maintain, design, operate, mentor, review, take a share of the on-call rotation
+- working conditions: on-call, shifts, travel, relocation, hybrid or remote work
+- qualities of a system: low-latency, high-throughput, scalable, reliable, secure, performant
+- plain generic nouns: tools, storage, systems, services, logic, prompts, delivery, workers, processing, infrastructure, platforms
+- phrases that describe the role instead of naming a skill: backend services, backend engineering, frontend delivery, production systems, end-to-end ownership, stakeholder management
+Examples: the line "build and maintain low-latency backend services and take a share of the on-call rotation" gives no keyword at all. The line "comfortable with dashboards, tooling, schemas and Kafka" gives only "Kafka". Prefer the whole technique over its parts: "asynchronous processing", never "asynchronous" and "processing" separately.
+
+WHAT TO LIST (most important first)
+- kind="title": exactly one, the job title from the posting headline, as written, without the team name that follows a comma, a dash or a slash. A second title only if the posting uses it as the name of the role at least twice. A description of the role such as "client-facing engineering role" is not a title.
+- tier="P0": terms that pass the search-box test and that the posting names as requirements or as part of the work. Every item named after "such as" or "for example" is its own P0 keyword. From a requirements line take the named technologies and techniques, never its other words.
+- tier="P1": terms that pass the search-box test and that the posting lists as a bonus, preferred, nice to have or a plus. Go through the bonus bullets one at a time. For each bullet, strike out every term that is already a P0 keyword. If a term remains, write it as a P1 line. A bullet that names alternatives with "or" gives one keyword per alternative: "financial services or another regulated environment" gives "financial services" and "regulated environment".
+
+- tier="P2", kind="theme": at most 3 themes for the cover letter. A theme is a short phrase (2 to 4 words) for a capability or an industry that the posting stresses (it repeats it at least twice or puts it in its first paragraph) and that a candidate can truthfully speak to in a letter. Examples: "client-facing work", "business stakeholders", "regulated environment". Working conditions (on-call, shifts, travel), qualities of a system (low-latency, scalable) and personality traits (communication, ownership, curiosity) are never themes. A theme that duplicates a P0 or P1 keyword is skipped.
+
+WHAT TO SKIP
+- everything that fails the search-box test
+- years of experience, degrees, seniority words. A years line that lists role types, for example "6+ years in software engineering, platform engineering, developer tooling", is a seniority statement: skip everything in it.
+- location, work authorization, salary, benefits, perks, schedule
+- company description, mission, culture, "why join", diversity statements, notes about how the employer itself uses AI or tools
+- names of the employer's own teams, products, programs or pods. Example: if the posting is from "Acme" and says "Acme Studio" or "Acme Agents" or "growth pods", those are not keywords. A name that follows a comma, a dash or a slash in the headline is a team name: for "Backend Engineer - Payments Core" or "Backend Engineer, Payments Core" the name "Payments Core" is not a keyword, even when the posting repeats it.
+- names of roles inside the text ("a full-stack engineer who is curious about growth"): only the headline gives the title
+- soft skills and personality traits: communication, ownership, collaboration, curiosity, fast-paced
+- generic words found in every posting: development, engineering, deployment, solutions, consulting, software, experience, projects, lifecycle, AI solutions
+
+FORMAT RULES
+- text: the exact wording of the posting, as short as possible (1 to 4 words). Write each term in one form only, the form the posting uses first.
+- src: a verbatim quote of at most 8 words from the posting that this keyword comes from.
+- Every text appears once in the whole list, whatever its tier.
+- level="required" if the keyword appears in the requirements, in the responsibilities or in the list of what the person will do, even when it also appears in a bonus. A keyword from the responsibilities is never preferred. level="preferred" only if it appears exclusively in a bonus, preferred, nice to have or plus section.
+- kind is one of: title, skill, tool, domain, cert.
+- Never use a double quote or the characters < and > inside a value. One tag per keyword.
+
+FINAL CHECK before you answer: there are at most 20 lines, no text value appears twice, every keyword except a P2 theme passes the search-box test, no keyword is a name of the employer's team or product, every level="preferred" keyword has a src quote that stands under a bonus, preferred or nice to have heading (a src quote from the responsibilities or the requirements makes it required), and every src quote really exists in the posting.
+
+OUTPUT FORMAT
+<kw text="AI Engineer" tier="P0" kind="title" level="required" src="AI Engineer" />
+<kw text="Python" tier="P0" kind="skill" level="required" src="Strong Python development skills" />
+<kw text="financial services" tier="P1" kind="domain" level="preferred" src="within financial services" />

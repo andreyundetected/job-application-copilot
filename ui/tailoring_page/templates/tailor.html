@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tailor{% endblock %}
+{% block title %}{{ t.page_title }}{% endblock %}
 
 {% block content %}
 <style>
@@ -9,63 +9,207 @@ html, body { height: 100%; overflow: hidden; background-color: var(--bg); }
 main {
     max-width: 100%;
     width: 100%;
-    height: calc(100vh - 52px);
-    padding: 16px 20px 8px;
+    height: calc(100vh - 60px);
+    padding: 14px 18px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
 
-.tailor-layout { display: flex; gap: 16px; width: 100%; flex: 1; min-height: 0; }
+.hidden { display: none !important; }
 
-.gaps-panel, .schema-panel {
-    flex: 0 0 300px;
-    min-width: 260px;
-    max-width: 340px;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
+.shell { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+
+.bar { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.bar-title { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.bar-title b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+.bar-title span { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-spacer { flex: 1; }
+
+.cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 36px; padding: 0 18px; margin: 0; border: none; border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+    box-shadow: 0 6px 20px rgba(91, 141, 239, 0.35);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
+.cta:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(91, 141, 239, 0.5); }
+.cta.busy { opacity: 0.55; cursor: wait; transform: none; }
+.cta.wide { width: 100%; }
 
-.panel-header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); flex-shrink: 0; }
-.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.ghost {
+    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 13px; margin: 0;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--bg-input);
+    color: var(--text-secondary); font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.12s ease;
+}
+.ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+.ghost.busy { opacity: 0.55; cursor: wait; }
+
+.ibtn {
+    width: 28px; height: 28px; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 9px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-secondary);
+    font-size: 13px; cursor: pointer; transition: all 0.12s ease; flex-shrink: 0; font-family: inherit;
+}
+.ibtn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.ibtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ibtn.busy { opacity: 0.55; cursor: wait; animation: spin 1s linear infinite; }
+.ibtn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.link-btn { background: none; border: none; padding: 0; margin: 0; font-size: 11.5px; font-weight: 500; color: var(--text-tertiary); cursor: pointer; font-family: inherit; }
+.link-btn:hover { color: var(--accent); }
+
+.cols { display: grid; grid-template-columns: 290px 380px minmax(0, 1fr); gap: 12px; flex: 1; min-height: 0; }
+@media (max-width: 1320px) { .cols { grid-template-columns: 250px 330px minmax(0, 1fr); } }
+
+.panel {
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 140px), var(--bg-card);
+    border: 1px solid var(--border); border-radius: 20px;
+}
+.panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); flex-shrink: 0;
+}
+.head-actions { display: flex; align-items: center; gap: 8px; }
+.count { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--bg-input); color: var(--text-secondary); letter-spacing: 0; font-weight: 700; }
+.count:empty { display: none; }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 14px 16px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
 .panel-body::-webkit-scrollbar { width: 7px; }
 .panel-body::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
 
-.resume-scroll-column {
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 0;
-    overflow-y: auto;
-    padding-right: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-hover) transparent;
+.rail-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px; }
+.rail-tab {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; padding: 9px 10px;
+    border-radius: 12px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-secondary);
+    cursor: pointer; text-align: left; transition: all 0.12s ease; font-family: inherit;
 }
-.resume-scroll-column::-webkit-scrollbar { width: 7px; }
-.resume-scroll-column::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
+.rail-tab b { font-size: 17px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.rail-tab span { font-size: 10px; font-weight: 600; line-height: 1.2; }
+.rail-tab:hover { border-color: var(--border-hover); }
+.rail-tab.active { border-color: var(--accent); background: var(--accent-soft); }
+.rail-tab.active b, .rail-tab.active span { color: var(--accent); }
 
-.resume-doc-wrapper { width: 794px; max-width: 100%; position: relative; }
-.doc-page-title { text-align: center; font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px; }
+.prio-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); margin: 12px 0 6px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.gap-chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px;
+    background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary);
+    font-size: 12px; font-weight: 500; cursor: pointer; max-width: 100%; transition: all 0.12s ease;
+}
+.gap-chip[draggable="true"] { cursor: grab; }
+.gap-chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.gap-chip.status-exact { background: var(--score-high-soft); border-color: transparent; color: var(--score-high); cursor: default; }
+.gap-chip.status-can_add { border-color: rgba(91, 141, 239, 0.5); color: #b6cbf7; }
+.gap-chip.status-unknown { background: var(--score-mid-soft); border: 1px dashed rgba(250, 204, 21, 0.45); color: var(--score-mid); }
+.gap-chip.preferred { opacity: 0.8; }
+.chip-dest { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); }
+.chip-dest.muted { opacity: 0.55; }
+
+.empty-state { text-align: center; padding: 28px 10px 14px; }
+.empty-ico { width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; background: linear-gradient(135deg, var(--accent), #8b5cf6); }
+.empty-ico.muted { background: var(--bg-input); color: var(--text-tertiary); border: 1px solid var(--border); }
+.empty-state p { font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); margin: 0 0 16px; }
+.hint { font-size: 11.5px; color: var(--text-tertiary); padding: 6px 0; line-height: 1.5; }
+.error-line { font-size: 11.5px; color: var(--score-low); background: var(--score-low-soft); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+
+.lane {
+    --c: var(--accent);
+    position: relative; margin-bottom: 12px; padding: 13px 14px 14px; border-radius: 16px;
+    border: 1px solid var(--border); background: var(--bg-input);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.lane::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--c); }
+.lane.k-title { --c: #a78bfa; }
+.lane.k-summary { --c: var(--accent); }
+.lane.k-skills { --c: var(--score-high); }
+.lane.k-letter { --c: #f59e0b; }
+.lane.hot { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+.lane.drag-over { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, var(--bg-input)); }
+
+.lane-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.lane-title { font-size: 13px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.lane-count { font-size: 10.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+.lane-edited { font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 999px; color: var(--score-high); background: var(--score-high-soft); }
+.lane-spacer { flex: 1; }
+.lane-run { height: 28px; padding: 0 13px; margin: 0; border: none; border-radius: 999px; background: var(--c); color: #0a0a0b; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: filter 0.12s ease, opacity 0.12s ease; }
+.lane-run:hover { filter: brightness(1.12); }
+.lane-run.busy { opacity: 0.55; cursor: wait; }
+
+.preview { font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-elevated); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; max-height: 58px; overflow: hidden; }
+.lane-hint { font-size: 11.5px; color: var(--text-tertiary); margin: 0 0 8px; line-height: 1.45; }
+.drop-empty { font-size: 11.5px; color: var(--text-tertiary); border: 1px dashed var(--border-hover); border-radius: 10px; padding: 10px 12px; width: 100%; }
+
+.kw-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 4px 5px 4px 11px; font-size: 11.5px; font-weight: 600;
+    border-radius: 999px; cursor: grab; color: var(--c);
+    background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+}
+.kw-chip.unknown { border-style: dashed; }
+.kw-chip.preferred { opacity: 0.8; }
+.chip-x { width: 18px; height: 18px; margin: 0; padding: 0; border: none; border-radius: 50%; background: transparent; color: inherit; opacity: 0.6; font-size: 14px; line-height: 1; cursor: pointer; }
+.chip-x:hover { opacity: 1; background: rgba(255, 255, 255, 0.14); }
+
+.bc-comment {
+    display: block; width: 100%; min-height: 54px; margin: 10px 0 0; padding: 9px 11px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; line-height: 1.45;
+    resize: vertical; box-sizing: border-box; font-family: inherit; transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.bc-comment:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.role-chip { font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: rgba(139, 92, 246, 0.16); color: #c4b5fd; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tcard { padding: 10px 0 12px; border-top: 1px solid var(--border); }
+.tcard:first-of-type { border-top: none; padding-top: 2px; }
+.tcard.hot .tcard-current { color: var(--accent); }
+.tcard-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tcard-label { flex: 1; min-width: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tcard-current { font-size: 12.5px; font-weight: 600; color: var(--text-primary); line-height: 1.4; word-break: break-word; }
+.tsug { margin-top: 8px; border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 12px; overflow: hidden; background: rgba(74, 222, 128, 0.06); }
+.tsug-new { padding: 9px 11px 4px; font-size: 12.5px; font-weight: 700; color: #86e0a8; word-break: break-word; }
+.tsug-why { padding: 0 11px; font-size: 11px; color: var(--text-tertiary); }
+.tsug-actions { display: flex; gap: 6px; padding: 9px 11px; }
+.tsug-actions .btn, .tsug-actions .btn-ghost { margin-top: 0; padding: 5px 13px; font-size: 11.5px; border-radius: 999px; }
+.tsame { margin-top: 6px; font-size: 11.5px; color: var(--text-tertiary); }
+
+.stage { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.stage-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; }
+.tabs { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--bg-card); border: 1px solid var(--border); }
+.tab { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 16px; margin: 0; border: none; border-radius: 999px; background: transparent; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s ease; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff; box-shadow: 0 4px 14px rgba(91, 141, 239, 0.35); }
+.tab-dot { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+.tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+
+.word-count-badge { position: relative; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--score-high-soft); color: var(--score-high); white-space: nowrap; cursor: default; }
+.word-count-badge[data-tip]:hover::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+    width: max-content; max-width: 260px; white-space: normal; padding: 8px 11px; border-radius: 10px;
+    background: var(--bg-elevated); border: 1px solid var(--border-hover); color: var(--text-primary);
+    font-size: 11.5px; font-weight: 500; line-height: 1.45; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+.word-count-badge.warn { background: var(--score-mid-soft); color: var(--score-mid); }
+.word-count-badge.danger { background: var(--score-low-soft); color: var(--score-low); }
+
+.fmt-select { width: auto; height: 30px; padding: 0 28px 0 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700; margin: 0; }
+.dl-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 15px; margin: 0; border-radius: 999px; border: none; background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff; font-size: 11.5px; font-weight: 700; text-decoration: none; cursor: pointer; font-family: inherit; }
+.dl-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.dl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.stage-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; padding: 2px 6px 24px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.stage-scroll::-webkit-scrollbar { width: 7px; }
+.stage-scroll::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
+.paper-wrap { width: 794px; max-width: 100%; }
 
 .resume-doc {
-    background: #ffffff;
-    color: #111;
-    border-radius: var(--radius-lg);
-    padding: 48px 56px;
-    min-height: 1000px;
-    width: 794px;
-    max-width: 100%;
-    font-family: "Calibri", "Segoe UI", sans-serif;
-    font-size: 10pt;
-    outline: none;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    background: #ffffff; color: #111; border-radius: 16px; padding: 48px 56px; min-height: 1000px; width: 794px; max-width: 100%;
+    font-family: "Calibri", "Segoe UI", sans-serif; font-size: 10pt; outline: none; box-sizing: border-box;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
 }
 .resume-doc mark { background-color: rgba(250, 204, 21, 0.35); border-radius: 2px; }
 .resume-doc mark.approved-mark { background-color: rgba(91, 141, 239, 0.28); cursor: pointer; }
@@ -73,268 +217,235 @@ main {
 .resume-doc p { margin: 3px 0; line-height: 1.4; }
 .resume-doc ul { margin: 3px 0 8px; padding-left: 20px; }
 .resume-doc li { margin: 1px 0; line-height: 1.4; }
-
 .resume-doc [data-blk] { border-radius: 3px; transition: background-color 0.15s ease, box-shadow 0.15s ease; }
 .resume-doc .blk-hot { background-color: rgba(91, 141, 239, 0.18); }
 .resume-doc .blk-edited { box-shadow: inset 3px 0 0 var(--score-high); }
 
-.history-btn { background-color: var(--bg-input) !important; color: var(--text-secondary) !important; border: 1px solid var(--border) !important; width: 38px; height: 38px; padding: 0 !important; margin-top: 0 !important; border-radius: var(--radius-sm) !important; font-size: 15px; display: flex; align-items: center; justify-content: center; }
-.history-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.letter-page { position: relative; background: #ffffff; color: #111; border-radius: 16px; padding: 56px 64px; box-sizing: border-box; font-family: "Calibri", "Segoe UI", sans-serif; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); }
+.letter-area, .letter-area:focus { display: block; width: 100%; min-height: 560px; padding: 0; margin: 0; border: none; outline: none; box-shadow: none; resize: none; background: transparent; color: #111; font-family: inherit; font-size: 11pt; line-height: 1.6; box-sizing: border-box; overflow: hidden; }
 
-.word-count-wrap { display: flex; align-items: center; gap: 8px; }
-.word-count-badge { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background-color: var(--score-high-soft); color: var(--score-high); white-space: nowrap; flex-shrink: 0; }
-.word-count-badge.warn { background-color: var(--score-mid-soft); color: var(--score-mid); }
-.word-count-badge.danger { background-color: var(--score-low-soft); color: var(--score-low); }
-.word-count-note { font-size: 11px; color: var(--text-tertiary); max-width: 260px; line-height: 1.3; display: none; }
-.word-count-note.visible { display: block; }
+.letter-area.blk-hot { background: rgba(91, 141, 239, 0.14); box-shadow: 0 0 0 6px rgba(91, 141, 239, 0.14); border-radius: 4px; }
+
+.note-diff .diff-line { white-space: pre-wrap; }
+.note-diff .diff-line.old .diff-text { text-decoration: none; }
+
+.paper-copy {
+    position: absolute; top: 18px; right: 18px; z-index: 2; display: inline-flex; align-items: center; gap: 6px;
+    height: 30px; padding: 0 13px; margin: 0; border-radius: 999px; border: 1px solid #e5e7eb; background: #f9fafb;
+    color: #4b5563; font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer; opacity: 0.9;
+    transition: all 0.12s ease;
+}
+.paper-copy:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; opacity: 1; }
+.paper-copy.done { border-color: #86efac; color: #16a34a; background: #f0fdf4; }
+
+.letter-empty { position: absolute; left: 0; right: 0; top: 150px; z-index: 1; text-align: center; padding: 0 64px; pointer-events: none; }
+.letter-empty b { display: block; font-size: 15px; color: #111; margin-bottom: 4px; }
+.letter-empty p { font-size: 12.5px; line-height: 1.5; color: #6b7280; margin: 0 auto 16px; max-width: 320px; }
+.letter-empty .cta { pointer-events: auto; }
 
 .style-toolbar {
-    position: absolute;
-    display: none;
-    align-items: center;
-    gap: 4px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 6px 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    z-index: 50;
-    font-size: 12px;
-    color: var(--text-primary);
+    position: absolute; display: none; align-items: center; gap: 4px; background: var(--bg-elevated);
+    border: 1px solid var(--border); border-radius: 12px; padding: 6px 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); z-index: 50; font-size: 12px; color: var(--text-primary);
 }
-.style-toolbar button { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; width: 26px; height: 26px; cursor: pointer; }
+.style-toolbar button { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; width: 26px; height: 26px; cursor: pointer; }
 .color-swatch { width: 18px; height: 18px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.3); }
-.style-toolbar input[type="color"] { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); cursor: pointer; }
+.style-toolbar input[type="color"] { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); cursor: pointer; }
 .style-toolbar .toolbar-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
 
 .revert-popover {
-    position: fixed;
-    display: none;
-    z-index: 200;
-    background: var(--bg-elevated);
-    border: 1px solid var(--accent);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    width: 280px;
-    max-width: 90vw;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    font-size: 12.5px;
+    position: fixed; display: none; z-index: 200; background: var(--bg-elevated); border: 1px solid var(--accent);
+    border-radius: 12px; padding: 10px 12px; width: 280px; max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); font-size: 12.5px;
 }
 .revert-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600; }
-.revert-popover-text { color: var(--text-secondary); margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; font-weight: 400; max-height: 140px; overflow-y: auto; word-break: break-word; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
-.revert-popover-text::-webkit-scrollbar { width: 6px; }
-.revert-popover-text::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
+.revert-popover-text { color: var(--text-secondary); margin-bottom: 8px; white-space: pre-wrap; line-height: 1.4; max-height: 140px; overflow-y: auto; word-break: break-word; }
 .revert-popover-btn { margin-top: 0; padding: 5px 10px; font-size: 12px; width: 100%; }
-
-.edited-title-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 9.5px;
-    font-weight: 600;
-    color: var(--score-high);
-    background: var(--score-high-soft);
-    border-radius: 999px;
-    padding: 1px 7px;
-    margin-left: 6px;
-    vertical-align: middle;
-}
-
-.gap-run-btn { width: 100%; margin-top: 0 !important; background: linear-gradient(135deg, var(--accent), #8b5cf6); border: none; color: white; font-weight: 600; }
-.gap-progress-line { font-size: 11.5px; color: var(--text-secondary); margin: 8px 0 0; text-align: center; }
-.gap-error-line { font-size: 11.5px; color: var(--score-low); background: var(--score-low-soft); border-radius: var(--radius-sm); padding: 8px 10px; }
-
-.gap-section { margin-bottom: 12px; }
-.gap-section-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 2px 0; }
-.gap-section-title { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); }
-.gap-section-title.miss { color: var(--score-mid); }
-.gap-section-count { font-size: 10px; background: var(--bg-input); border-radius: 999px; padding: 1px 6px; color: var(--text-secondary); }
-.gap-section-chevron { width: 11px; height: 11px; color: var(--text-tertiary); transition: transform 0.2s ease; }
-.gap-section.collapsed .gap-section-chevron { transform: rotate(-90deg); }
-.gap-section-body { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-.gap-section.collapsed .gap-section-body { display: none; }
-
-.gap-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 999px; background-color: var(--bg-input); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11.5px; font-weight: 500; cursor: pointer; transition: all 0.12s ease; max-width: 100%; }
-.gap-chip[draggable="true"] { cursor: grab; }
-.gap-chip span.gap-chip-text { white-space: normal; word-break: break-word; }
-.gap-chip:hover { border-color: var(--border-hover); }
-.gap-chip.status-can_add { border-color: rgba(91, 141, 239, 0.4); }
-.gap-chip.status-can_add.placed { background-color: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.gap-chip.status-match { background-color: var(--score-high-soft); border-color: transparent; color: var(--score-high); }
-.gap-chip.status-miss { background-color: var(--score-mid-soft); border-color: transparent; color: var(--score-mid); }
-.gap-chip.status-over { background-color: var(--bg-input); border-color: var(--border); color: var(--text-tertiary); opacity: 0.85; }
-.gap-chip.status-over.in-generation { opacity: 1; }
-.gap-chip.in-generation { box-shadow: 0 0 0 2px var(--score-high) inset; }
-.gap-chip-check { width: 10px; height: 10px; flex-shrink: 0; opacity: 0; }
-.gap-chip.placed .gap-chip-check { opacity: 1; }
-.gap-empty-hint { font-size: 11.5px; color: var(--text-tertiary); padding: 4px 0; }
 
 .gap-location-popover {
     position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); flex-direction: column; gap: 2px; min-width: 200px;
-    max-height: 320px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent;
+    border-radius: 14px; padding: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); flex-direction: column; gap: 2px; min-width: 200px;
 }
 .gap-location-popover.open { display: flex; }
 .gap-location-popover-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); padding: 4px 8px 6px; }
-.gap-location-option { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); cursor: pointer; margin-bottom: 0 !important; transition: background-color 0.12s ease, color 0.12s ease; }
+.gap-location-option { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease; }
 .gap-location-option:hover { background-color: var(--bg-input); color: var(--text-primary); }
+.gap-location-option .radio { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border-hover); flex-shrink: 0; }
 .gap-location-option.selected { color: var(--accent); }
-.gap-location-option .custom-checkbox-box svg { color: white; }
-.gap-location-option.selected .custom-checkbox-box { background-color: var(--accent); border-color: var(--accent); }
-.gap-location-option.selected .custom-checkbox-box svg { opacity: 1; transform: scale(1); }
+.gap-location-option.selected .radio { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 45%, transparent 50%); }
 
-.title-block { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.title-block-heading { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: 8px; }
-.title-suggestion-row {
-    background: linear-gradient(135deg, var(--accent-soft), rgba(139, 92, 246, 0.08));
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    padding: 10px 11px;
-    margin-bottom: 8px;
-    font-size: 11.5px;
-    transition: box-shadow 0.15s ease;
+.modal-overlay { position: fixed; inset: 0; background: rgba(5, 5, 8, 0.62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 400; padding: 20px; }
+.modal-overlay.open { display: flex; animation: fade-in 0.16s ease; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
+.modal {
+    width: 520px; max-width: 100%; max-height: 88vh; display: flex; flex-direction: column;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 120px), var(--bg-elevated);
+    border: 1px solid var(--border-hover); border-radius: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: pop-in 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
-.title-suggestion-row.hot-title-row { box-shadow: 0 0 0 2px var(--accent) inset; }
-.title-suggestion-company { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-tertiary); margin-bottom: 6px; }
-.title-suggestion-diff { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
-.title-suggestion-current { display: flex; align-items: baseline; gap: 6px; color: var(--text-tertiary); }
-.title-suggestion-current .diff-tag { font-size: 9px; font-weight: 700; }
-.title-suggestion-current .diff-text { text-decoration: line-through; }
-.title-suggestion-new { display: flex; align-items: baseline; gap: 6px; color: var(--text-primary); font-weight: 600; }
-.title-suggestion-new .diff-tag { font-size: 9px; font-weight: 700; color: var(--score-high); }
-.title-suggestion-buttons { display: flex; gap: 6px; }
-.title-suggestion-buttons button { margin-top: 0; padding: 5px 10px; font-size: 11px; }
+.modal-head { display: flex; align-items: flex-start; gap: 14px; padding: 22px 24px 12px; }
+.modal-ico { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 700; flex-shrink: 0; color: #fff; background: linear-gradient(135deg, var(--accent), #8b5cf6); }
+.modal-ico.danger { background: linear-gradient(135deg, #f87171, #ef4444); }
+.modal-titles { flex: 1; min-width: 0; }
+.modal-titles h3 { display: flex; align-items: center; gap: 8px; margin: 2px 0 4px; font-size: 16px; font-weight: 700; color: var(--text-primary); text-transform: none; letter-spacing: -0.01em; }
+.modal-titles p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); }
+.modal-x { width: 30px; height: 30px; margin: 0; padding: 0; border: none; border-radius: 10px; background: transparent; color: var(--text-tertiary); font-size: 20px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+.modal-x:hover { background: var(--bg-input); color: var(--text-primary); }
+.modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 24px 4px; scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
+.modal-foot { display: flex; align-items: center; gap: 8px; justify-content: flex-end; padding: 16px 24px 22px; }
+.modal-foot .m-left { margin-right: auto; }
+.modal-note { font-size: 11.5px; color: var(--text-tertiary); margin: 12px 2px 0; line-height: 1.5; }
 
-.schema-block {
-    margin-bottom: 14px; padding: 12px 12px 11px; border-radius: var(--radius);
-    border: 1px solid var(--border); background-color: var(--bg-input);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.schema-block.drag-over { border-color: var(--accent); background-color: var(--accent-soft); }
-.schema-block.edited-block { border-color: rgba(74, 222, 128, 0.4); }
+.m-btn { height: 38px; padding: 0 18px; margin: 0; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-secondary); font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.12s ease; }
+.m-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.m-btn.primary { border: none; color: #fff; background: linear-gradient(135deg, var(--accent), #8b5cf6); box-shadow: 0 6px 18px rgba(91, 141, 239, 0.35); }
+.m-btn.primary:hover { filter: brightness(1.1); color: #fff; }
+.m-btn.danger { border: none; color: #fff; background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3); }
+.m-btn.danger:hover { filter: brightness(1.1); color: #fff; }
+.m-btn.link { border-color: transparent; background: transparent; }
 
-.schema-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
-.schema-block-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-primary); }
-.schema-block-gen-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: var(--accent-soft); border: 1px solid transparent; color: var(--accent);
-    font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; cursor: pointer;
-    transition: background-color 0.12s ease, border-color 0.12s ease;
+.split { position: relative; display: inline-flex; }
+.split .m-btn:first-child { border-radius: 999px 0 0 999px; }
+.split .m-btn.caret { width: 36px; padding: 0; margin-left: 1px; border-radius: 0 999px 999px 0; border-left: 1px solid rgba(255, 255, 255, 0.22); font-size: 11px; }
+.split-menu {
+    position: absolute; bottom: calc(100% + 8px); right: 0; display: none; min-width: 240px; padding: 6px; z-index: 5;
+    background: var(--bg-elevated); border: 1px solid var(--border-hover); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
 }
-.schema-block-gen-btn:hover { border-color: var(--accent); }
-.schema-block-gen-btn.generating { opacity: 0.55; cursor: wait; }
+.split-menu.open { display: block; animation: pop-in 0.14s ease; }
+.split-menu button { display: block; width: 100%; margin: 0; padding: 9px 12px; border: none; border-radius: 8px; background: transparent; color: var(--text-secondary); font-size: 12.5px; font-family: inherit; text-align: left; cursor: pointer; }
+.split-menu button:hover { background: var(--bg-input); color: var(--text-primary); }
 
-.schema-kw-group { margin-bottom: 8px; }
-.schema-kw-group:last-of-type { margin-bottom: 0; }
-.schema-kw-group-label {
-    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--text-tertiary); margin-bottom: 5px; display: block;
-}
-.schema-block-items { display: flex; flex-wrap: wrap; gap: 5px; }
+.sk-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; padding: 2px; }
+.sk-row { display: flex; align-items: center; gap: 10px; margin: 0; padding: 4px 8px 4px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-input); transition: border-color 0.12s ease, box-shadow 0.12s ease; }
+.sk-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.sk-ico { color: var(--text-tertiary); font-size: 13px; }
+.sk-input, .sk-input:focus { flex: 1; min-width: 0; margin: 0; border: none !important; background: transparent !important; padding: 8px 4px !important; font-size: 13px; font-weight: 600; color: var(--text-primary); outline: none; box-shadow: none; }
 
-.schema-block-item-chip {
-    font-size: 11px; font-weight: 500; padding: 4px 9px; border-radius: 999px;
-    color: var(--text-secondary); border: 1px solid var(--border); background-color: var(--bg-elevated);
-    cursor: grab; display: inline-flex; align-items: center; gap: 5px;
-    transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.schema-block-item-chip:active { cursor: grabbing; }
-.schema-block-item-chip.is-plain { cursor: pointer; border-style: dashed; color: var(--text-tertiary); }
-.schema-block-item-chip.is-plain:hover { border-color: var(--accent); color: var(--accent); }
-.schema-block-item-chip.is-plain.is-highlighted { border-style: solid; border-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
-.schema-block-item-chip.is-kept { border-color: var(--score-high); background-color: var(--score-high-soft); color: var(--score-high); }
-.schema-block-item-chip.is-new { border-color: var(--accent); background-color: var(--accent-soft); color: var(--accent); }
-.schema-block-item-chip.is-disabled { border-color: var(--border); background-color: var(--bg-elevated); color: var(--text-tertiary); opacity: 0.55; text-decoration: line-through; }
-.schema-block-item-remove { cursor: pointer; font-weight: 700; opacity: 0.6; line-height: 1; }
-.schema-block-item-remove:hover { opacity: 1; }
+.switch-row { display: flex; align-items: center; gap: 10px; margin: 16px 2px 6px; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; }
+.switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { position: absolute; inset: 0; border-radius: 999px; background: var(--bg-input); border: 1px solid var(--border-hover); transition: all 0.15s ease; pointer-events: none; }
+.switch-track::after { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-secondary); transition: all 0.15s ease; }
+.switch input:checked + .switch-track { background: var(--accent); border-color: var(--accent); }
+.switch input:checked + .switch-track::after { transform: translateX(16px); background: #fff; }
 
-.schema-block-add-wrap { position: relative; margin: 10px 0 8px; }
-.schema-block-add-row {
-    display: flex; align-items: center; gap: 8px; background-color: var(--bg-elevated);
-    border: 1px solid var(--border); border-radius: 999px; padding: 3px 4px 3px 14px;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-.schema-block-add-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.schema-block-add-input { flex: 1; font-size: 12px; padding: 5px 0; margin-top: 0; background: transparent; border: none; color: var(--text-primary); }
-.schema-block-add-input::placeholder { color: var(--text-tertiary); }
-.schema-block-add-input:focus { outline: none; border: none; }
-.schema-block-add-btn {
-    margin-top: 0; padding: 0; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
-    background-color: var(--accent); color: white; border: none; font-size: 16px; font-weight: 600;
-    display: flex; align-items: center; justify-content: center; line-height: 1; cursor: pointer;
-    transition: background-color 0.12s ease, transform 0.12s ease;
-}
-.schema-block-add-btn:hover { background-color: var(--accent-hover); transform: scale(1.06); }
+.diff-card { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--bg-input); }
+.diff-line { display: flex; align-items: baseline; gap: 10px; padding: 11px 14px; font-size: 13px; line-height: 1.4; }
+.diff-line.old { color: #f0a3a3; background: rgba(248, 113, 113, 0.08); }
+.diff-line.old .diff-text { text-decoration: line-through; text-decoration-color: rgba(248, 113, 113, 0.6); }
+.diff-line.new { color: #86e0a8; background: rgba(74, 222, 128, 0.08); font-weight: 600; }
+.diff-tag { font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.7; min-width: 66px; }
+.reject-comment { display: block; width: 100%; min-height: 84px; margin: 14px 0 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-input); color: var(--text-primary); font-size: 12.5px; font-family: inherit; box-sizing: border-box; resize: vertical; }
+.reject-comment:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
-.schema-add-suggestions {
-    position: fixed; display: none; z-index: 300; background: var(--bg-elevated); border: 1px solid var(--border);
-    border-radius: var(--radius); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); padding: 6px;
-    max-height: 220px; overflow-y: auto; flex-direction: column; gap: 1px; min-width: 200px;
-    scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent;
-}
-.schema-add-suggestions::-webkit-scrollbar { width: 6px; }
-.schema-add-suggestions::-webkit-scrollbar-track { background: transparent; }
-.schema-add-suggestions::-webkit-scrollbar-thumb { background-color: var(--border-hover); border-radius: 999px; }
-.schema-add-suggestions.open { display: flex; }
-.schema-add-suggestion-item {
-    padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-secondary);
-    cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease;
-}
-.schema-add-suggestion-item:hover { background-color: var(--bg-input); color: var(--text-primary); }
-
-.schema-block-comment-wrap { margin-top: 8px; }
-.schema-block-comment {
-    width: 100%; font-size: 11.5px; min-height: 38px; padding: 7px 9px;
-    background-color: var(--bg-elevated); border-color: var(--border);
-}
-.schema-empty-hint { font-size: 11.5px; color: var(--text-tertiary); }
+.rules-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 6px; }
+.rule-card { display: flex; align-items: flex-start; gap: 10px; padding: 12px 12px 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-input); }
+.rule-main { flex: 1; min-width: 0; }
+.rule-flow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; font-weight: 600; }
+.rule-from { color: var(--text-secondary); padding: 3px 9px; border-radius: 8px; background: var(--bg-elevated); }
+.rule-to { color: #f0a3a3; padding: 3px 9px; border-radius: 8px; background: rgba(248, 113, 113, 0.1); text-decoration: line-through; text-decoration-color: rgba(248, 113, 113, 0.5); }
+.rule-arrow { color: var(--text-tertiary); }
+.rule-why { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--text-tertiary); font-style: italic; }
+.rules-empty { text-align: center; padding: 26px 10px 18px; }
+.rules-empty b { display: block; font-size: 13.5px; color: var(--text-primary); margin-bottom: 4px; }
+.rules-empty p { margin: 0; font-size: 12.5px; color: var(--text-tertiary); }
 </style>
 
-<div class="result-header" style="align-items:center;">
-    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+<div class="shell">
+    <header class="bar">
         <a href="/jobs/{{ job.id }}" class="back-nav" style="padding-left:0;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             {{ t.back_link }}
         </a>
         <span class="back-nav-divider"></span>
-        <h1 style="margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.page_title }} — {{ job.company or "" }}</h1>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-        <button type="button" class="btn-ghost btn history-btn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
-        <button type="button" class="btn-ghost btn history-btn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
-        <select id="download-format" style="width:auto;padding:9px 11px;">
-            <option value="docx">DOCX</option>
-            <option value="pdf">PDF</option>
-            <option value="txt">TXT</option>
-        </select>
-        <a class="btn" id="btn-download" style="margin-top:0;text-decoration:none;display:inline-block;" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
-    </div>
-</div>
+        <div class="bar-title">
+            <b>{{ job.company or "" }}</b>
+            <span>{{ job.title or "" }}</span>
+        </div>
+        <span class="bar-spacer"></span>
+        <button type="button" class="cta" id="run-all">✦ {{ t.run_all }}</button>
+    </header>
 
-<div class="tailor-layout" style="margin-top:16px;">
-    <div class="gaps-panel">
-        <div class="panel-header">ГЕПЫ</div>
-        <div class="panel-body" id="pane-gaps"></div>
-    </div>
+    <div class="cols">
+        <aside class="panel">
+            <div class="panel-head">
+                <span>{{ t.keywords_title }}</span>
+                <span class="head-actions">
+                    <span class="count" id="gap-meta"></span>
+                    <button type="button" class="ibtn hidden" id="gap-rerun" title="{{ t.rerun_analysis }}">↻</button>
+                </span>
+            </div>
+            <div class="panel-body" id="pane-gaps"></div>
+        </aside>
 
-    <div class="schema-panel">
-        <div class="panel-header">СХЕМА</div>
-        <div class="panel-body" id="pane-schema"></div>
-    </div>
+        <section class="panel">
+            <div class="panel-head"><span>{{ t.work_title }}</span></div>
+            <div class="panel-body" id="pane-work"></div>
+        </section>
 
-    <div class="resume-scroll-column">
-        <div class="resume-doc-wrapper">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:12px;">
-                <h2 class="doc-page-title" style="margin:0;">{{ job.company or "" }}</h2>
-                <div class="word-count-wrap">
-                    <span class="word-count-note" id="word-count-note"></span>
+        <section class="stage">
+            <div class="stage-head">
+                <div class="tabs">
+                    <button type="button" class="tab active" data-tab="resume">{{ t.tab_resume }}</button>
+                    <button type="button" class="tab" data-tab="letter">{{ t.tab_letter }} <span class="tab-dot hidden" id="letter-dot"></span></button>
+                </div>
+
+                <div class="tools" id="resume-tools">
                     <span id="word-count-badge" class="word-count-badge"></span>
+                    <button type="button" class="ibtn" id="btn-undo" title="{{ t.undo_button }}">↩</button>
+                    <button type="button" class="ibtn" id="btn-redo" title="{{ t.redo_button }}">↪</button>
+                    <div class="custom-select fmt-pick" id="download-format" data-value="docx">
+                        <button type="button" class="custom-select-trigger">
+                            <span data-select-label>DOCX</span>
+                            <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="custom-select-menu">
+                            <button type="button" class="custom-select-option selected" data-value="docx"><span>DOCX</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                            <button type="button" class="custom-select-option" data-value="pdf"><span>PDF</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                            <button type="button" class="custom-select-option" data-value="txt"><span>TXT</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                        </div>
+                    </div>
+                    <a class="dl-btn" id="btn-download" href="/tailor/session/{{ session_id }}/download?format=docx">⬇ {{ t.download_button }}</a>
+                </div>
+
+                <div class="tools hidden" id="letter-tools">
+                    <span id="letter-words" class="word-count-badge hidden"></span>
+                    <div class="custom-select fmt-pick" id="letter-format" data-value="docx">
+                        <button type="button" class="custom-select-trigger">
+                            <span data-select-label>DOCX</span>
+                            <svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="custom-select-menu">
+                            <button type="button" class="custom-select-option selected" data-value="docx"><span>DOCX</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                            <button type="button" class="custom-select-option" data-value="pdf"><span>PDF</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                            <button type="button" class="custom-select-option" data-value="txt"><span>TXT</span><svg class="custom-select-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                        </div>
+                    </div>
+                    <button type="button" class="dl-btn" id="letter-download" disabled>⬇ {{ t.download_button }}</button>
                 </div>
             </div>
-            <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
-        </div>
+
+            <div class="stage-scroll">
+                <div class="paper-wrap" id="tab-resume">
+                    <div class="resume-doc" id="resume-doc" contenteditable="true">{{ resume_html | safe }}</div>
+                </div>
+                <div class="paper-wrap hidden" id="tab-letter">
+                    <div class="letter-page">
+                        <button type="button" class="paper-copy hidden" id="letter-copy">
+                            <span>⧉</span><span id="letter-copy-label">{{ t.letter_copy }}</span>
+                        </button>
+                        <div class="letter-empty" id="letter-empty">
+                            <div class="empty-ico">✉</div>
+                            <b>{{ t.letter_empty_title }}</b>
+                            <p>{{ t.letter_empty_text }}</p>
+                            <button type="button" class="cta" id="letter-empty-gen">{{ t.lane_generate }}</button>
+                        </div>
+                        <textarea class="letter-area" id="letter-doc"></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -367,19 +478,129 @@ main {
 
 <div class="gap-location-popover" id="gap-location-popover"></div>
 
+<div class="modal-overlay" id="skills-modal">
+    <div class="modal">
+        <div class="modal-head">
+            <span class="modal-ico">✓</span>
+            <div class="modal-titles">
+                <h3>{{ t.skills_modal_title }}</h3>
+                <p>{{ t.skills_modal_text }}</p>
+            </div>
+            <button type="button" class="modal-x" id="skills-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="sk-list" id="skills-modal-list"></div>
+            <p class="modal-note">✎ {{ t.skills_modal_hint }}</p>
+        </div>
+        <div class="modal-foot">
+            <div class="split">
+                <button type="button" class="m-btn" id="skills-modal-skip">{{ t.skills_modal_skip }}</button>
+                <button type="button" class="m-btn caret">▾</button>
+                <div class="split-menu"><button type="button" id="skills-modal-never">{{ t.skills_modal_never_add }}</button></div>
+            </div>
+            <div class="split">
+                <button type="button" class="m-btn primary" id="skills-modal-add">{{ t.skills_modal_add }}</button>
+                <button type="button" class="m-btn primary caret">▾</button>
+                <div class="split-menu"><button type="button" id="skills-modal-always-add">{{ t.skills_modal_always_add }}</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="note-modal">
+    <div class="modal">
+        <div class="modal-head">
+            <span class="modal-ico">✎</span>
+            <div class="modal-titles">
+                <h3>{{ t.note_modal_title }}</h3>
+                <p>{{ t.note_modal_text }}</p>
+            </div>
+            <button type="button" class="modal-x" id="note-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="diff-card note-diff">
+                <div class="diff-line old"><span class="diff-tag">{{ t.note_modal_was }}</span><span class="diff-text" id="note-modal-old"></span></div>
+                <div class="diff-line new"><span class="diff-tag">{{ t.note_modal_new }}</span><span id="note-modal-new"></span></div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="m-btn link m-left" id="note-modal-cancel">{{ t.note_modal_cancel }}</button>
+            <button type="button" class="m-btn" id="note-modal-once">{{ t.note_modal_once }}</button>
+            <button type="button" class="m-btn primary" id="note-modal-save">{{ t.note_modal_save }}</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="reject-modal">
+    <div class="modal">
+        <div class="modal-head">
+            <span class="modal-ico danger">⊘</span>
+            <div class="modal-titles">
+                <h3>{{ t.reject_title }}</h3>
+                <p>{{ t.reject_text }}</p>
+            </div>
+            <button type="button" class="modal-x" id="reject-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="diff-card">
+                <div class="diff-line old"><span class="diff-tag">{{ t.reject_from }}</span><span class="diff-text" id="reject-modal-old"></span></div>
+                <div class="diff-line new"><span class="diff-tag">{{ t.reject_to }}</span><span id="reject-modal-new"></span></div>
+            </div>
+            <textarea class="reject-comment" id="reject-modal-comment" placeholder="{{ t.reject_placeholder }}"></textarea>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="m-btn link m-left" id="reject-cancel">{{ t.reject_cancel }}</button>
+            <button type="button" class="m-btn" id="reject-once">{{ t.reject_once }}</button>
+            <button type="button" class="m-btn danger" id="reject-forever">{{ t.reject_forever }}</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="rules-modal">
+    <div class="modal">
+        <div class="modal-head">
+            <span class="modal-ico danger">⊘</span>
+            <div class="modal-titles">
+                <h3>{{ t.rules_title }} <span class="count" id="rules-count"></span></h3>
+                <p>{{ t.rules_text }}</p>
+            </div>
+            <button type="button" class="modal-x" id="rules-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="rules-list" id="rules-list"></div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" class="m-btn" id="rules-close-btn">{{ t.rules_close }}</button>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     window.addEventListener("pageshow", (event) => { if (event.persisted) window.location.reload(); });
 
+    const T = {{ t | tojson }};
     const SESSION_ID = {{ session_id }};
+    const LETTER_COMPANY = {{ (job.company or "Company") | tojson }};
     const TITLE_KINDS = ["title_main", "exp_title"];
+    const SKILL_CATS = new Set(["skill", "tool", "cert"]);
+    const DEST_KEYS = { skills: "dest_skills", summary: "dest_summary", letter: "dest_letter" };
+    const RESUME_RANGE = [400, 475, 600, 725];
+    const LETTER_RANGE = [200, 250, 350, 400];
+    const RESUME_TIPS = { ok: "resume_words_ok", short: "resume_words_short", very_short: "resume_words_very_short", long: "resume_words_long", very_long: "resume_words_very_long" };
+    const LETTER_TIPS = { ok: "letter_words_ok", short: "letter_words_short", very_short: "letter_words_very_short", long: "letter_words_long", very_long: "letter_words_very_long" };
+
     const resumeDoc = document.getElementById("resume-doc");
     const toolbarEl = document.getElementById("style-toolbar");
 
     let blocksState = {{ blocks | tojson }};
     let eidToBlock = {};
-    let gapState = { ready: false, items: [], blockComments: {}, blockOrder: [], resumeItems: [], editedBlocks: {} };
-    let titleSuggestions = null;
+    let gapState = { ready: false, items: [], blockComments: {}, editedBlocks: {}, popupChoice: null };
+    let titleSuggestions = [];
+    let stageTab = "resume";
+    let railFilter = "can_add";
+    const openNotes = new Set();
+    const declinedSkills = new Set();
 
     let saveTimeout = null;
     let savedRange = null;
@@ -394,8 +615,31 @@ main {
     const undoBtn = document.getElementById("btn-undo");
     const redoBtn = document.getElementById("btn-redo");
 
+    function tr(key, vars) {
+        let text = Object.prototype.hasOwnProperty.call(T, key) ? T[key] : key;
+        if (vars) Object.keys(vars).forEach((name) => { text = text.split("{" + name + "}").join(String(vars[name])); });
+        return text;
+    }
+
+    function esc(value) {
+        return String(value === null || value === undefined ? "" : value)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
     function attrEscape(value) {
         return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    }
+
+    function applyWordBadge(el, words, range, tips) {
+        el.textContent = tr("words_count", { n: words });
+        el.classList.remove("warn", "danger");
+        let key = "ok";
+        if (words < range[0]) { key = "very_short"; el.classList.add("danger"); }
+        else if (words < range[1]) { key = "short"; el.classList.add("warn"); }
+        else if (words > range[3]) { key = "very_long"; el.classList.add("danger"); }
+        else if (words > range[2]) { key = "long"; el.classList.add("warn"); }
+        el.dataset.tip = tr(tips[key]);
+        el.removeAttribute("title");
     }
 
     function rebuildElementMap() {
@@ -467,7 +711,7 @@ main {
         if (opts.persist !== false) persistRawHtml(stripMarksFromClone());
         if (opts.snapshot !== false) pushHistorySnapshot();
         updateWordCount();
-        renderSchemaPane();
+        renderWork();
     }
 
     async function restoreHistory(html) {
@@ -477,7 +721,7 @@ main {
         await persistRawHtml(stripMarksFromClone());
         updateHistoryButtons();
         updateWordCount();
-        renderSchemaPane();
+        renderWork();
     }
 
     async function undoHistory() {
@@ -503,11 +747,13 @@ main {
     redoBtn.addEventListener("click", () => redoHistory());
 
     document.addEventListener("keydown", (e) => {
+        if (stageTab !== "resume") return;
         const isMac = navigator.platform.toUpperCase().includes("MAC");
         const modifier = isMac ? e.metaKey : e.ctrlKey;
         if (!modifier) return;
         const isZKey = e.code ? e.code === "KeyZ" : e.key.toLowerCase() === "z";
         if (!isZKey) return;
+        if (document.activeElement && document.activeElement.tagName === "TEXTAREA") return;
         e.preventDefault();
         if (e.shiftKey) redoHistory(); else undoHistory();
     });
@@ -593,7 +839,7 @@ main {
         await flushPendingSave();
         const response = await fetch(`/tailor/changes/${changeId}/revert`, { method: "POST" });
         const data = await response.json();
-        if (data.status === "error") showToast(data.detail || "Revert failed", "danger");
+        if (data.status === "error") showToast(data.detail || tr("toast_revert_failed"), "danger");
         await refreshDocFromServer();
     });
 
@@ -726,35 +972,15 @@ main {
     });
 
     const wordCountBadge = document.getElementById("word-count-badge");
-    const wordCountNote = document.getElementById("word-count-note");
     function updateWordCount() {
         const words = (resumeDoc.innerText || "").trim().split(/\s+/).filter(Boolean).length;
-        wordCountBadge.textContent = `${words} слов`;
-        wordCountBadge.classList.remove("warn", "danger");
-        wordCountNote.classList.remove("visible");
-        if (words < 400) {
-            wordCountBadge.classList.add("danger");
-            wordCountNote.textContent = "Заметно короче нормы (475–600) — возможно теряется важный опыт.";
-            wordCountNote.classList.add("visible");
-        } else if (words < 475) {
-            wordCountBadge.classList.add("warn");
-            wordCountNote.textContent = "Чуть короче обычного — можно раскрыть буллеты подробнее.";
-            wordCountNote.classList.add("visible");
-        } else if (words > 725) {
-            wordCountBadge.classList.add("danger");
-            wordCountNote.textContent = "Заметно длиннее нормы — стоит сократить менее релевантное.";
-            wordCountNote.classList.add("visible");
-        } else if (words > 600) {
-            wordCountBadge.classList.add("warn");
-            wordCountNote.textContent = "Чуть длиннее нормы (475–600) — не критично, но можно ужать.";
-            wordCountNote.classList.add("visible");
-        }
+        applyWordBadge(wordCountBadge, words, RESUME_RANGE, RESUME_TIPS);
     }
 
     const downloadFormatSelect = document.getElementById("download-format");
     const downloadBtn = document.getElementById("btn-download");
-    downloadFormatSelect.addEventListener("change", () => {
-        downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.value}`;
+    downloadFormatSelect.addEventListener("fmtchange", () => {
+        downloadBtn.href = `/tailor/session/${SESSION_ID}/download?format=${downloadFormatSelect.dataset.value}`;
     });
 
     const blockRevertPopover = document.getElementById("block-revert-popover");
@@ -791,27 +1017,51 @@ main {
         });
         if (!response.ok) {
             const data = await response.json().catch(() => ({}));
-            showToast(data.detail || "Revert failed", "danger");
+            showToast(data.detail || tr("toast_revert_failed"), "danger");
             return;
         }
         const data = await response.json();
         gapState.editedBlocks = data.edited_blocks || {};
         blocksState = data.blocks || blocksState;
         rebuildElementMap();
-        if (data.title_suggestions) titleSuggestions = data.title_suggestions;
+        if (data.title_suggestions) titleSuggestions = normalizeSuggestions(data.title_suggestions);
         setResumeHtml(data.html, { persist: false });
-        showToast("Откачено к оригиналу", "success", { key: "tailoring" });
+        showToast(tr("toast_reverted"), "success", { key: "tailoring" });
     });
+
+    const paneGaps = document.getElementById("pane-gaps");
+    const paneWork = document.getElementById("pane-work");
+    const gapMeta = document.getElementById("gap-meta");
+    const gapRerun = document.getElementById("gap-rerun");
+    const gapLocationPopover = document.getElementById("gap-location-popover");
+
+    function blockPath(kind) {
+        if (kind === "letter") return "letter";
+        const block = blocksState.find((item) => item.kind === kind);
+        return block ? block.field_path : null;
+    }
+
+    function currentTextOf(path) {
+        return [...resumeDoc.querySelectorAll(`[data-blk="${attrEscape(path)}"]`)]
+            .map((el) => (el.innerText || "").trim())
+            .filter(Boolean)
+            .join("\n");
+    }
+
+    function normalizeSuggestions(list) {
+        return (list || []).map((item) => ("changed" in item ? item : Object.assign({}, item, { changed: true })));
+    }
 
     function setBlockHot(path, on, opts) {
         opts = opts || {};
         const els = [...resumeDoc.querySelectorAll(`[data-blk="${attrEscape(path)}"]`)];
         els.forEach((el) => el.classList.toggle("blk-hot", on));
-        if (on && opts.scrollResume && els[0]) els[0].scrollIntoView({ behavior: "smooth", block: "center" });
-        document.querySelectorAll(".schema-block, .title-suggestion-row").forEach((el) => {
-            if (el.dataset.fieldPath !== path) return;
-            el.classList.toggle(el.classList.contains("schema-block") ? "drag-over" : "hot-title-row", on);
-            if (on && opts.scrollSchema) el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (path === "letter") letterDoc.classList.toggle("blk-hot", on);
+        if (on && opts.scrollResume && els[0] && stageTab === "resume") els[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        paneWork.querySelectorAll("[data-hot-path]").forEach((card) => {
+            if (card.dataset.hotPath !== path) return;
+            card.classList.toggle("hot", on);
+            if (on && opts.scrollSchema) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     }
 
@@ -840,49 +1090,29 @@ main {
         scheduleHideBlockRevertPopover();
     });
 
-    const paneGaps = document.getElementById("pane-gaps");
-    const paneSchema = document.getElementById("pane-schema");
-    const gapLocationPopover = document.getElementById("gap-location-popover");
+    function gapItems() { return gapState.items.filter((item) => item.category !== "title"); }
 
-    function bodyBlocks() {
-        return blocksState.filter((block) => !TITLE_KINDS.includes(block.kind));
+    function targetRole() {
+        const found = gapState.items.find((item) => item.category === "title");
+        return found ? found.text : "";
     }
 
-    function allLocationOptions() {
-        return bodyBlocks().map((block) => ({ value: block.field_path, label: block.label || block.field_path }));
-    }
-
-    function fieldPathLabel(path) {
-        const block = blocksState.find((item) => item.field_path === path);
-        return block ? (block.label || path) : path;
-    }
-
-    function isActivelyInGeneration(item) {
-        const assigned = item.assigned_field_paths || [];
+    function destinations(item) {
+        if (item.status === "exact" || item.category === "title") return [];
+        const assigned = new Set(item.assigned_field_paths || []);
         const disabled = new Set(item.disabled_field_paths || []);
-        return assigned.some((p) => !disabled.has(p));
-    }
-
-    function renderGapChip(item) {
-        const chip = document.createElement("span");
-        chip.className = `gap-chip status-${item.status}`;
-        if (isActivelyInGeneration(item)) chip.classList.add("in-generation");
-        chip.dataset.gapItemId = item.id;
-        chip.draggable = true;
-        chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/gap-item-id", String(item.id)));
-
-        if (item.status === "miss") {
-            chip.innerHTML = `<span class="gap-chip-text">? ${item.text}</span>`;
-        } else if (item.status === "over") {
-            chip.innerHTML = `<span class="gap-chip-text">${item.text}</span>`;
-        } else {
-            const placed = (item.assigned_field_paths || []).length > 0;
-            if (placed) chip.classList.add("placed");
-            const locations = (item.assigned_field_paths || []).map(fieldPathLabel).join(", ");
-            chip.innerHTML = `<svg class="gap-chip-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="gap-chip-text">${item.text}${locations ? " · " + locations : ""}</span>`;
-            chip.addEventListener("click", (e) => openLocationPopover(e, item));
+        const out = ["skills", "summary", "letter"].filter((kind) => {
+            const path = blockPath(kind);
+            return path && assigned.has(path);
+        });
+        if (!out.length) {
+            if (item.status === "unknown") return [];
+            out.push(SKILL_CATS.has(item.category) ? "skills" : "letter");
         }
-        return chip;
+        return out.filter((kind) => {
+            const path = blockPath(kind);
+            return path && !disabled.has(path);
+        });
     }
 
     function positionFloatingPanel(panelEl, anchorRect) {
@@ -910,33 +1140,7 @@ main {
         panelEl.style.visibility = "visible";
     }
 
-    function openLocationPopover(e, item) {
-        e.stopPropagation();
-        const options = allLocationOptions();
-        const assigned = new Set(item.assigned_field_paths || []);
-
-        gapLocationPopover.innerHTML = `<div class="gap-location-popover-label">Куда добавить</div>`;
-        options.forEach((opt) => {
-            const isSelected = assigned.has(opt.value);
-            const row = document.createElement("div");
-            row.className = `gap-location-option custom-checkbox${isSelected ? " selected" : ""}`;
-            row.innerHTML = `
-                <span class="custom-checkbox-box">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </span>
-                <span>${opt.label}</span>
-            `;
-            row.addEventListener("click", async () => {
-                await toggleGapItemLocation(item, opt.value);
-                openLocationPopover(e, item);
-            });
-            gapLocationPopover.appendChild(row);
-        });
-
-        positionFloatingPanel(gapLocationPopover, e.target.closest(".gap-chip").getBoundingClientRect());
-    }
-
-    async function toggleGapItemLocation(item, fieldPath) {
+    async function toggleLoc(item, fieldPath) {
         const response = await fetch(`/tailor/gap-items/${item.id}/toggle-location`, {
             method: "POST",
             body: new URLSearchParams({ field_path: fieldPath }),
@@ -944,131 +1148,312 @@ main {
         const data = await response.json();
         item.assigned_field_paths = data.assigned_field_paths;
         item.disabled_field_paths = data.disabled_field_paths;
-        renderGapPanel();
-        renderSchemaPane();
     }
 
-    async function moveGapItemLocation(item, fromFieldPath, toFieldPath) {
-        const response = await fetch(`/tailor/gap-items/${item.id}/move-location`, {
-            method: "POST",
-            body: new URLSearchParams({ from_field_path: fromFieldPath, to_field_path: toFieldPath }),
-        });
-        const data = await response.json();
-        item.assigned_field_paths = data.assigned_field_paths;
-        item.disabled_field_paths = data.disabled_field_paths;
-        renderGapPanel();
-        renderSchemaPane();
-    }
-
-    async function toggleGapItemDisabled(item, fieldPath) {
+    async function toggleDis(item, fieldPath) {
         const response = await fetch(`/tailor/gap-items/${item.id}/toggle-disabled`, {
             method: "POST",
             body: new URLSearchParams({ field_path: fieldPath }),
         });
         const data = await response.json();
         item.disabled_field_paths = data.disabled_field_paths;
-        renderSchemaPane();
     }
 
-    document.addEventListener("click", (e) => { if (!gapLocationPopover.contains(e.target) && !e.target.closest(".gap-chip")) gapLocationPopover.classList.remove("open"); });
+    function renderAll() {
+        renderGapPanel();
+        renderWork();
+    }
+
+    const skillsModal = document.getElementById("skills-modal");
+    const skillsList = document.getElementById("skills-modal-list");
+    function closeSkillMenus() {
+        skillsModal.querySelectorAll(".split-menu").forEach((menu) => menu.classList.remove("open"));
+    }
+    skillsModal.querySelectorAll(".caret").forEach((caret) => caret.addEventListener("click", () => {
+        const menu = caret.parentElement.querySelector(".split-menu");
+        const wasOpen = menu.classList.contains("open");
+        closeSkillMenus();
+        if (!wasOpen) menu.classList.add("open");
+    }));
+    skillsModal.addEventListener("mousedown", (e) => {
+        if (!e.target.closest(".split")) closeSkillMenus();
+    });
+
+    function askUnknownSkills(items) {
+        return new Promise((resolve) => {
+            skillsList.innerHTML = items.map((item) => `
+                <label class="sk-row">
+                    <span class="sk-ico">✎</span>
+                    <input type="text" class="sk-input" data-id="${item.id}" data-original="${esc(item.text)}" value="${esc(item.text)}" maxlength="120">
+                </label>`).join("");
+            closeSkillMenus();
+            skillsModal.classList.add("open");
+            const first = skillsList.querySelector(".sk-input");
+            if (first) { first.focus(); first.select(); }
+
+            const collect = () => [...skillsList.querySelectorAll(".sk-input")].map((input) => ({
+                id: Number(input.dataset.id),
+                text: input.value.trim() || input.dataset.original,
+            }));
+            const finish = (add, always) => {
+                const entries = collect();
+                closeSkillMenus();
+                skillsModal.classList.remove("open");
+                resolve(add === null ? null : { add, always: !!always, entries });
+            };
+            document.getElementById("skills-modal-add").onclick = () => finish(true, false);
+            document.getElementById("skills-modal-always-add").onclick = () => finish(true, true);
+            document.getElementById("skills-modal-skip").onclick = () => finish(false, false);
+            document.getElementById("skills-modal-never").onclick = () => finish(false, true);
+            document.getElementById("skills-modal-close").onclick = () => finish(null, false);
+            skillsList.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); finish(true); } };
+        });
+    }
+
+    async function saveSkillsChoice(choice) {
+        await fetch("/settings/skills-popup-choice", { method: "POST", body: new URLSearchParams({ choice }) });
+        gapState.popupChoice = choice;
+    }
+
+    async function addKnownSkills(entries) {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/known-skills`, {
+            method: "POST",
+            body: new URLSearchParams({ items_json: JSON.stringify(entries) }),
+        });
+        if (!response.ok) { showToast(tr("toast_skills_failed"), "danger"); return; }
+        const data = await response.json();
+        data.items.forEach((updated) => {
+            const index = gapState.items.findIndex((item) => item.id === updated.id);
+            if (index >= 0) gapState.items[index] = updated;
+        });
+        renderAll();
+        showToast(tr("toast_skills_added", { n: entries.length }), "success", { key: "known_skills" });
+    }
+
+    async function resolveUnknownSkills(items) {
+        const pending = items.filter((item) => item.status === "unknown" && !declinedSkills.has(item.id));
+        if (!pending.length) return true;
+
+        let choice = gapState.popupChoice;
+        let entries = pending.map((item) => ({ id: item.id, text: item.text }));
+        if (!choice) {
+            const answer = await askUnknownSkills(pending);
+            if (!answer) return false;
+            choice = answer.add ? "add" : "skip";
+            entries = answer.entries;
+            if (answer.always) await saveSkillsChoice(choice);
+        }
+        if (choice === "add") await addKnownSkills(entries);
+        else pending.forEach((item) => declinedSkills.add(item.id));
+        return true;
+    }
+
+    async function confirmUnknownSkills(path) {
+        const unknown = gapState.items.filter(
+            (item) => item.status === "unknown"
+                && (item.assigned_field_paths || []).includes(path)
+                && !(item.disabled_field_paths || []).includes(path)
+        );
+        return resolveUnknownSkills(unknown);
+    }
+
+    async function setDestination(item, kind) {
+        const want = blockPath(kind);
+        for (const other of ["skills", "summary", "letter"]) {
+            const path = blockPath(other);
+            if (!path) continue;
+            const assigned = (item.assigned_field_paths || []).includes(path);
+            if (other === kind && !assigned) await toggleLoc(item, path);
+            if (other !== kind && assigned) await toggleLoc(item, path);
+        }
+        if (want && (item.disabled_field_paths || []).includes(want)) await toggleDis(item, want);
+        renderAll();
+        if (item.status === "unknown") await resolveUnknownSkills([item]);
+    }
+
+    async function skipItem(item) {
+        for (const kind of ["skills", "summary", "letter"]) {
+            const path = blockPath(kind);
+            if (!path) continue;
+            if ((item.assigned_field_paths || []).includes(path)) await toggleLoc(item, path);
+        }
+        for (const kind of ["skills", "summary", "letter"]) {
+            const path = blockPath(kind);
+            if (path && !(item.disabled_field_paths || []).includes(path)) await toggleDis(item, path);
+        }
+        renderAll();
+    }
+
+    async function removeFromBlock(item, kind) {
+        const path = blockPath(kind);
+        if (!path) return;
+        if ((item.assigned_field_paths || []).includes(path)) await toggleLoc(item, path);
+        if (destinations(item).includes(kind)) await toggleDis(item, path);
+        renderAll();
+    }
+
+    function openLocationPopover(e, item) {
+        e.stopPropagation();
+        const current = destinations(item);
+        gapLocationPopover.innerHTML = `<div class="gap-location-popover-label">${esc(tr("popover_label"))}</div>`;
+
+        [["skills", "popover_skills"], ["summary", "popover_summary"], ["letter", "popover_letter"]].forEach(([kind, labelKey]) => {
+            if (!blockPath(kind)) return;
+            const row = document.createElement("div");
+            row.className = "gap-location-option" + (current.includes(kind) ? " selected" : "");
+            row.innerHTML = `<span class="radio"></span><span>${esc(tr(labelKey))}</span>`;
+            row.addEventListener("click", async () => {
+                gapLocationPopover.classList.remove("open");
+                await setDestination(item, kind);
+            });
+            gapLocationPopover.appendChild(row);
+        });
+
+        const none = document.createElement("div");
+        none.className = "gap-location-option" + (current.length ? "" : " selected");
+        none.innerHTML = `<span class="radio"></span><span>${esc(tr("popover_none"))}</span>`;
+        none.addEventListener("click", async () => {
+            gapLocationPopover.classList.remove("open");
+            await skipItem(item);
+        });
+        gapLocationPopover.appendChild(none);
+
+        positionFloatingPanel(gapLocationPopover, e.target.closest(".gap-chip").getBoundingClientRect());
+    }
+
+    document.addEventListener("click", (e) => {
+        if (!gapLocationPopover.contains(e.target) && !e.target.closest(".gap-chip")) gapLocationPopover.classList.remove("open");
+    });
     document.addEventListener("scroll", (e) => {
         if (gapLocationPopover.contains(e.target)) return;
         gapLocationPopover.classList.remove("open");
     }, true);
 
-    const gapSectionCollapsedState = { miss: false, can_add: false, match: true, over: true };
+    const FILTERS = [
+        { key: "can_add", label: "filter_can_add" },
+        { key: "unknown", label: "filter_unknown" },
+        { key: "exact", label: "filter_exact" },
+    ];
+    const PRIORITIES = [["required", "prio_required"], ["preferred", "prio_preferred"]];
 
-    function renderGapSection(key, title, items, cssClass) {
-        const section = document.createElement("div");
-        section.className = "gap-section";
-        if (gapSectionCollapsedState[key]) section.classList.add("collapsed");
+    function bucketOf(item) {
+        if (item.status === "exact") return "exact";
+        if (item.status === "can_add") return "can_add";
+        return "unknown";
+    }
 
-        const header = document.createElement("div");
-        header.className = "gap-section-header";
-        header.innerHTML = `
-            <span class="gap-section-title ${cssClass || ""}">${title}</span>
-            <span style="display:flex;align-items:center;gap:6px;">
-                <span class="gap-section-count">${items.length}</span>
-                <svg class="gap-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </span>
-        `;
-        header.addEventListener("click", () => {
-            gapSectionCollapsedState[key] = !gapSectionCollapsedState[key];
-            section.classList.toggle("collapsed");
-        });
+    function renderGapChip(item) {
+        const chip = document.createElement("span");
+        const preferred = item.priority === "preferred" ? " preferred" : "";
+        chip.className = `gap-chip status-${bucketOf(item)}${preferred}`;
+        chip.dataset.gapItemId = item.id;
 
-        const body = document.createElement("div");
-        body.className = "gap-section-body";
-        if (items.length === 0) {
-            const hint = document.createElement("span");
-            hint.className = "gap-empty-hint";
-            hint.textContent = "—";
-            body.appendChild(hint);
-        } else {
-            items.forEach((item) => body.appendChild(renderGapChip(item)));
+        const dests = destinations(item);
+        let suffix = "";
+        if (item.status !== "exact") {
+            suffix = dests.length
+                ? `<span class="chip-dest">${dests.map((d) => esc(tr(DEST_KEYS[d]))).join(" + ")}</span>`
+                : `<span class="chip-dest muted">${esc(tr(item.status === "unknown" ? "dest_decide" : "dest_skip"))}</span>`;
         }
+        chip.innerHTML = `<span>${esc(item.text)}</span>${suffix}`;
 
-        section.appendChild(header);
-        section.appendChild(body);
-        return section;
+        if (item.status === "exact") return chip;
+        chip.draggable = true;
+        chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/gap-item-id", String(item.id)));
+        chip.addEventListener("click", (e) => openLocationPopover(e, item));
+        return chip;
     }
 
     function renderGapPanel() {
         paneGaps.innerHTML = "";
+        gapRerun.classList.toggle("hidden", !gapState.ready);
 
         if (!gapState.ready) {
+            gapMeta.textContent = "";
+            paneGaps.innerHTML = `<div class="empty-state"><div class="empty-ico">✦</div><p>${esc(tr("gap_intro"))}</p></div>`;
             const runBtn = document.createElement("button");
             runBtn.type = "button";
-            runBtn.className = "btn gap-run-btn";
-            runBtn.textContent = "Запустить gap-анализ";
+            runBtn.className = "cta wide";
+            runBtn.textContent = tr("run_analysis");
             runBtn.addEventListener("click", runGapAnalysis);
             paneGaps.appendChild(runBtn);
             return;
         }
 
-        paneGaps.appendChild(renderGapSection("miss", "Miss", gapState.items.filter((i) => i.status === "miss"), "miss"));
-        paneGaps.appendChild(renderGapSection("can_add", "Можно добавить", gapState.items.filter((i) => i.status === "can_add"), ""));
-        paneGaps.appendChild(renderGapSection("match", "Match", gapState.items.filter((i) => i.status === "match"), ""));
-        paneGaps.appendChild(renderGapSection("over", "Over", gapState.items.filter((i) => i.status === "over"), ""));
+        const items = gapItems();
+        gapMeta.textContent = items.length;
+
+        const tabs = document.createElement("div");
+        tabs.className = "rail-tabs";
+        tabs.innerHTML = FILTERS.map((filter) => {
+            const count = items.filter((item) => bucketOf(item) === filter.key).length;
+            return `<button type="button" class="rail-tab${railFilter === filter.key ? " active" : ""}" data-filter="${filter.key}"><b>${count}</b><span>${esc(tr(filter.label))}</span></button>`;
+        }).join("");
+        paneGaps.appendChild(tabs);
+
+        const current = items.filter((item) => bucketOf(item) === railFilter);
+        if (!current.length) {
+            const hint = document.createElement("div");
+            hint.className = "hint";
+            hint.textContent = tr("empty_bucket");
+            paneGaps.appendChild(hint);
+        }
+
+        PRIORITIES.forEach(([prio, labelKey]) => {
+            const group = current.filter((item) => (item.priority === "preferred" ? "preferred" : "required") === prio);
+            if (!group.length) return;
+            const wrap = document.createElement("div");
+            wrap.innerHTML = `<div class="prio-label">${esc(tr(labelKey))}</div>`;
+            const chips = document.createElement("div");
+            chips.className = "chip-row";
+            group.forEach((item) => chips.appendChild(renderGapChip(item)));
+            wrap.appendChild(chips);
+            paneGaps.appendChild(wrap);
+        });
     }
 
+    paneGaps.addEventListener("click", (e) => {
+        const tab = e.target.closest(".rail-tab");
+        if (!tab) return;
+        railFilter = tab.dataset.filter;
+        renderGapPanel();
+    });
+
     async function runGapAnalysis() {
-        paneGaps.innerHTML = `<p class="gap-progress-line">Анализирую... <span class="loading-dot"></span></p>`;
+        if (gapRerun.classList.contains("busy")) return;
+        gapRerun.classList.add("busy");
+        paneGaps.innerHTML = `<div class="empty-state"><div class="empty-ico">✦</div><p>${esc(tr("analyzing"))} <span class="loading-dot"></span></p></div>`;
         const response = await fetch(`/tailor/session/${SESSION_ID}/run-gap-analysis`, { method: "POST" });
         const data = await response.json();
 
         pollTaskStatus([data.task_id], (tasks) => {
             const task = tasks[0];
             if (task.status === "done") {
+                gapRerun.classList.remove("busy");
                 gapState.ready = true;
                 gapState.items = task.result.items;
-                gapState.resumeItems = task.result.resume_items || [];
                 if (!gapState.items.length) {
-                    paneGaps.innerHTML = `<p class="gap-error-line">Анализ вернул 0 элементов. Модель могла не уложиться в формат — попробуй ещё раз.</p>`;
+                    paneGaps.innerHTML = `<div class="error-line">${esc(tr("analysis_empty"))}</div>`;
                     const retryBtn = document.createElement("button");
                     retryBtn.type = "button";
-                    retryBtn.className = "btn gap-run-btn";
-                    retryBtn.style.marginTop = "8px";
-                    retryBtn.textContent = "Повторить";
+                    retryBtn.className = "cta wide";
+                    retryBtn.textContent = tr("retry");
                     retryBtn.addEventListener("click", runGapAnalysis);
                     paneGaps.appendChild(retryBtn);
+                    gapRerun.classList.remove("hidden");
                     return;
                 }
-                renderGapPanel();
-                fetchGapMeta();
-                fetchTitleSuggestions();
+                renderAll();
+                suggestTitles(null, null, true);
             } else if (task.status === "failed") {
-                paneGaps.innerHTML = `<p class="gap-error-line">Ошибка: ${task.error}</p>`;
+                gapRerun.classList.remove("busy");
+                gapRerun.classList.remove("hidden");
+                paneGaps.innerHTML = `<div class="error-line">${esc(tr("error_prefix"))} ${esc(task.error)}</div>`;
             }
         });
     }
 
-    async function fetchGapMeta() {
-        const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items`);
-        const data = await response.json();
-        gapState.blockOrder = data.block_order || [];
-        renderSchemaPane();
-    }
+    gapRerun.addEventListener("click", runGapAnalysis);
 
     async function loadGapState() {
         const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items`);
@@ -1076,28 +1461,46 @@ main {
         gapState.ready = data.ready;
         gapState.items = data.items;
         gapState.blockComments = data.block_comments || {};
-        gapState.blockOrder = data.block_order || [];
-        gapState.resumeItems = data.resume_items || [];
         gapState.editedBlocks = data.edited_blocks || {};
+        gapState.popupChoice = data.skills_popup_choice || null;
+        Object.keys(gapState.blockComments).forEach((path) => { if (gapState.blockComments[path]) openNotes.add(path); });
         blocksState = data.blocks || blocksState;
         rebuildElementMap();
-        const hasNeverFetchedTitles = data.title_suggestions === null || data.title_suggestions === undefined;
-        titleSuggestions = data.title_suggestions || [];
+        const neverFetched = data.title_suggestions === null || data.title_suggestions === undefined;
+        titleSuggestions = normalizeSuggestions(data.title_suggestions);
         decorateBlocks();
-        renderGapPanel();
-        renderSchemaPane();
-        if (gapState.ready && hasNeverFetchedTitles) fetchTitleSuggestions();
+        renderAll();
+        if (gapState.ready && neverFetched) suggestTitles(null, null, true);
     }
 
-    async function fetchTitleSuggestions() {
-        const response = await fetch(`/tailor/session/${SESSION_ID}/suggest-titles`, { method: "POST" });
+    async function suggestTitles(path, button, quiet) {
+        await flushPendingSave();
+        if (button) button.classList.add("busy");
+        const body = new URLSearchParams();
+        if (path) body.set("field_path", path);
+        const response = await fetch(`/tailor/session/${SESSION_ID}/suggest-titles`, { method: "POST", body });
         const data = await response.json();
-        pollTaskStatus([data.task_id], (tasks) => {
-            const task = tasks[0];
-            if (task.status === "done") {
-                titleSuggestions = task.result.suggestions;
-                renderSchemaPane();
-            }
+        return new Promise((resolve) => {
+            pollTaskStatus([data.task_id], (tasks) => {
+                const task = tasks[0];
+                if (task.status === "done") {
+                    titleSuggestions = normalizeSuggestions(task.result.suggestions);
+                    if (!task.result.found && !quiet) showToast(tr("toast_titles_fit"), "info", { key: "tailoring" });
+                    renderWork();
+                    resolve(true);
+                } else if (task.status === "failed") {
+                    showToast(`${tr("error_prefix")} ${task.error}`, "danger");
+                    renderWork();
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    function persistTitleSuggestions() {
+        fetch(`/tailor/session/${SESSION_ID}/title-suggestions`, {
+            method: "POST",
+            body: new URLSearchParams({ suggestions_json: JSON.stringify(titleSuggestions || []) }),
         });
     }
 
@@ -1113,309 +1516,596 @@ main {
             }),
         });
         if (!response.ok) {
-            showToast("Не удалось применить — текст не найден в резюме", "danger");
+            showToast(tr("toast_apply_failed"), "danger");
             return;
         }
         const data = await response.json();
         gapState.editedBlocks = data.edited_blocks || {};
         blocksState = data.blocks || blocksState;
         rebuildElementMap();
-        titleSuggestions = titleSuggestions.filter((s) => s !== suggestion);
+        suggestion.current = suggestion.suggested;
+        suggestion.changed = false;
+        suggestion.reason = tr("title_applied_reason");
+        persistTitleSuggestions();
         setResumeHtml(data.html, { persist: false });
-        showToast("Тайтл обновлён", "success", { key: "tailoring" });
+        showToast(tr("toast_title_applied"), "success", { key: "tailoring" });
     }
 
-    function persistTitleSuggestions() {
-        fetch(`/tailor/session/${SESSION_ID}/title-suggestions`, {
-            method: "POST",
-            body: new URLSearchParams({ suggestions_json: JSON.stringify(titleSuggestions || []) }),
+    const rejectModal = document.getElementById("reject-modal");
+
+    function askReject(suggestion) {
+        return new Promise((resolve) => {
+            document.getElementById("reject-modal-old").textContent = suggestion.current;
+            document.getElementById("reject-modal-new").textContent = suggestion.suggested;
+            const comment = document.getElementById("reject-modal-comment");
+            comment.value = "";
+            rejectModal.classList.add("open");
+            comment.focus();
+            const finish = (forever) => {
+                rejectModal.classList.remove("open");
+                resolve(forever === null ? null : { forever, comment: comment.value.trim() });
+            };
+            document.getElementById("reject-forever").onclick = () => finish(true);
+            document.getElementById("reject-once").onclick = () => finish(false);
+            document.getElementById("reject-cancel").onclick = () => finish(null);
+            document.getElementById("reject-close").onclick = () => finish(null);
         });
     }
 
-    function itemsForBlock(fieldPath) {
-        return gapState.items.filter((i) => (i.assigned_field_paths || []).includes(fieldPath));
+    async function rejectSuggestion(suggestion) {
+        const choice = await askReject(suggestion);
+        if (!choice) return;
+        const response = await fetch(`/tailor/session/${SESSION_ID}/title-rejections`, {
+            method: "POST",
+            body: new URLSearchParams({
+                original: suggestion.current,
+                rejected: suggestion.suggested,
+                comment: choice.comment,
+                forever: choice.forever ? "1" : "",
+                kind: suggestion.kind || "",
+            }),
+        });
+        if (!response.ok) {
+            showToast(tr("toast_reject_failed"), "danger");
+            return;
+        }
+        showToast(tr(choice.forever ? "toast_reject_forever" : "toast_reject_here"), "success", { key: "tailoring" });
+        await suggestTitles(suggestion.key, null, true);
     }
 
-    function originalTextsForBlock(fieldPath) {
-        return gapState.resumeItems
-            .filter((i) => i.field_path === fieldPath)
-            .map((i) => i.text)
-            .filter((text, index, arr) => arr.indexOf(text) === index);
+    const rulesModal = document.getElementById("rules-modal");
+    const rulesList = document.getElementById("rules-list");
+    const rulesCount = document.getElementById("rules-count");
+
+    async function openRules() {
+        rulesCount.textContent = "";
+        rulesList.innerHTML = `<div class="hint">${esc(tr("rules_loading"))}</div>`;
+        rulesModal.classList.add("open");
+        const response = await fetch("/tailor/title-rejections");
+        const data = await response.json();
+        if (!data.items.length) {
+            rulesList.innerHTML = `<div class="rules-empty"><div class="empty-ico muted">⊘</div><b>${esc(tr("rules_empty_title"))}</b><p>${esc(tr("rules_empty_text"))}</p></div>`;
+            return;
+        }
+        rulesCount.textContent = data.items.length;
+        rulesList.innerHTML = data.items.map((rule) => `
+            <div class="rule-card" data-id="${rule.id}">
+                <div class="rule-main">
+                    <div class="rule-flow"><span class="rule-from">${esc(rule.original)}</span><span class="rule-arrow">→</span><span class="rule-to">${esc(rule.rejected)}</span></div>
+                    ${rule.comment ? `<div class="rule-why">${esc(rule.comment)}</div>` : ""}
+                </div>
+                <button type="button" class="ibtn rule-delete" data-id="${rule.id}" title="${esc(tr("rules_delete"))}">&times;</button>
+            </div>`).join("");
     }
 
-    function allKnownKeywordTexts() {
-        const set = new Set();
-        gapState.items.forEach((i) => set.add(i.text));
-        gapState.resumeItems.forEach((i) => set.add(i.text));
-        return [...set];
+    document.getElementById("rules-close").addEventListener("click", () => rulesModal.classList.remove("open"));
+    document.getElementById("rules-close-btn").addEventListener("click", () => rulesModal.classList.remove("open"));
+    rulesList.addEventListener("click", async (e) => {
+        const button = e.target.closest(".rule-delete");
+        if (!button) return;
+        await fetch(`/tailor/title-rejections/${button.dataset.id}/delete`, { method: "POST" });
+        openRules();
+    });
+
+    document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+        overlay.addEventListener("mousedown", (e) => {
+            if (e.target !== overlay) return;
+            const close = overlay.querySelector(".modal-x");
+            if (close) close.click();
+        });
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        document.querySelectorAll(".modal-overlay.open .modal-x").forEach((button) => button.click());
+    });
+
+    function bindHot(el, path) {
+        el.dataset.hotPath = path;
+        el.addEventListener("mouseenter", () => setBlockHot(path, true, { scrollResume: true }));
+        el.addEventListener("mouseleave", () => setBlockHot(path, false, {}));
     }
 
-    function renderSchemaBlock(fieldPath) {
-        const block = document.createElement("div");
-        block.className = "schema-block";
-        const isEdited = Object.prototype.hasOwnProperty.call(gapState.editedBlocks || {}, fieldPath);
-        if (isEdited) block.classList.add("edited-block");
-        block.dataset.fieldPath = fieldPath;
+    function bindDrop(el, kind) {
+        el.addEventListener("dragover", (e) => { e.preventDefault(); el.classList.add("drag-over"); });
+        el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
+        el.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            el.classList.remove("drag-over");
+            followLane(el);
+            const gapItemId = e.dataTransfer.getData("text/gap-item-id");
+            if (!gapItemId) return;
+            const item = gapState.items.find((entry) => String(entry.id) === gapItemId);
+            if (!item || item.status === "exact" || item.category === "title") return;
+            await setDestination(item, kind);
+        });
+    }
 
-        const originalTexts = originalTextsForBlock(fieldPath);
-        const originalTextsLower = new Set(originalTexts.map((t) => t.toLowerCase()));
-        const genItems = itemsForBlock(fieldPath);
-        const genItemTextsLower = new Set(genItems.map((i) => i.text.toLowerCase()));
+    function noteToggleHtml(key, value) {
+        const on = openNotes.has(key) || !!value;
+        return `<button type="button" class="ibtn note-toggle${on ? " on" : ""}" data-note="${esc(key)}" title="${esc(tr("note_title"))}">✎</button>`;
+    }
 
-        const originalChipsHtml = originalTexts
-            .map((text) => {
-                const inGeneration = genItemTextsLower.has(text.toLowerCase());
-                const cls = `schema-block-item-chip is-plain${inGeneration ? " is-highlighted" : ""}`;
-                return `<span class="${cls}" data-plain-text="${text.replace(/"/g, "&quot;")}" data-field-path="${fieldPath}"><span>${text}</span></span>`;
-            })
-            .join("");
+    function chipsHtml(items, kind) {
+        if (!items.length) {
+            return `<div class="drop-empty">${esc(tr("drop_empty"))}</div>`;
+        }
+        return items.map((item) => `
+            <span class="kw-chip${item.status === "unknown" ? " unknown" : ""}${item.priority === "preferred" ? " preferred" : ""}" draggable="true" data-gap-item-id="${item.id}">
+                ${esc(item.text)}<button type="button" class="chip-x" data-gap-item-id="${item.id}" data-kind="${kind}" title="${esc(tr("chip_remove"))}">&times;</button>
+            </span>`).join("");
+    }
 
-        function activeChipsHtml(list) {
-            return list
-                .map((i) => {
-                    const isDisabled = (i.disabled_field_paths || []).includes(fieldPath);
-                    const variant = originalTextsLower.has(i.text.toLowerCase()) ? "is-kept" : "is-new";
-                    const cls = `schema-block-item-chip ${variant}${isDisabled ? " is-disabled" : ""}`;
-                    return `<span class="${cls}" draggable="true" data-gap-item-id="${i.id}" data-toggle-disabled="1"><span>${i.text}</span><span class="schema-block-item-remove" data-gap-item-id="${i.id}">&times;</span></span>`;
-                })
-                .join("");
+    function renderTitleRow(block) {
+        const path = block.field_path;
+        const suggestion = titleSuggestions.find((item) => item.key === path);
+        const label = block.kind === "title_main" ? tr("title_headline") : (block.company || block.label || path);
+        const current = suggestion ? suggestion.current : currentTextOf(path);
+
+        const row = document.createElement("div");
+        row.className = "tcard";
+        bindHot(row, path);
+
+        let body = "";
+        if (suggestion && suggestion.changed) {
+            body = `
+                <div class="tsug">
+                    <div class="tsug-new">${esc(suggestion.suggested)}</div>
+                    ${suggestion.reason ? `<div class="tsug-why">${esc(suggestion.reason)}</div>` : ""}
+                    <div class="tsug-actions">
+                        <button type="button" class="btn t-apply" data-key="${esc(path)}">${esc(tr("title_apply"))}</button>
+                        <button type="button" class="btn-ghost btn t-reject" data-key="${esc(path)}">${esc(tr("title_reject"))}</button>
+                    </div>
+                </div>`;
+        } else if (suggestion) {
+            body = `<div class="tsame">${esc(tr("title_unchanged"))}${suggestion.reason ? ` · ${esc(suggestion.reason)}` : ""}</div>`;
+        } else {
+            body = `<div class="tsame">${esc(tr("title_pending"))}</div>`;
         }
 
-        block.innerHTML = `
-            <div class="schema-block-header">
-                <span class="schema-block-title">${fieldPathLabel(fieldPath)}${isEdited ? '<span class="edited-title-badge">✎ изменено</span>' : ""}</span>
-                <button type="button" class="schema-block-gen-btn" data-field-path="${fieldPath}">Сгенерировать</button>
+        row.innerHTML = `
+            <div class="tcard-top">
+                <span class="tcard-label">${esc(label)}</span>
+                <button type="button" class="ibtn t-refresh" data-key="${esc(path)}" title="${esc(tr("title_refresh"))}">↻</button>
             </div>
-            ${originalChipsHtml ? `<div class="schema-kw-group"><span class="schema-kw-group-label">Оригинал в блоке</span><div class="schema-block-items">${originalChipsHtml}</div></div>` : ""}
-            ${genItems.length ? `<div class="schema-kw-group"><span class="schema-kw-group-label">В генерации</span><div class="schema-block-items">${activeChipsHtml(genItems)}</div></div>` : ""}
-            ${!originalTexts.length && !genItems.length ? `<div class="schema-block-items"><span class="gap-empty-hint">пусто</span></div>` : ""}
-            <div class="schema-block-add-wrap">
-                <div class="schema-block-add-row">
-                    <input type="text" class="schema-block-add-input" autocomplete="off" placeholder="Добавить кейворд..." data-field-path="${fieldPath}">
-                    <button type="button" class="schema-block-add-btn" data-field-path="${fieldPath}">+</button>
-                </div>
-            </div>
-            <div class="schema-block-comment-wrap">
-                <textarea class="schema-block-comment" data-field-path="${fieldPath}" placeholder="Комментарий к блоку...">${gapState.blockComments[fieldPath] || ""}</textarea>
-            </div>
-        `;
-
-        block.addEventListener("mouseenter", () => setBlockHot(fieldPath, true, { scrollResume: true }));
-        block.addEventListener("mouseleave", () => setBlockHot(fieldPath, false, {}));
-
-        block.addEventListener("dragover", (e) => { e.preventDefault(); block.classList.add("drag-over"); });
-        block.addEventListener("dragleave", () => block.classList.remove("drag-over"));
-        block.addEventListener("drop", async (e) => {
-            e.preventDefault();
-            block.classList.remove("drag-over");
-            const gapItemId = e.dataTransfer.getData("text/gap-item-id");
-            const sourceFieldPath = e.dataTransfer.getData("text/source-field-path");
-            if (!gapItemId) return;
-            const item = gapState.items.find((i) => String(i.id) === gapItemId);
-            if (!item) return;
-            if ((item.assigned_field_paths || []).includes(fieldPath)) return;
-
-            if (sourceFieldPath && sourceFieldPath !== fieldPath && (item.assigned_field_paths || []).includes(sourceFieldPath)) {
-                await moveGapItemLocation(item, sourceFieldPath, fieldPath);
-            } else {
-                await toggleGapItemLocation(item, fieldPath);
-            }
-        });
-
-        return block;
+            <div class="tcard-current">${esc(current) || "—"}</div>
+            ${body}`;
+        return row;
     }
 
-    function renderSchemaPane() {
-        paneSchema.innerHTML = "";
+    function renderTitlesLane() {
+        const lane = document.createElement("section");
+        lane.className = "lane k-title";
+        const role = targetRole();
+        lane.innerHTML = `
+            <div class="lane-head">
+                <span class="lane-title">${esc(tr("lane_titles"))}</span>
+                ${role ? `<span class="role-chip" title="${esc(tr("title_role_chip"))}">${esc(role)}</span>` : ""}
+                <span class="lane-spacer"></span>
+                <button type="button" class="link-btn open-rules">${esc(tr("lane_rules"))}</button>
+                <button type="button" class="ghost t-refresh-all">${esc(tr("lane_suggest"))}</button>
+            </div>`;
+        const blocks = blocksState.filter((block) => TITLE_KINDS.includes(block.kind));
+        if (!blocks.length) {
+            lane.insertAdjacentHTML("beforeend", `<div class="drop-empty">${esc(tr("lane_no_titles"))}</div>`);
+        }
+        blocks.forEach((block) => lane.appendChild(renderTitleRow(block)));
+        return lane;
+    }
+
+    function renderBlockLane(kind, titleKey, hintKey) {
+        const path = blockPath(kind);
+        const lane = document.createElement("section");
+        lane.className = `lane k-${kind}`;
+        const items = gapItems().filter((item) => destinations(item).includes(kind));
+        const edited = path && Object.prototype.hasOwnProperty.call(gapState.editedBlocks || {}, path);
+        const comment = path ? (gapState.blockComments[path] || "") : "";
+
+        lane.innerHTML = `
+            <div class="lane-head">
+                <span class="lane-title">${esc(tr(titleKey))}</span>
+                <span class="lane-count">${items.length}</span>
+                ${edited ? `<span class="lane-edited">${esc(tr("lane_edited"))}</span>` : ""}
+                <span class="lane-spacer"></span>
+                ${path ? noteToggleHtml(path, comment) : ""}
+                ${path ? `<button type="button" class="lane-run" data-field-path="${esc(path)}">${esc(tr("lane_generate"))}</button>` : ""}
+            </div>`;
+
+        if (!path) {
+            lane.insertAdjacentHTML("beforeend", `<div class="drop-empty">${esc(tr("lane_no_block"))}</div>`);
+            return lane;
+        }
+
+        const preview = currentTextOf(path).replace(/\s+/g, " ").slice(0, 200);
+        const noteOpen = openNotes.has(path) || !!comment;
+        lane.insertAdjacentHTML("beforeend", `
+            <p class="lane-hint">${esc(tr(hintKey))}</p>
+            <div class="preview">${esc(preview) || "—"}</div>
+            <div class="chip-row">${chipsHtml(items, kind)}</div>
+            ${noteOpen ? `<textarea class="bc-comment" data-field-path="${esc(path)}" placeholder="${esc(tr("note_placeholder"))}">${esc(comment)}</textarea>` : ""}`);
+
+        bindHot(lane, path);
+        bindDrop(lane, kind);
+        return lane;
+    }
+
+    function renderLetterLane() {
+        const lane = document.createElement("section");
+        lane.className = "lane k-letter";
+        const items = gapItems().filter((item) => destinations(item).includes("letter"));
+        const noteOpen = openNotes.has("letter") || !!letterState.notes;
+
+        lane.innerHTML = `
+            <div class="lane-head">
+                <span class="lane-title">${esc(tr("lane_letter"))}</span>
+                <span class="lane-count">${items.length}</span>
+                <span class="lane-spacer"></span>
+                ${noteToggleHtml("letter", letterState.notes)}
+                <button type="button" class="lane-run letter-run${letterState.busy ? " busy" : ""}">${esc(tr(letterState.busy ? "lane_generating" : "lane_generate"))}</button>
+            </div>
+            <p class="lane-hint">${esc(tr("lane_letter_hint"))}</p>
+            <div class="chip-row">${chipsHtml(items, "letter")}</div>
+            ${noteOpen ? `<textarea class="bc-comment letter-notes" placeholder="${esc(tr("letter_note_placeholder"))}">${esc(letterState.notes)}</textarea>` : ""}`;
+
+        bindHot(lane, "letter");
+        bindDrop(lane, "letter");
+        return lane;
+    }
+
+    function renderWork() {
+        const scrollTop = paneWork.scrollTop;
+        paneWork.innerHTML = "";
 
         if (!gapState.ready) {
-            paneSchema.innerHTML = `<p class="schema-empty-hint">Сначала запусти gap-анализ во вкладке ГЕПЫ.</p>`;
+            paneWork.innerHTML = `<div class="hint">${esc(tr("work_run_analysis_first"))}</div>`;
+            paneWork.appendChild(renderLetterLane());
             return;
         }
 
-        if (titleSuggestions && titleSuggestions.length) {
-            const titleBlock = document.createElement("div");
-            titleBlock.className = "title-block";
-            titleBlock.innerHTML = `<div class="title-block-heading">Тайтлы</div>`;
-            titleSuggestions.forEach((s) => {
-                const row = document.createElement("div");
-                row.className = "title-suggestion-row";
-                row.dataset.fieldPath = s.key;
-                row.innerHTML = `
-                    ${s.kind === "experience" ? `<div class="title-suggestion-company">${s.company}</div>` : ""}
-                    <div class="title-suggestion-diff">
-                        <div class="title-suggestion-current"><span class="diff-tag">было</span><span class="diff-text">${s.current}</span></div>
-                        <div class="title-suggestion-new"><span class="diff-tag">станет</span><span>${s.suggested}</span></div>
-                    </div>
-                    <div class="title-suggestion-buttons">
-                        <button type="button" class="btn apply-title-btn">Применить</button>
-                        <button type="button" class="btn-ghost btn dismiss-title-btn">Пропустить</button>
-                    </div>
-                `;
-                row.addEventListener("mouseenter", () => setBlockHot(s.key, true, { scrollResume: true }));
-                row.addEventListener("mouseleave", () => setBlockHot(s.key, false, {}));
-                row.querySelector(".apply-title-btn").addEventListener("click", () => applyTitleSuggestion(s));
-                row.querySelector(".dismiss-title-btn").addEventListener("click", () => {
-                    titleSuggestions = titleSuggestions.filter((x) => x !== s);
-                    persistTitleSuggestions();
-                    renderSchemaPane();
+        paneWork.appendChild(renderTitlesLane());
+        paneWork.appendChild(renderBlockLane("summary", "lane_summary", "lane_summary_hint"));
+        paneWork.appendChild(renderBlockLane("skills", "lane_skills", "lane_skills_hint"));
+        paneWork.appendChild(renderLetterLane());
+        paneWork.scrollTop = scrollTop;
+    }
+
+    let letterState = { content: "", notes: "", standing: "", busy: false };
+    let letterSaveTimeout = null;
+
+    function letterWordCount(text) {
+        return (text || "").trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function scheduleLetterSave() {
+        clearTimeout(letterSaveTimeout);
+        letterSaveTimeout = setTimeout(() => {
+            fetch(`/tailor/session/${SESSION_ID}/letter`, {
+                method: "POST",
+                body: new URLSearchParams({ content: letterState.content, notes: letterState.notes }),
+            });
+        }, 700);
+    }
+
+    const letterDoc = document.getElementById("letter-doc");
+    const letterEmpty = document.getElementById("letter-empty");
+    const letterEmptyGen = document.getElementById("letter-empty-gen");
+    const letterCopyBtn = document.getElementById("letter-copy");
+    const letterCopyLabel = document.getElementById("letter-copy-label");
+    const letterDownloadBtn = document.getElementById("letter-download");
+    const letterFormatSelect = document.getElementById("letter-format");
+    const letterWordsEl = document.getElementById("letter-words");
+    const letterDot = document.getElementById("letter-dot");
+
+    letterDoc.addEventListener("mouseenter", () => setBlockHot("letter", true, { scrollSchema: true }));
+    letterDoc.addEventListener("mouseleave", () => setBlockHot("letter", false, {}));
+
+    function syncLetterPage() {
+        if (letterDoc.value !== letterState.content) letterDoc.value = letterState.content;
+        const filled = letterState.content.trim().length > 0;
+        letterEmpty.classList.toggle("hidden", filled);
+        letterCopyBtn.classList.toggle("hidden", !filled);
+        letterDownloadBtn.disabled = !filled;
+        letterDot.classList.toggle("hidden", !filled);
+        letterEmptyGen.textContent = tr(letterState.busy ? "lane_generating" : "lane_generate");
+        letterEmptyGen.classList.toggle("busy", letterState.busy);
+        letterWordsEl.classList.toggle("hidden", !filled);
+        if (filled) applyWordBadge(letterWordsEl, letterWordCount(letterState.content), LETTER_RANGE, LETTER_TIPS);
+        letterDoc.style.height = "auto";
+        letterDoc.style.height = `${Math.max(560, letterDoc.scrollHeight)}px`;
+    }
+
+    async function loadLetter() {
+        const response = await fetch(`/tailor/session/${SESSION_ID}/letter`);
+        if (!response.ok) return;
+        const data = await response.json();
+        letterState.content = data.content || "";
+        letterState.standing = data.standing || "";
+        letterState.notes = data.notes || letterState.standing;
+        if (letterState.notes) openNotes.add("letter");
+        renderWork();
+        syncLetterPage();
+    }
+
+    function confirmStandingNote() {
+        const current = letterState.notes.trim();
+        const standing = letterState.standing.trim();
+        if (current === standing) return Promise.resolve(true);
+
+        const modal = document.getElementById("note-modal");
+        document.getElementById("note-modal-old").textContent = standing || tr("note_modal_none");
+        document.getElementById("note-modal-new").textContent = current || tr("note_modal_none");
+        modal.classList.add("open");
+
+        return new Promise((resolve) => {
+            const close = (value) => { modal.classList.remove("open"); resolve(value); };
+            document.getElementById("note-modal-cancel").onclick = () => close(false);
+            document.getElementById("note-modal-close").onclick = () => close(false);
+            document.getElementById("note-modal-once").onclick = () => close(true);
+            document.getElementById("note-modal-save").onclick = async () => {
+                const response = await fetch("/settings/profile/letter-note", {
+                    method: "POST",
+                    body: new URLSearchParams({ letter_note: current }),
                 });
-                titleBlock.appendChild(row);
-            });
-            paneSchema.appendChild(titleBlock);
-        }
-
-        const order = gapState.blockOrder.length ? gapState.blockOrder : bodyBlocks().map((b) => b.field_path);
-        order.forEach((path) => paneSchema.appendChild(renderSchemaBlock(path)));
-    }
-
-    const schemaAddSuggestions = document.createElement("div");
-    schemaAddSuggestions.className = "schema-add-suggestions";
-    document.body.appendChild(schemaAddSuggestions);
-    let activeAddInput = null;
-
-    function renderAddSuggestions(inputEl) {
-        const fieldPath = inputEl.dataset.fieldPath;
-        const query = inputEl.value.trim().toLowerCase();
-        const alreadyInBlock = new Set(itemsForBlock(fieldPath).map((i) => i.text.toLowerCase()));
-        const matches = allKnownKeywordTexts().filter(
-            (t) => !alreadyInBlock.has(t.toLowerCase()) && (!query || t.toLowerCase().includes(query))
-        );
-
-        if (!matches.length) { schemaAddSuggestions.classList.remove("open"); return; }
-
-        schemaAddSuggestions.innerHTML = "";
-        matches.slice(0, 30).forEach((text) => {
-            const item = document.createElement("div");
-            item.className = "schema-add-suggestion-item";
-            item.textContent = text;
-            item.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                inputEl.value = text;
-                schemaAddSuggestions.classList.remove("open");
-                inputEl.closest(".schema-block-add-row").querySelector(".schema-block-add-btn").click();
-            });
-            schemaAddSuggestions.appendChild(item);
+                if (!response.ok) { showToast(tr("toast_note_failed"), "danger"); return; }
+                letterState.standing = current;
+                showToast(tr("toast_note_saved"), "success", { key: "tailoring" });
+                close(true);
+            };
         });
-
-        positionFloatingPanel(schemaAddSuggestions, inputEl.getBoundingClientRect());
     }
 
-    paneSchema.addEventListener("focusin", (e) => {
-        if (!e.target.classList.contains("schema-block-add-input")) return;
-        activeAddInput = e.target;
-        renderAddSuggestions(e.target);
+    async function generateLetter() {
+        if (letterState.busy) return;
+        if (!(await confirmStandingNote())) return;
+        if (!(await confirmUnknownSkills("letter"))) return;
+        letterState.busy = true;
+        renderWork();
+        syncLetterPage();
+        try {
+            const response = await fetch(`/tailor/session/${SESSION_ID}/generate-letter`, {
+                method: "POST",
+                body: new URLSearchParams({ notes: letterState.notes }),
+            });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                showToast(error.detail || tr("toast_letter_failed"), "danger");
+                return;
+            }
+            const data = await response.json();
+            letterState.content = data.content || "";
+            setTab("letter");
+            showToast(tr("toast_letter_ready"), "success", { key: "tailoring" });
+        } finally {
+            letterState.busy = false;
+            renderWork();
+            syncLetterPage();
+        }
+    }
+
+    function setTab(name) {
+        stageTab = name;
+        document.querySelectorAll(".tab").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
+        document.getElementById("tab-resume").classList.toggle("hidden", name !== "resume");
+        document.getElementById("tab-letter").classList.toggle("hidden", name !== "letter");
+        document.getElementById("resume-tools").classList.toggle("hidden", name !== "resume");
+        document.getElementById("letter-tools").classList.toggle("hidden", name !== "letter");
+        if (name === "letter") syncLetterPage();
+    }
+
+    document.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => setTab(button.dataset.tab)));
+
+    letterDoc.addEventListener("input", () => {
+        letterState.content = letterDoc.value;
+        syncLetterPage();
+        scheduleLetterSave();
     });
 
-    paneSchema.addEventListener("input", (e) => {
-        if (e.target.classList.contains("schema-block-add-input")) renderAddSuggestions(e.target);
+    letterEmptyGen.addEventListener("click", generateLetter);
+
+    let copyResetTimeout = null;
+    letterCopyBtn.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(letterState.content);
+            letterCopyBtn.classList.add("done");
+            letterCopyLabel.textContent = tr("letter_copied");
+            clearTimeout(copyResetTimeout);
+            copyResetTimeout = setTimeout(() => {
+                letterCopyBtn.classList.remove("done");
+                letterCopyLabel.textContent = tr("letter_copy");
+            }, 1600);
+        } catch (error) {
+            showToast(tr("toast_copy_failed"), "danger");
+        }
     });
 
-    document.addEventListener("click", (e) => {
-        if (!schemaAddSuggestions.contains(e.target) && e.target !== activeAddInput) schemaAddSuggestions.classList.remove("open");
-    });
-    document.addEventListener("scroll", (e) => {
-        if (schemaAddSuggestions.contains(e.target)) return;
-        schemaAddSuggestions.classList.remove("open");
-    }, true);
-
-    async function addCustomItem(text, fieldPath, isOriginal) {
-        const response = await fetch(`/tailor/session/${SESSION_ID}/gap-items/custom`, {
+    letterDownloadBtn.addEventListener("click", async () => {
+        clearTimeout(letterSaveTimeout);
+        await fetch(`/tailor/session/${SESSION_ID}/letter`, {
             method: "POST",
-            body: new URLSearchParams({ text, field_path: fieldPath, is_original: isOriginal ? "true" : "" }),
+            body: new URLSearchParams({ content: letterState.content, notes: letterState.notes }),
+        });
+        const format = letterFormatSelect.dataset.value;
+        const response = await fetch(`/tailor/session/${SESSION_ID}/letter/download?format=${format}`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            showToast(error.detail || tr("toast_download_failed"), "danger");
+            return;
+        }
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${LETTER_COMPANY.replace(/[\\/:*?"<>|]+/g, " ").trim()} cover letter.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    });
+
+    async function runBlockGeneration(path, mode, button, quiet) {
+        if (!(await confirmUnknownSkills(path))) return false;
+        await flushPendingSave();
+
+        if (button) button.classList.add("busy");
+        const restore = () => { if (button) button.classList.remove("busy"); };
+
+        const response = await fetch(`/tailor/session/${SESSION_ID}/generate-block`, {
+            method: "POST",
+            body: new URLSearchParams({ field_path: path, mode }),
         });
         const data = await response.json();
-        const existingIndex = gapState.items.findIndex((i) => i.id === data.item.id);
-        if (existingIndex >= 0) gapState.items[existingIndex] = data.item;
-        else gapState.items.push(data.item);
-        renderGapPanel();
-        renderSchemaPane();
-    }
 
-    paneSchema.addEventListener("click", async (e) => {
-        if (e.target.classList.contains("schema-block-gen-btn")) {
-            const button = e.target;
-            const fieldPath = button.dataset.fieldPath;
-            await flushPendingSave();
-            button.classList.add("generating");
-            button.textContent = "...";
-
-            const response = await fetch(`/tailor/session/${SESSION_ID}/generate-block`, {
-                method: "POST",
-                body: new URLSearchParams({ field_path: fieldPath }),
-            });
-            const data = await response.json();
-
+        return new Promise((resolve) => {
             pollTaskStatus([data.task_id], (tasks) => {
                 const task = tasks[0];
                 if (task.status === "done") {
-                    button.classList.remove("generating");
-                    button.textContent = "Сгенерировать";
+                    restore();
                     if (task.result.unchanged) {
-                        showToast("Без изменений", "info", { key: "tailoring" });
+                        if (!quiet) showToast(tr("toast_no_changes"), "info", { key: "tailoring" });
+                        resolve(true);
                         return;
                     }
                     gapState.editedBlocks = task.result.edited_blocks || {};
                     blocksState = task.result.blocks || blocksState;
                     rebuildElementMap();
                     setResumeHtml(task.result.html, { persist: false });
-                    showToast("Готово", "success", { key: "tailoring" });
+                    if (!quiet) showToast(tr("toast_done"), "success", { key: "tailoring" });
+                    resolve(true);
                 } else if (task.status === "failed") {
-                    button.classList.remove("generating");
-                    button.textContent = "Сгенерировать";
-                    showToast(`Ошибка: ${task.error}`, "danger");
+                    restore();
+                    showToast(`${tr("error_prefix")} ${task.error}`, "danger");
+                    resolve(false);
                 }
             });
+        });
+    }
+
+    async function runEverything(button) {
+        button.classList.add("busy");
+        await suggestTitles(null, null, true);
+        const skillsPath = blockPath("skills");
+        const summaryPath = blockPath("summary");
+        if (skillsPath) await runBlockGeneration(skillsPath, "all", null, true);
+        if (summaryPath) await runBlockGeneration(summaryPath, "all", null, true);
+        button.classList.remove("busy");
+        showToast(tr("toast_all_done"), "success", { key: "tailoring" });
+        renderWork();
+    }
+
+    document.getElementById("run-all").addEventListener("click", async (e) => {
+        const button = e.currentTarget;
+        if (button.classList.contains("busy")) return;
+        if (!gapState.ready) { showToast(tr("toast_run_analysis_first"), "info", { key: "tailoring" }); return; }
+        await runEverything(button);
+    });
+
+    function scrollResumeTo(path) {
+        requestAnimationFrame(() => {
+            const el = resumeDoc.querySelector(`[data-blk="${attrEscape(path)}"]`);
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+    }
+
+    function followLane(target) {
+        const lane = target.closest(".lane");
+        if (!lane) return;
+        const want = lane.classList.contains("k-letter") ? "letter" : "resume";
+        if (want === stageTab) return;
+        setTab(want);
+        const hot = target.closest("[data-hot-path]");
+        if (want === "resume" && hot) scrollResumeTo(hot.dataset.hotPath);
+    }
+
+    paneWork.addEventListener("click", async (e) => {
+        if (!e.target.closest(".open-rules")) followLane(e.target);
+        const chipX = e.target.closest(".chip-x");
+        if (chipX) {
+            const item = gapState.items.find((entry) => String(entry.id) === chipX.dataset.gapItemId);
+            if (item) await removeFromBlock(item, chipX.dataset.kind);
             return;
         }
 
-        if (e.target.classList.contains("schema-block-add-btn")) {
-            const fieldPath = e.target.dataset.fieldPath;
-            const input = paneSchema.querySelector(`.schema-block-add-input[data-field-path="${attrEscape(fieldPath)}"]`);
-            const text = input.value.trim();
-            if (!text) return;
-            const isOriginal = originalTextsForBlock(fieldPath).some((t) => t.toLowerCase() === text.toLowerCase());
-            input.value = "";
-            await addCustomItem(text, fieldPath, isOriginal);
+        const noteToggle = e.target.closest(".note-toggle");
+        if (noteToggle) {
+            const key = noteToggle.dataset.note;
+            if (openNotes.has(key)) openNotes.delete(key); else openNotes.add(key);
+            renderWork();
             return;
         }
 
-        if (e.target.classList.contains("schema-block-item-remove")) {
-            const item = gapState.items.find((i) => String(i.id) === e.target.dataset.gapItemId);
-            if (!item) return;
-            await toggleGapItemLocation(item, e.target.closest(".schema-block").dataset.fieldPath);
+        if (e.target.closest(".open-rules")) { openRules(); return; }
+
+        const refreshAll = e.target.closest(".t-refresh-all");
+        if (refreshAll) {
+            if (!refreshAll.classList.contains("busy")) await suggestTitles(null, refreshAll, false);
             return;
         }
 
-        const activeChip = e.target.closest('.schema-block-item-chip[data-toggle-disabled="1"]');
-        if (activeChip) {
-            const item = gapState.items.find((i) => String(i.id) === activeChip.dataset.gapItemId);
-            if (!item) return;
-            await toggleGapItemDisabled(item, activeChip.closest(".schema-block").dataset.fieldPath);
+        const refresh = e.target.closest(".t-refresh");
+        if (refresh) {
+            if (!refresh.classList.contains("busy")) await suggestTitles(refresh.dataset.key, refresh, false);
             return;
         }
 
-        const plainChip = e.target.closest(".schema-block-item-chip.is-plain");
-        if (plainChip) {
-            await addCustomItem(plainChip.dataset.plainText, plainChip.dataset.fieldPath, true);
+        const apply = e.target.closest(".t-apply");
+        if (apply) {
+            const suggestion = titleSuggestions.find((item) => item.key === apply.dataset.key);
+            if (suggestion) await applyTitleSuggestion(suggestion);
+            return;
+        }
+
+        const reject = e.target.closest(".t-reject");
+        if (reject) {
+            const suggestion = titleSuggestions.find((item) => item.key === reject.dataset.key);
+            if (suggestion) await rejectSuggestion(suggestion);
+            return;
+        }
+
+        if (e.target.closest(".letter-run")) { await generateLetter(); return; }
+
+        const run = e.target.closest(".lane-run");
+        if (run && run.dataset.fieldPath) {
+            if (!run.classList.contains("busy")) await runBlockGeneration(run.dataset.fieldPath, "all", run, false);
         }
     });
 
-    paneSchema.addEventListener("dragstart", (e) => {
-        const chip = e.target.closest(".schema-block-item-chip");
+    paneWork.addEventListener("dragstart", (e) => {
+        const chip = e.target.closest(".kw-chip");
         if (!chip || !chip.dataset.gapItemId) return;
         e.dataTransfer.setData("text/gap-item-id", chip.dataset.gapItemId);
-        e.dataTransfer.setData("text/source-field-path", chip.closest(".schema-block").dataset.fieldPath);
     });
 
     let commentSaveTimeout = null;
-    paneSchema.addEventListener("input", (e) => {
-        if (!e.target.classList.contains("schema-block-comment")) return;
+    paneWork.addEventListener("input", (e) => {
+        if (e.target.classList.contains("letter-notes")) {
+            letterState.notes = e.target.value;
+            scheduleLetterSave();
+            return;
+        }
+        if (!e.target.classList.contains("bc-comment")) return;
         const fieldPath = e.target.dataset.fieldPath;
         const value = e.target.value;
+        gapState.blockComments[fieldPath] = value;
         clearTimeout(commentSaveTimeout);
         commentSaveTimeout = setTimeout(async () => {
-            gapState.blockComments[fieldPath] = value;
             await fetch(`/tailor/session/${SESSION_ID}/block-comment`, {
                 method: "POST",
                 body: new URLSearchParams({ block_path: fieldPath, comment: value }),
@@ -1429,7 +2119,10 @@ main {
     pushHistorySnapshot();
     updateHistoryButtons();
     updateWordCount();
+    renderAll();
     loadGapState();
+    loadLetter();
+    syncLetterPage();
 })();
 </script>
 {% endblock %}

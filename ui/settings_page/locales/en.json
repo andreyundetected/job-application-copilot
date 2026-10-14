@@ -90,5 +90,18 @@
     "toast_cat_copied": "Answer copied to clipboard",
     "toast_cat_tailoring": "Resume tailoring: title applied, block generated or reverted",
     "toast_cat_tracker_sorted": "Tracker sorted by date",
-    "toast_cat_data_wiped": "Discovered data deleted"
+    "toast_cat_data_wiped": "Discovered data deleted",
+    "toast_cat_known_skills": "Resume tailoring: new skills added to the known list",
+    "blocks_kind_exp_intro": "Job intro",
+    "letter_note_title": "Permanent cover letter note",
+    "letter_note_hint": "Always added to the cover letter generation. It is linked to the letter note on the tailoring page: you can change it there too.",
+    "letter_note_placeholder": "e.g. Keep the tone direct. Mention that I'm open to relocation.",
+    "known_skills_title": "Known skills",
+    "known_skills_hint": "Skills you confirm you have. Used to decide which missing keywords can be added to the resume. Separate several with commas.",
+    "known_skills_placeholder": "e.g. Docker, Kubernetes",
+    "skills_popup_state_label": "Skills popup in tailoring:",
+    "skills_popup_state_ask": "asks every time",
+    "skills_popup_state_add": "always adds to the list",
+    "skills_popup_state_skip": "never adds to the list",
+    "skills_popup_reset_button": "Reset choice"
 }

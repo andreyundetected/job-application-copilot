@@ -36,6 +36,9 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 
 TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
 
+LLM_TEMPERATURE = 0.0
+LLM_REASONING_EFFORT = "off"
+
 _evaluator_temperature_raw = os.getenv("EVALUATOR_TEMPERATURE", "0").strip()
 EVALUATOR_TEMPERATURE = float(_evaluator_temperature_raw) if _evaluator_temperature_raw else None
 
@@ -57,3 +60,5 @@ DISCOVERY_POLL_BATCH_SIZE = int(os.getenv("DISCOVERY_POLL_BATCH_SIZE", "180"))
 DISCOVERY_RATE_LIMIT_PER_SEC = float(os.getenv("DISCOVERY_RATE_LIMIT_PER_SEC", "2"))
 DISCOVERY_EVAL_MAX_WORKERS = int(os.getenv("DISCOVERY_EVAL_MAX_WORKERS", "3"))
 DISCOVERY_SCREEN_CHUNK_SIZE = int(os.getenv("DISCOVERY_SCREEN_CHUNK_SIZE", "25"))
+DISCOVERY_SCREEN_WORKERS = int(os.getenv("DISCOVERY_SCREEN_WORKERS", "4"))
+DISCOVERY_POST_MAX_WORKERS = int(os.getenv("DISCOVERY_POST_MAX_WORKERS", "4"))

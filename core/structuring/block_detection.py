@@ -15,8 +15,8 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-VALID_KINDS = {"title_main", "summary", "skills", "exp_title", "exp_body"}
-MERGEABLE_KINDS = {"summary", "skills", "exp_body"}
+VALID_KINDS = {"title_main", "summary", "skills", "exp_title", "exp_intro", "exp_body"}
+MERGEABLE_KINDS = {"summary", "skills", "exp_intro", "exp_body"}
 
 _BLOCK_RE = re.compile(r"<block\s+([^>]*?)/?>", re.DOTALL)
 _ATTR_RE = re.compile(r'(\w+)="([^"]*)"')
@@ -33,6 +33,8 @@ def compute_field_path(kind: str, company: str) -> str:
         return "skills"
     if kind == "exp_title":
         return f"title:{company}"
+    if kind == "exp_intro":
+        return f"intro: {company}"
     return f"experience: {company}"
 
 
@@ -43,6 +45,8 @@ def default_label(kind: str, company: str) -> str:
         return "Summary"
     if kind == "skills":
         return "Skills"
+    if kind == "exp_intro":
+        return f"{company} · описание"
     return company
 
 
@@ -53,7 +57,7 @@ def finalize_blocks(blocks: list[dict]) -> list[dict]:
         kind = block["kind"]
         company = (block.get("company") or "").strip()
         label = (block.get("label") or "").strip()
-        if kind in ("exp_title", "exp_body") and not company:
+        if kind in ("exp_title", "exp_intro", "exp_body") and not company:
             company = label or "Company"
         base = compute_field_path(kind, company)
         count = used.get(base, 0) + 1

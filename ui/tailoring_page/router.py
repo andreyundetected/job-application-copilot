@@ -154,6 +154,18 @@ def _store_changes_with_dedup(
     return created, superseded
 
 
+_LEGACY_STATUS = {"match": "exact", "miss": "unknown"}
+
+
+def _status_of(item) -> str:
+    return _LEGACY_STATUS.get(item.status, item.status)
+
+
+def _popup_choice(session: Session) -> str | None:
+    app_settings = crud.get_app_settings(session)
+    return app_settings.skills_popup_choice if app_settings else None
+
+
 def _find_block(blocks: list[dict], field_path: str) -> dict | None:
     return next((block for block in blocks if block["field_path"] == field_path), None)
 
@@ -271,7 +283,11 @@ def _serialize_gap_item(item) -> dict:
         "id": item.id,
         "text": item.text,
         "category": item.category,
-        "status": item.status,
+        "status": _status_of(item),
+        "resume_form": item.resume_form,
+        "suggested_form": item.suggested_form,
+        "category": getattr(item, "category", None),
+        "evidence": getattr(item, "evidence", None),
         "priority": item.priority,
         "source": item.source,
         "original_field_path": item.original_field_path,
@@ -301,7 +317,8 @@ def get_gap_items(session_id: int, session: Session = Depends(get_session)):
     return JSONResponse(
         {
             "ready": tailoring_session.gap_analysis_ready,
-            "items": [_serialize_gap_item(i) for i in items],
+            "items": [_serialize_gap_item(i) for i in items if i.status != "over"],
+            "skills_popup_choice": _popup_choice(session),
             "block_comments": tailoring_session.block_comments or {},
             "block_order": [block["field_path"] for block in _body_blocks(blocks)],
             "blocks": blocks,
@@ -340,6 +357,7 @@ def _run_gap_analysis_task(session_id: int) -> dict:
             linkedin_text=linkedin.raw_text if linkedin else "",
             extra_info=profile.extra_info if profile else None,
             blocks=blocks,
+            known_skills=[skill.text for skill in crud.list_known_skills(session)],
         )
         gap_items = result["gap_items"]
         resume_items = result["resume_items"]
@@ -419,26 +437,64 @@ def save_title_suggestions(
 
 
 @router.post("/session/{session_id}/suggest-titles")
-def suggest_titles_endpoint(session_id: int, session: Session = Depends(get_session)):
+def suggest_titles_endpoint(
+    session_id: int, field_path: str = Form(""), session: Session = Depends(get_session)
+):
     tailoring_session = crud.get_tailoring_session(session, session_id)
     if tailoring_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    task_id = run_tracked_task("gap_suggest_titles", _run_suggest_titles, session_id)
+    task_id = run_tracked_task("gap_suggest_titles", _run_suggest_titles, session_id, field_path)
     return JSONResponse({"task_id": task_id})
 
 
-def _run_suggest_titles(session_id: int) -> dict:
+def _run_suggest_titles(session_id: int, field_path: str = "") -> dict:
     session = SessionLocal()
     try:
         tailoring_session = crud.get_tailoring_session(session, session_id)
         job = crud.get_job_posting(session, tailoring_session.job_posting_id)
 
-        targets = build_title_targets(tailoring_session.working_html or "", tailoring_session.blocks or [])
-        suggestions = suggest_title_changes(get_llm_provider(), targets, job.raw_text)
+        blocks = tailoring_session.blocks or []
+        targets = build_title_targets(tailoring_session.working_html or "", blocks)
+        if field_path:
+            targets = [target for target in targets if target["key"] == field_path]
 
-        crud.save_title_suggestions(session, session_id, suggestions)
-        return {"suggestions": suggestions}
+        title_item = next(
+            (
+                item
+                for item in crud.list_gap_items_for_session(session, session_id)
+                if getattr(item, "category", None) == "title"
+            ),
+            None,
+        )
+        job_title = title_item.text if title_item else (job.title or "")
+        from core.gap_analysis.title_suggestions import with_work_context
+        from core.parsing.html_blocks import body_block_texts
+
+        targets = with_work_context(targets, body_block_texts(tailoring_session.working_html or "", blocks))
+        rejections = [
+            {"original": row.original, "rejected": row.rejected, "comment": row.comment or ""}
+            for row in crud.list_title_rejections(session, session_id)
+        ]
+        found = suggest_title_changes(
+            get_llm_provider(),
+            targets,
+            job.raw_text,
+            tailoring_session.block_comments or {},
+            job_title,
+            rejections,
+        )
+
+        previous = tailoring_session.title_suggestions or []
+        kept = [item for item in previous if item.get("key") != field_path] if field_path else []
+        merged = [dict(item) for item in kept + found]
+        order = {block["field_path"]: index for index, block in enumerate(blocks)}
+        for item in merged:
+            item.pop("order", None)
+        merged.sort(key=lambda item: _title_sort_key(item, order))
+
+        crud.save_title_suggestions(session, session_id, merged)
+        return {"suggestions": merged, "found": sum(1 for item in found if item.get("changed"))}
     finally:
         session.close()
 
@@ -588,17 +644,18 @@ def set_block_comment(
 def generate_block(
     session_id: int,
     field_path: str = Form(...),
+    mode: str = Form("all"),
     session: Session = Depends(get_session),
 ):
     tailoring_session = crud.get_tailoring_session(session, session_id)
     if tailoring_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    task_id = run_tracked_task("gap_generate_block", _run_generate_block, session_id, field_path)
+    task_id = run_tracked_task("gap_generate_block", _run_generate_block, session_id, field_path, mode)
     return JSONResponse({"task_id": task_id})
 
 
-def _run_generate_block(session_id: int, field_path: str) -> dict:
+def _run_generate_block(session_id: int, field_path: str, mode: str = "all") -> dict:
     session = SessionLocal()
     try:
         tailoring_session = crud.get_tailoring_session(session, session_id)
@@ -614,26 +671,42 @@ def _run_generate_block(session_id: int, field_path: str) -> dict:
         if not originals:
             raise ValueError("Block is empty")
 
+        from core.gap_analysis.keywords import keywords_for_block
+
         items = crud.list_gap_items_for_session(session, session_id)
-        included_texts = [
-            item.text
-            for item in items
-            if item.status in ("match", "can_add")
-            and field_path in (item.assigned_field_paths or [])
-            and field_path not in (item.disabled_field_paths or [])
-        ]
-        included_texts += [
-            item.text
-            for item in items
-            if item.status in ("miss", "over")
-            and field_path in (item.assigned_field_paths or [])
-            and field_path not in (item.disabled_field_paths or [])
-        ]
-        keep_texts = [
-            item.text
-            for item in items
-            if item.status == "over" and item.recommend_keep and item.original_field_path == field_path
-        ]
+        rephrase_items = []
+        add_items = []
+        if block["kind"] in ("skills", "summary"):
+            block_text = "\n".join(html_to_text(fragment) for fragment in originals)
+            chosen = keywords_for_block(
+                [
+                    {
+                        "text": item.text,
+                        "status": _status_of(item),
+                        "category": getattr(item, "category", None),
+                        "assigned_field_paths": item.assigned_field_paths or [],
+                        "disabled_field_paths": item.disabled_field_paths or [],
+                    }
+                    for item in items
+                ],
+                block["kind"],
+                field_path,
+                block_text,
+                html_to_text(strip_marks(html)),
+                next(
+                    (
+                        b["field_path"]
+                        for b in (tailoring_session.blocks or [])
+                        if b["kind"] == ("summary" if block["kind"] == "skills" else "skills")
+                    ),
+                    None,
+                ),
+            )
+            add_items = [item["text"] for item in chosen]
+
+        if mode == "rephrase" or not add_items:
+            return {"unchanged": True}
+
         comment = (tailoring_session.block_comments or {}).get(field_path, "")
 
         fragments = generate_block_fragments(
@@ -642,8 +715,8 @@ def _run_generate_block(session_id: int, field_path: str) -> dict:
             block["label"],
             html_to_text(strip_marks(html)),
             job.raw_text,
-            included_texts,
-            keep_texts,
+            add_items,
+            rephrase_items,
             comment,
             kind=block["kind"],
         )
@@ -720,6 +793,254 @@ def revert_block(
             "title_suggestions": refreshed.title_suggestions or [],
         }
     )
+
+
+@router.get("/session/{session_id}/letter")
+def get_letter_endpoint(session_id: int, session: Session = Depends(get_session)):
+    if crud.get_tailoring_session(session, session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    row = crud.get_letter(session, session_id)
+    profile = crud.get_candidate_profile(session)
+    return JSONResponse(
+        {
+            "content": (row.content or "") if row else "",
+            "notes": (row.notes or "") if row else "",
+            "standing": (profile.letter_note or "") if profile else "",
+        }
+    )
+
+
+@router.post("/session/{session_id}/letter")
+def save_letter_endpoint(
+    session_id: int,
+    content: str = Form(""),
+    notes: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    if crud.get_tailoring_session(session, session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    crud.save_letter(session, session_id, content, notes)
+    return JSONResponse({"status": "ok"})
+
+
+@router.get("/session/{session_id}/letter/download")
+def download_letter_endpoint(
+    session_id: int,
+    format: str = "docx",
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    import html as html_module
+    import io
+    import re as regex
+    from urllib.parse import quote
+
+    from fastapi.responses import Response
+
+    tailoring_session = crud.get_tailoring_session(session, session_id)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    strings = load_page_strings("ui/tailoring_page", lang)
+    row = crud.get_letter(session, session_id)
+    text = (row.content or "").strip() if row else ""
+    if not text:
+        raise HTTPException(status_code=404, detail=strings["err_letter_empty"])
+
+    job = crud.get_job_posting(session, tailoring_session.job_posting_id)
+    name = regex.sub(r'[\\/:*?"<>|]+', " ", f"{job.company or 'Company'} cover letter").strip()
+    fmt = format.lower()
+
+    if fmt == "txt":
+        data, media, ext = text.encode("utf-8"), "text/plain; charset=utf-8", "txt"
+    elif fmt == "pdf":
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import ParagraphStyle
+            from reportlab.platypus import Paragraph, SimpleDocTemplate
+        except ImportError:
+            raise HTTPException(status_code=501, detail=strings["err_pdf_package"])
+        try:
+            text.encode("cp1252")
+        except UnicodeEncodeError:
+            raise HTTPException(status_code=501, detail=strings["err_pdf_latin"])
+        buffer = io.BytesIO()
+        style = ParagraphStyle("body", fontName="Helvetica", fontSize=11, leading=15, spaceAfter=10)
+        story = [
+            Paragraph(html_module.escape(block).replace("\n", "<br/>"), style)
+            for block in text.split("\n\n")
+            if block.strip()
+        ]
+        SimpleDocTemplate(
+            buffer, pagesize=A4, leftMargin=64, rightMargin=64, topMargin=64, bottomMargin=64
+        ).build(story)
+        data, media, ext = buffer.getvalue(), "application/pdf", "pdf"
+    else:
+        from docx import Document
+        from docx.shared import Pt
+
+        document = Document()
+        document.styles["Normal"].font.name = "Calibri"
+        document.styles["Normal"].font.size = Pt(11)
+        for block in text.split("\n\n"):
+            if not block.strip():
+                continue
+            paragraph = document.add_paragraph()
+            paragraph.paragraph_format.space_after = Pt(8)
+            for index, line in enumerate(block.split("\n")):
+                if index:
+                    paragraph.add_run().add_break()
+                paragraph.add_run(line)
+        buffer = io.BytesIO()
+        document.save(buffer)
+        data = buffer.getvalue()
+        media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ext = "docx"
+
+    filename = f"{name}.{ext}"
+    disposition = f"attachment; filename=\"cover_letter.{ext}\"; filename*=UTF-8''{quote(filename)}"
+    return Response(content=data, media_type=media, headers={"Content-Disposition": disposition})
+
+
+@router.post("/session/{session_id}/generate-letter")
+def generate_letter_endpoint(
+    session_id: int,
+    notes: str = Form(""),
+    session: Session = Depends(get_session),
+    lang: str = Depends(get_language),
+):
+    from core.gap_analysis.keywords import keywords_for_letter
+    from core.gap_analysis.letter import generate_cover_letter
+    from core.parsing.html_to_text import html_to_text
+
+    tailoring_session = crud.get_tailoring_session(session, session_id)
+    if tailoring_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    job = crud.get_job_posting(session, tailoring_session.job_posting_id)
+    linkedin = crud.get_active_resume_version(session, "linkedin")
+    profile = crud.get_candidate_profile(session)
+    blocks = tailoring_session.blocks or []
+    skills_path = next((b["field_path"] for b in blocks if b["kind"] == "skills"), None)
+    summary_path = next((b["field_path"] for b in blocks if b["kind"] == "summary"), None)
+
+    items = [
+        {
+            "text": row.text,
+            "status": _status_of(row),
+            "category": getattr(row, "category", None),
+            "assigned_field_paths": row.assigned_field_paths or [],
+            "disabled_field_paths": row.disabled_field_paths or [],
+            "evidence": getattr(row, "evidence", None),
+        }
+        for row in crud.list_gap_items_for_session(session, session_id)
+        if row.status != "over"
+    ]
+    chosen = keywords_for_letter(items, skills_path, summary_path)
+    chosen_texts = {item["text"] for item in chosen}
+    topics = [
+        f'{item["text"]} (basis: "{item["evidence"]}")' if item.get("evidence") else item["text"]
+        for item in chosen
+    ]
+    not_proven = [
+        item["text"]
+        for item in items
+        if item["status"] == "unknown" and item["category"] != "title" and item["text"] not in chosen_texts
+    ]
+    contacts = [
+        value
+        for value in (
+            profile.email if profile else None,
+            profile.github_url if profile else None,
+            profile.linkedin_url if profile else None,
+        )
+        if value
+    ]
+
+    try:
+        content = generate_cover_letter(
+            get_llm_provider(),
+            job.company or "",
+            job.title or "",
+            job.raw_text,
+            html_to_text(tailoring_session.working_html or ""),
+            linkedin.raw_text if linkedin else "",
+            profile.extra_info if profile else None,
+            topics,
+            not_proven,
+            notes.strip(),
+            contacts=contacts,
+        )
+    except Exception as error:
+        message = load_page_strings("ui/tailoring_page", lang)["err_letter_failed"]
+        raise HTTPException(status_code=502, detail=message.replace("{error}", str(error)))
+
+    crud.save_letter(session, session_id, content, notes.strip())
+    return JSONResponse({"content": content, "topics": [item["text"] for item in chosen]})
+
+
+@router.post("/session/{session_id}/title-rejections")
+def add_title_rejection_endpoint(
+    session_id: int,
+    original: str = Form(...),
+    rejected: str = Form(...),
+    comment: str = Form(""),
+    forever: str = Form(""),
+    kind: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    if crud.get_tailoring_session(session, session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    row = crud.add_title_rejection(
+        session,
+        original.strip(),
+        rejected.strip(),
+        comment.strip(),
+        kind.strip(),
+        None if forever else session_id,
+    )
+    return JSONResponse({"id": row.id})
+
+
+@router.get("/title-rejections")
+def list_title_rejections_endpoint(session: Session = Depends(get_session)):
+    rows = crud.list_title_rejections(session)
+    return JSONResponse(
+        {
+            "items": [
+                {"id": row.id, "original": row.original, "rejected": row.rejected, "comment": row.comment or ""}
+                for row in rows
+            ]
+        }
+    )
+
+
+@router.post("/title-rejections/{rejection_id}/delete")
+def delete_title_rejection_endpoint(rejection_id: int, session: Session = Depends(get_session)):
+    crud.delete_title_rejection(session, rejection_id)
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/session/{session_id}/known-skills")
+def add_known_skills_endpoint(
+    session_id: int,
+    items_json: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    import json as _json
+
+    if crud.get_tailoring_session(session, session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        entries = [
+            {"id": int(entry["id"]), "text": str(entry["text"])} for entry in _json.loads(items_json)
+        ]
+    except (ValueError, KeyError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    crud.add_known_skills(session, [entry["text"] for entry in entries])
+    updated = crud.promote_gap_items(session, session_id, entries)
+    return JSONResponse({"items": [_serialize_gap_item(item) for item in updated]})
 
 
 @router.post("/session/{session_id}/extract-keywords")

@@ -27,13 +27,13 @@ def _capture(monkeypatch, provider):
 
 
 @pytest.mark.providers
-def test_temperature_is_not_sent_by_default(monkeypatch):
+def test_temperature_is_zero_by_default(monkeypatch):
     provider = FreeLLMAPIProvider()
     calls = _capture(monkeypatch, provider)
 
     provider.call("system", "user")
 
-    assert "temperature" not in calls[0]
+    assert calls[0]["temperature"] == 0
 
 
 @pytest.mark.providers
@@ -51,7 +51,7 @@ def test_temperature_is_sent_together_with_reasoning_effort(monkeypatch):
     provider = FreeLLMAPIProvider()
     calls = _capture(monkeypatch, provider)
 
-    provider.call("system", "user", reasoning_effort="low", temperature=0)
+    provider.call("system", "user", reasoning_effort="low", temperature=0.7)
 
     assert calls[0]["temperature"] == 0
-    assert calls[0]["extra_body"] == {"reasoning_effort": "low"}
+    assert "extra_body" not in calls[0]

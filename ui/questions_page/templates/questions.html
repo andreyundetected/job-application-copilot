@@ -486,10 +486,7 @@ textarea.answer-body-editable:focus {
             let downloadHtml = "";
             if (q.category === "cover_letter") {
                 downloadHtml = `
-                    <select class="download-format-select" data-question-id="${q.id}">
-                        <option value="docx">DOCX</option>
-                        <option value="pdf">PDF</option>
-                    </select>
+                    ${fmtPickerHtml("docx", ["docx", "pdf"], true)}
                     <button type="button" class="btn-ghost btn download-answer-btn" data-question-id="${q.id}">${I18N.download_answer_button}</button>
                 `;
             }
@@ -604,12 +601,12 @@ textarea.answer-body-editable:focus {
             return;
         }
 
-        if (e.target.classList.contains("download-format-select")) {
+        if (e.target.closest(".fmt-pick")) {
             return;
         }
 
         if (e.target.classList.contains("download-answer-btn")) {
-            const format = card.querySelector(".download-format-select").value;
+            const format = card.querySelector(".fmt-pick").dataset.value;
             window.location.href = `/questions/${questionId}/download?format=${format}`;
             return;
         }

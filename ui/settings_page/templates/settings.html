@@ -504,6 +504,34 @@
 <div class="settings-card">
     <div class="settings-card-header">
         <div class="settings-card-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><polyline points="4 8 12 14 20 8"></polyline></svg>
+            <h2>{{ t.letter_note_title }}</h2>
+        </div>
+        <span class="autosave-status" id="letter-note-save-status">✓ {{ t.saved_status }}</span>
+    </div>
+    <p class="settings-card-hint">{{ t.letter_note_hint }}</p>
+    <textarea class="autosave-textarea" id="letter_note" placeholder="{{ t.letter_note_placeholder }}" style="min-height:100px;">{{ profile.letter_note or '' if profile else '' }}</textarea>
+</div>
+
+<script>
+(function () {
+    const textarea = document.getElementById("letter_note");
+    const status = document.getElementById("letter-note-save-status");
+    let timeout = null;
+
+    function save() {
+        fetch("/settings/profile/letter-note", { method: "POST", body: new URLSearchParams({ letter_note: textarea.value }) })
+            .then(() => flashSaved(status));
+    }
+
+    textarea.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(save, 800); });
+    textarea.addEventListener("blur", () => { clearTimeout(timeout); save(); });
+})();
+</script>
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div class="settings-card-header-left">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             <h2>{{ t.toast_prefs_title }}</h2>
         </div>
@@ -516,6 +544,94 @@
         <button type="button" class="btn btn-ghost" id="toast-prefs-disable-all">{{ t.toast_prefs_disable_all }}</button>
     </div>
 </div>
+
+<div class="settings-card">
+    <div class="settings-card-header">
+        <div class="settings-card-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <h2>{{ t.known_skills_title }}</h2>
+        </div>
+        <span class="settings-card-meta" id="known-skills-count"></span>
+    </div>
+    <p class="settings-card-hint">{{ t.known_skills_hint }}</p>
+
+    <div class="quick-add-row">
+        <input type="text" id="known_skill_input" placeholder="{{ t.known_skills_placeholder }}">
+        <button type="button" class="btn" id="add-known-skill-btn">{{ t.add_button }}</button>
+    </div>
+
+    <div class="chip-row" id="known-skills-list" style="margin-top:12px;"></div>
+
+    <div class="pref-actions" style="align-items:center;">
+        <span class="settings-card-meta" id="skills-popup-state"></span>
+        <button type="button" class="btn btn-ghost" id="skills-popup-reset-btn">{{ t.skills_popup_reset_button }}</button>
+    </div>
+</div>
+
+<script>
+(function () {
+    const T = {{ t | tojson }};
+    let skills = {{ known_skills | map(attribute="text") | list | tojson }};
+    let ids = {{ known_skills | map(attribute="id") | list | tojson }};
+    let popupChoice = {{ skills_popup_choice | tojson }};
+    const listEl = document.getElementById("known-skills-list");
+    const countEl = document.getElementById("known-skills-count");
+    const stateEl = document.getElementById("skills-popup-state");
+
+    function esc(value) {
+        return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    }
+
+    function render() {
+        countEl.textContent = `(${skills.length})`;
+        listEl.innerHTML = skills.map((text, index) => `
+            <span class="chip-item">
+                <span class="chip-item-text">${esc(text)}</span>
+                <button type="button" class="chip-item-remove known-skill-remove" data-id="${ids[index]}">&times;</button>
+            </span>
+        `).join("");
+        const key = popupChoice === "add" ? "skills_popup_state_add" : popupChoice === "skip" ? "skills_popup_state_skip" : "skills_popup_state_ask";
+        stateEl.textContent = `${T.skills_popup_state_label} ${T[key]}`;
+    }
+
+    function apply(data) {
+        skills = data.skills.map((item) => item.text);
+        ids = data.skills.map((item) => item.id);
+        render();
+    }
+
+    async function addSkill() {
+        const input = document.getElementById("known_skill_input");
+        const text = input.value.trim();
+        if (!text) return;
+        const response = await fetch("/settings/known-skills", { method: "POST", body: new URLSearchParams({ text }) });
+        if (!response.ok) return;
+        apply(await response.json());
+        input.value = "";
+    }
+
+    document.getElementById("add-known-skill-btn").addEventListener("click", addSkill);
+    document.getElementById("known_skill_input").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { event.preventDefault(); addSkill(); }
+    });
+
+    listEl.addEventListener("click", async (event) => {
+        const button = event.target.closest(".known-skill-remove");
+        if (!button) return;
+        const response = await fetch(`/settings/known-skills/${button.dataset.id}/delete`, { method: "POST" });
+        if (response.ok) apply(await response.json());
+    });
+
+    document.getElementById("skills-popup-reset-btn").addEventListener("click", async () => {
+        const response = await fetch("/settings/skills-popup-choice", { method: "POST", body: new URLSearchParams({ choice: "" }) });
+        if (!response.ok) return;
+        popupChoice = null;
+        render();
+    });
+
+    render();
+})();
+</script>
 
 <script>
 const I18N = {{ t | tojson }};
@@ -713,7 +829,7 @@ bindResumeToolbar();
     const doc = resumeDocEl;
     const RESUME_ID = doc.dataset.resumeId;
     const PALETTE = ["#5b8def", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#ea580c", "#0d9488", "#db2777"];
-    const KINDS = ["title_main", "summary", "skills", "exp_title", "exp_body"];
+    const KINDS = ["title_main", "summary", "skills", "exp_title", "exp_intro", "exp_body"];
     const toolbar = document.getElementById("resume-toolbar");
     const bar = document.getElementById("blocks-bar");
     const tip = document.getElementById("blk-tip");
@@ -732,7 +848,7 @@ bindResumeToolbar();
     let lastIndex = null;
 
     function kindLabel(kind) { return I18N["blocks_kind_" + kind] || kind; }
-    function isExp(kind) { return kind === "exp_title" || kind === "exp_body"; }
+    function isExp(kind) { return kind === "exp_title" || kind === "exp_intro" || kind === "exp_body"; }
     function escapeHtml(value) { return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
     function randomId() { return "b" + Math.random().toString(16).slice(2, 10); }
     function colorOf(block) { return PALETTE[Math.max(0, blocks.indexOf(block)) % PALETTE.length]; }
@@ -1112,7 +1228,7 @@ document.getElementById("scoring-factor-list").addEventListener("click", async (
 
 (function () {
     const STORAGE_KEY = "toast_prefs";
-    const KEYS = ["new_job", "job_added", "applied", "job_archived", "job_restored", "archive_cleared", "stuck_removed", "copied", "tailoring", "tracker_sorted", "data_wiped"];
+    const KEYS = ["new_job", "job_added", "applied", "job_archived", "job_restored", "archive_cleared", "stuck_removed", "copied", "tailoring", "tracker_sorted", "data_wiped", "known_skills"];
     const list = document.getElementById("toast-prefs-list");
     const status = document.getElementById("toast-prefs-save-status");
 

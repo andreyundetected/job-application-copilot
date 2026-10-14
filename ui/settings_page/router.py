@@ -63,6 +63,8 @@ def _page_context(session: Session, request: Request, lang: str) -> dict:
         "preferred_currency": app_settings.preferred_currency if app_settings else "USD",
         "preferred_salary_period": app_settings.preferred_salary_period if app_settings else "year",
         "supported_currencies": SUPPORTED_CURRENCIES,
+        "known_skills": crud.list_known_skills(session),
+        "skills_popup_choice": app_settings.skills_popup_choice if app_settings else None,
         "lang": lang,
         "t": load_page_strings("ui/settings_page", lang),
     }
@@ -101,6 +103,12 @@ def update_profile(
 @router.post("/profile/writing-preferences")
 def update_writing_preferences(writing_preferences: str = Form(""), session: Session = Depends(get_session)):
     crud.update_writing_preferences(session, writing_preferences)
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/profile/letter-note")
+def update_letter_note(letter_note: str = Form(""), session: Session = Depends(get_session)):
+    crud.update_letter_note(session, letter_note)
     return JSONResponse({"status": "ok"})
 
 
@@ -281,6 +289,32 @@ def update_auto_answer_settings(
         session,
         auto_answer_questions_enabled=auto_answer_questions_enabled,
     )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/known-skills")
+def add_known_skill(text: str = Form(...), session: Session = Depends(get_session)):
+    parts = [part.strip() for part in text.replace("\n", ",").split(",")]
+    texts = [part for part in parts if part]
+    if not texts:
+        raise HTTPException(status_code=400, detail="Skill cannot be empty")
+    crud.add_known_skills(session, texts)
+    skills = crud.list_known_skills(session)
+    return JSONResponse({"skills": [{"id": skill.id, "text": skill.text} for skill in skills]})
+
+
+@router.post("/known-skills/{skill_id}/delete")
+def delete_known_skill(skill_id: int, session: Session = Depends(get_session)):
+    crud.delete_known_skill(session, skill_id)
+    skills = crud.list_known_skills(session)
+    return JSONResponse({"skills": [{"id": skill.id, "text": skill.text} for skill in skills]})
+
+
+@router.post("/skills-popup-choice")
+def update_skills_popup_choice(choice: str = Form(""), session: Session = Depends(get_session)):
+    if choice not in ("", "add", "skip"):
+        raise HTTPException(status_code=400, detail="Invalid choice")
+    crud.upsert_app_settings(session, skills_popup_choice=choice)
     return JSONResponse({"status": "ok"})
 
 

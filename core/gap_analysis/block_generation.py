@@ -1,5 +1,6 @@
 import html as html_module
 import re
+from collections import Counter
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -21,11 +22,20 @@ _EL_RE = re.compile(r'<el\s+n="(\d+)"[^>]*>(.*?)</el>', re.DOTALL)
 _OUT_LI_RE = re.compile(r"<li>(.*?)</li>", re.DOTALL)
 
 SKILLS_LENGTH_BOUNDS = (0.5, 1.6)
-TEXT_LENGTH_BOUNDS = (0.8, 1.35)
+TEXT_LENGTH_BOUNDS = (0.9, 1.25)
+SUMMARY_LENGTH_BOUNDS = (0.9, 1.4)
+MIN_RETAINED_WORDS = 0.8
+
+_NUM_RE = re.compile(r"\d+(?:[.,]\d+)?")
+_WORD_RE = re.compile(r"\w+", re.UNICODE)
+
+
+def _lines(text: str) -> str:
+    return "\n".join(" ".join(line.split()) for line in text.splitlines() if line.strip())
 
 
 def _plain(fragment: str) -> str:
-    return " ".join(html_to_text(fragment).split())
+    return _lines(html_to_text(fragment))
 
 
 def build_units(fragments: list[str]) -> list[dict]:
@@ -52,7 +62,7 @@ def _dominant_style(inner_html: str) -> str:
 
 
 def _wrap(style: str, text: str) -> str:
-    escaped = html_module.escape(text)
+    escaped = html_module.escape(text).replace("\n", "<br>")
     if style:
         return f'<span style="{style}">{escaped}</span>'
     return escaped
@@ -84,9 +94,9 @@ def parse_generated(raw: str) -> dict[int, dict]:
     for number, body in _EL_RE.findall(raw or ""):
         items = _OUT_LI_RE.findall(body)
         if items:
-            parsed[int(number)] = {"items": [" ".join(html_module.unescape(item).split()) for item in items if item.strip()]}
+            parsed[int(number)] = {"items": [_lines(html_module.unescape(item)) for item in items if item.strip()]}
         else:
-            parsed[int(number)] = {"text": " ".join(html_module.unescape(body).split())}
+            parsed[int(number)] = {"text": _lines(html_module.unescape(body))}
     return parsed
 
 
@@ -122,14 +132,40 @@ def count_words(units: list[dict]) -> int:
     return total
 
 
+def _units_text(units: list[dict]) -> str:
+    parts = []
+    for unit in units:
+        if unit["list"]:
+            parts.extend(unit["items"])
+        else:
+            parts.append(unit["text"])
+    return "\n".join(parts)
+
+
+def _numbers_preserved(old: str, new: str) -> bool:
+    old_numbers = Counter(_NUM_RE.findall(old))
+    new_numbers = Counter(_NUM_RE.findall(new))
+    return all(new_numbers[number] >= count for number, count in old_numbers.items())
+
+
+def _retained_ratio(old: str, new: str) -> float:
+    old_words = Counter(word.lower() for word in _WORD_RE.findall(old))
+    new_words = Counter(word.lower() for word in _WORD_RE.findall(new))
+    total = sum(old_words.values())
+    if not total:
+        return 1.0
+    kept = sum(min(count, new_words[word]) for word, count in old_words.items())
+    return kept / total
+
+
 def generate_block_fragments(
     provider,
     fragments: list[str],
     label: str,
     full_resume_text: str,
     job_posting_text: str,
-    included_items: list[str],
-    keep_items: list[str],
+    add_items: list[str],
+    rephrase_items: list[dict],
     comment: str,
     kind: str = "exp_body",
 ) -> list[str]:
@@ -143,8 +179,8 @@ def generate_block_fragments(
         words=original_words,
         full_resume_text=full_resume_text,
         job_posting_text=job_posting_text,
-        included_items=included_items,
-        keep_items=keep_items,
+        add_items=add_items,
+        rephrase_items=rephrase_items,
         comment=comment,
     )
 
@@ -157,7 +193,15 @@ def generate_block_fragments(
 
     merged = merge_generated(fragments, units, parse_generated(raw_response))
     new_words = count_words(build_units(merged))
-    low, high = SKILLS_LENGTH_BOUNDS if kind == "skills" else TEXT_LENGTH_BOUNDS
+    bounds = {"skills": SKILLS_LENGTH_BOUNDS, "summary": SUMMARY_LENGTH_BOUNDS}
+    low, high = bounds.get(kind, TEXT_LENGTH_BOUNDS)
     if original_words and not (low * original_words <= new_words <= high * original_words):
         raise ValueError(f"The model changed the block length too much ({original_words} -> {new_words} words)")
+    if kind != "skills":
+        old_text = _units_text(units)
+        new_text = _units_text(build_units(merged))
+        if not _numbers_preserved(old_text, new_text):
+            raise ValueError("The model changed numbers or metrics in the block")
+        if _retained_ratio(old_text, new_text) < MIN_RETAINED_WORDS:
+            raise ValueError("The model rewrote too much of the block")
     return merged

@@ -67,6 +67,7 @@ class CandidateProfile(Base):
     extra_links: Mapped[list] = mapped_column(JSON, nullable=True)
     extra_info: Mapped[str] = mapped_column(Text, nullable=True)
     writing_preferences: Mapped[str] = mapped_column(Text, nullable=True)
+    letter_note: Mapped[str] = mapped_column(Text, nullable=True)
 
 
 class AppSettings(Base):
@@ -84,6 +85,7 @@ class AppSettings(Base):
     telegram_notify_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     telegram_notify_only_successful: Mapped[bool] = mapped_column(Boolean, default=True)
     telegram_notify_min_score: Mapped[int] = mapped_column(Integer, nullable=True)
+    skills_popup_choice: Mapped[str] = mapped_column(String(8), nullable=True)
 
 
 class JobPosting(Base):
@@ -281,6 +283,9 @@ class GapItem(Base):
     disabled_field_paths: Mapped[list] = mapped_column(JSON, nullable=True)
     origin_status: Mapped[str] = mapped_column(String(16), nullable=True)
     recommend_keep: Mapped[bool] = mapped_column(Boolean, nullable=True)
+    resume_form: Mapped[str] = mapped_column(String(255), nullable=True)
+    suggested_form: Mapped[str] = mapped_column(String(255), nullable=True)
+    evidence: Mapped[str] = mapped_column(String(1000), nullable=True)
     included: Mapped[bool] = mapped_column(Boolean, default=False)
 
     session: Mapped["TailoringSession"] = relationship(back_populates="gap_items")
@@ -558,3 +563,40 @@ class ApiUsageLog(Base):
     total_tokens: Mapped[int] = mapped_column(Integer, nullable=True)
     estimated_cost: Mapped[float] = mapped_column(Float, nullable=True)
     raw_usage: Mapped[dict] = mapped_column(JSON, nullable=True)
+
+
+class KnownSkill(Base):
+    __tablename__ = "known_skills"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    text: Mapped[str] = mapped_column(String(255))
+    text_norm: Mapped[str] = mapped_column(String(255), unique=True)
+
+
+class TailoringLetter(Base):
+    __tablename__ = "tailoring_letters"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=True)
+    notes: Mapped[str] = mapped_column(String(2000), nullable=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+
+
+class TitleRejection(Base):
+    __tablename__ = "title_rejections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow
+    )
+    session_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=True)
+    original: Mapped[str] = mapped_column(String(500))
+    rejected: Mapped[str] = mapped_column(String(500))
+    comment: Mapped[str] = mapped_column(String(2000), nullable=True)

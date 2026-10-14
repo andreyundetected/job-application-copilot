@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+import config
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -232,7 +233,7 @@ def update_discovery_settings(
 
 
 @router.get("/discovery/live-stats")
-def discovery_live_stats():
+def discovery_live_stats(session: Session = Depends(get_session)):
     from core.discovery.posting_batch import get_state, pending_count
 
     discovery_session = DiscoverySessionLocal()
@@ -241,28 +242,32 @@ def discovery_live_stats():
     finally:
         discovery_session.close()
 
-    batch_stats = run_control.get_batch_stats()
-    eval_stats = run_control.get_eval_stats()
+    automation_settings = _get_or_create_settings(session)
+    app_settings = crud.get_app_settings(session) or crud.upsert_app_settings(session)
+    batch_state = get_state()
+    flow = run_control.get_flow()
+    pending_total = pending_count()
 
     return JSONResponse(
         {
             "quick_batch_enabled": settings.quick_batch_enabled,
             "batch_window_minutes": settings.batch_window_minutes,
             "batch_force_flush_size": settings.batch_force_flush_size,
-            "batch_last_flush_at": batch_stats["last_flush_at"],
-            "pending_count": pending_count(),
-            "batch_loop_alive": get_state()["loop_alive"],
-            "batch_flush_running": get_state()["flush_running"],
-            "batch_seconds_until_flush": get_state()["seconds_until_flush"],
-            "batch_last_error": get_state()["last_error"],
-            "batch_evaluating": batch_stats["evaluating_batch"],
-            "last_batch_size": batch_stats["last_batch_size"],
-            "last_batch_skipped": batch_stats["last_batch_skipped"],
-            "last_batch_proceeded": batch_stats["last_batch_proceeded"],
-            "eval_in_flight": eval_stats["in_flight"],
-            "eval_evaluated_count": eval_stats["evaluated_count"],
-            "eval_passed_count": eval_stats["passed_count"],
-            "eval_archived_count": eval_stats["archived_count"],
+            "batch_loop_alive": batch_state["loop_alive"],
+            "batch_flush_running": batch_state["flush_running"],
+            "batch_seconds_until_flush": batch_state["seconds_until_flush"],
+            "batch_last_error": batch_state["last_error"],
+            "screen_pending_total": pending_total,
+            "screen_queue": max(0, pending_total - flow["screen"]["active"]),
+            "screen_workers": config.DISCOVERY_SCREEN_WORKERS,
+            "chunk_size": config.DISCOVERY_SCREEN_CHUNK_SIZE,
+            "eval_workers": config.DISCOVERY_EVAL_MAX_WORKERS,
+            "post_workers": config.DISCOVERY_POST_MAX_WORKERS,
+            "telegram_enabled": bool(app_settings.telegram_notify_enabled),
+            "tailor_enabled": automation_settings.auto_tailor_master_enabled,
+            "answers_enabled": automation_settings.auto_questions_master_enabled
+            and bool(crud.list_automation_base_questions(session)),
+            "flow": flow,
         }
     )
 
@@ -341,6 +346,9 @@ def start_discovery(skip_wayback: str = Form(""), full_scan: str = Form("")):
         discovery_session.close()
 
     run_control.reset_run()
+    from core.discovery.posting_batch import clear_pending
+
+    clear_pending()
     if skip_wayback == "true":
         run_control.request_skip_wayback()
     else:

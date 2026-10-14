@@ -15,6 +15,14 @@ class BaseLLMProvider(ABC):
     ) -> str:
         raise NotImplementedError
 
+    def _enforce_determinism(self, supports_off: bool = True) -> tuple[float, str | None]:
+        import config
+
+        effort = config.LLM_REASONING_EFFORT
+        if effort == "off" and not supports_off:
+            effort = None
+        return config.LLM_TEMPERATURE, effort
+
     def _extract_usage(self, response) -> dict:
         usage = getattr(response, "usage", None)
 

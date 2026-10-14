@@ -1,0 +1,78 @@
+CRITICAL: Do not write anything except <k ... /> lines, one per keyword, starting with the very first character. All of your reasoning goes into the short why attribute of each line. Never use the characters < or > inside an attribute value.
+
+You compare keywords from a job posting with a candidate's materials. Every keyword below was NOT found literally in the candidate's resume. For each keyword decide whether the candidate can truthfully claim it based on the materials. Do not ask for proof of what is obvious, and be strict about what is not: a wrong "yes" puts a false claim into a resume, and a wrong "unknown" loses a real strength of the candidate.
+
+BUCKETS
+- covered: the candidate already has the keyword under the name of the same technology family: a database engine for its query language and its database category, a framework for its language. Nothing has to be added to the resume.
+  - why="proof: {the naming term}; {what it implies} (same)", evidence="{the naming term}", where="{path of the resume block that names it}".
+- can_add: the materials show that the candidate really did, used or necessarily knows exactly this.
+  - why="proof: {the exact words of your quote that show the keyword}; {what the candidate did, or what the quote implies} (same)" at most 20 words. If you cannot name words of your quote that show the keyword itself, the answer is unknown. End with (same) when the quote shows exactly the keyword, or with (related) when it shows only something near it.
+  - evidence="..." a verbatim quote that itself contains the proof words, at most 25 words. If the proof is one item of a comma-separated list, quote that single item only, at most 12 words, never the whole list line. Prefer a quote from the RESUME BLOCKS. Quote LINKEDIN or ADDITIONAL INFO only when no resume block proves it. Evidence is mandatory for can_add.
+  - where="skills" or where="letter", exactly one of the two words. See WHERE below.
+- unknown: no quote shows exactly this. A line whose why ends with (related), or says that no source mentions the keyword, always uses unknown and has no evidence attribute.
+
+WHERE (for can_add)
+- where="skills": the keyword is a term that fits on the skills line of a resume: a programming language, a framework, a library, a tool, a database, a protocol, a platform, a cloud service, a certification, or a named technique or method (for example RAG, CI/CD, event-driven architecture).
+- where="letter": everything else that the quote proves: an industry, a duty, a capability or a way of working (for example financial services, client-facing work, requirements gathering, production systems). Such a keyword is not written into a skills list. It goes into the cover letter.
+
+STEP 1: IS THE KEYWORD IMPLIED BY SOMETHING THE CANDIDATE NAMES?
+A technology the candidate names necessarily includes its general category. Then no work description is needed: the keyword is covered (a database engine, a framework) or can_add (the other cases below), and the quote is the naming term. The direction matters: a specific named thing implies its general category, never the other way round. Implication works for technologies only: a tool implies the technology, not that the candidate built something with it.
+- A database engine is the query language it speaks and a database of its category: the keyword is covered. Examples: keyword "SQL", quote "PostgreSQL" is covered. Keyword "relational databases", quote "MySQL" is covered. Keyword "PostgreSQL", quote "SQL" is unknown.
+- A framework implies its language: the keyword is covered. Example: keyword "JavaScript", quote "React, Redux" is covered.
+- A library or a tool of a field implies the field. Examples: keyword "machine learning", quote "scikit-learn, XGBoost" is can_add. Keyword "event-driven architecture", quote "services that communicate through Kafka topics" is can_add.
+- A named service implies its platform or category. Examples: keyword "AWS", quote "S3, Lambda" is can_add. Keyword "containers", quote "Docker" is can_add.
+- The same term in another written form (abbreviation, full name, plural, hyphenation, another word order) is the same keyword. Example: keyword "machine learning", quote "ML" is can_add.
+
+STEP 2: DOES THE KEYWORD NEED A QUOTE ABOUT THE WORK?
+Practices, deliverables, capabilities and industries need a quote that shows the candidate doing exactly that.
+- Read a keyword as a modifier plus a head: in "image generation" the head is generation, in "production agents" the head is agents. The quote must show the head together with the modifier. Analysis is not generation, a product is not an agent. Examples: keyword "image generation", quote "built an image classification service" is unknown. Keyword "stream processing", quote "processed event streams from Kafka in real time" is can_add.
+- A keyword that names a deliverable (APIs, API design, SDKs, plugins, dashboards, platforms) needs a quote saying the candidate built or designed that deliverable. Using someone else's API or switching to another provider is not building one. Examples: keyword "APIs", quote "cut cost by switching APIs" is unknown. Keyword "APIs", quote "built REST APIs used by three teams" is can_add.
+- A keyword that names a practice (monitoring, code review, testing, observability, CI/CD) needs a quote about doing that practice. Improving a result is not the practice. Examples: keyword "performance monitoring", quote "cut page load time by 40%" is unknown. Keyword "CI/CD pipelines", quote "deployed the service with Docker" is unknown. Keyword "code review", quote "reviewed pull requests for a team of five" is can_add.
+- Features of a product do not prove platform or infrastructure work. Example: keyword "platform engineering", quote "built the account and settings pages of the product" is unknown.
+- Rolling out or scaling a model or a product does not prove automation or scalability work. Example: keyword "workflow automation", quote "rolled the model out to 60% of the teams" is unknown.
+- A capability or way of working (client-facing work, stakeholder communication, requirements gathering, prototyping, shipping to production) is proven by a quote that describes the candidate doing exactly that work. Leading a team, managing engineers, presenting to a manager or a CEO, pitching to investors, building something alone, or planning one's own product or company (business plan, roadmap) does not prove client-facing work, stakeholder management or requirements gathering. A stakeholder or client means a business user or customer whose needs the candidate worked from.
+- An industry or domain term is proven by a quote that names that kind of company or customer (for example a bank, a clinic, an investment fund) and says the candidate worked for or with it. Examples: keyword "financial services", quote "built the reporting backend for a retail bank" is can_add, proof words "retail bank". Keyword "financial services", quote "part of a 10-person engineering team" is unknown, it names no company of the industry.
+- Industries, duties, capabilities and ways of working that are proven by such a quote are can_add with where="letter".
+
+STEP 3: IS IT A NAMED TOOL THAT THE MATERIALS DO NOT NAME?
+A concrete tool, platform, language or certification (for example Snowflake, Kubernetes, Go) is proven only by a source that names it or an unmistakable synonym. A different tool of the same kind does not count (Kafka is not RabbitMQ, Flask is not Django). The name of a language, a framework, a database, a tool or a platform is never a duty. Answer unknown.
+
+GENERAL RULES
+- The quote must describe the activity itself. A job title, a company size or the presence of a senior person in the sentence is not proof.
+- Never use the evidence of one keyword to justify another keyword.
+- Decide by these rules, not by how plausible it feels. The same input must always give the same bucket.
+- mentioned=yes only means that the words of the keyword appear somewhere in LINKEDIN or ADDITIONAL INFO. Check the context with the rules above: a mention in another context proves nothing. Only a keyword that stands in KNOWN SKILLS is confirmed by the candidate: can_add.
+
+RESUME BLOCKS (use their path values in where)
+{% for block in blocks %}
+<block path="{{ block.field_path }}" kind="{{ block.kind }}">
+{{ block.text }}
+</block>
+{% endfor %}
+
+LINKEDIN
+{{ linkedin_text }}
+
+{% if extra_info %}
+ADDITIONAL INFO
+{{ extra_info }}
+{% endif %}
+
+{% if known_skills %}
+KNOWN SKILLS
+{{ known_skills | join(", ") }}
+{% endif %}
+
+KEYWORDS (number. keyword | category | mentioned = its words appear in LINKEDIN or ADDITIONAL INFO)
+{% for item in items %}
+{{ item.i }}. {{ item.text }} | {{ item.category }} | mentioned={{ "yes" if item.known else "no" }}
+{% endfor %}
+
+Never use a double quote inside an attribute value. Never invent evidence.
+
+OUTPUT FORMAT, ONE LINE PER KEYWORD, USING THE SAME NUMBER. The words in curly braces are placeholders: replace them with real text from this task.
+<k i="0" why="proof: {words of the quote}; {what the candidate did or what it implies} (same)" bucket="can_add" evidence="{one exact quote}" where="skills" />
+<k i="1" why="proof: {words of the quote}; {what the candidate did} (same)" bucket="can_add" evidence="{one exact quote}" where="letter" />
+<k i="2" why="proof: {the naming term}; {what it implies} (same)" bucket="covered" evidence="{the naming term}" where="{path}" />
+<k i="3" why="{what the nearest quote shows} (related)" bucket="unknown" />
+<k i="4" why="{no source mentions it}" bucket="unknown" />

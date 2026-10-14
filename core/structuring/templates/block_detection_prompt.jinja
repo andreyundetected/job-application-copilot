@@ -7,12 +7,13 @@ ELEMENTS
 [{{ element.eid }}] ({{ element.traits or "plain" }}) {{ element.preview }}
 {% endfor %}
 
-THE FIVE BLOCK KINDS
+THE SIX BLOCK KINDS
 - title_main: the main headline at the top of the resume: the candidate's name and/or professional title, for example "Jane Doe | AI Engineer". Only those lines. Contact lines and location are not part of it. It is never the description of a job.
 - summary: the text of the resume-level summary / about section, not its heading. Only if the resume has one. A summary stands at resume level; a paragraph under a job header is never a summary.
 - skills: the list of skills / technologies of the skills section, not its heading. One single block for the whole section.
 - exp_title: only the line with company and role of ONE job entry. Attributes: company (exact company name), role (exact job title wording as written).
-- exp_body: everything that belongs to that job below its header, up to the next job header: an intro line about the company or the type of work, a short role summary, paragraphs, project subheadings, bullets, and a stack or technologies list if it is described inside the job. Attribute: company (identical to the one on its exp_title).
+- exp_intro: only the introductory description of the company or of the role that stands right under the job header (and under the work format / location / dates line), before the first project subheading or bullet list. Many jobs do not have it. Output it only when such an intro text exists. Attribute: company (identical to the one on its exp_title).
+- exp_body: everything else that belongs to that job below its header and its intro, up to the next job header: a short role summary, paragraphs, project subheadings, bullets, and a stack or technologies list if it is described inside the job. Attribute: company (identical to the one on its exp_title).
 
 WORDS THAT NEVER BELONG TO A BLOCK
 Some text is fixed and must never be reworded. An element made only of such text stays outside every block. Examples:
@@ -22,7 +23,7 @@ Some text is fixed and must never be reworded. An element made only of such text
 If one element mixes such words with real description text, it belongs to the block and stays whole. If you are unsure whether an element is fixed text or description, leave it outside.
 
 JOB ENTRIES
-- Use exactly one exp_body per job entry: one contiguous range from the first description element to the last one before the next job header. Never split one job into several exp_body blocks.
+- Use at most one exp_intro and exactly one exp_body per job entry. The exp_body is one contiguous range from the first element after the intro (or after the header when there is no intro) to the last one before the next job header. Never split one job into several exp_body blocks.
 - Independent, personal, freelance, side or open-source projects count as work experience. If every project has its own header line, output an exp_title (company = project name) and an exp_body for each. If the section is one list of projects, output one exp_body with company = the section name (for example "Independent Projects"); the section heading itself stays outside every block.
 - If a job has no description, output only its exp_title.
 
@@ -38,5 +39,6 @@ Output only block tags, one per line, in document order, nothing else:
 <block kind="summary" from="e4" to="e4" />
 <block kind="skills" from="e6" to="e6" />
 <block kind="exp_title" company="Acme" role="Backend Engineer" from="e8" to="e8" />
-<block kind="exp_body" company="Acme" from="e10" to="e12" />
+<block kind="exp_intro" company="Acme" from="e10" to="e10" />
+<block kind="exp_body" company="Acme" from="e11" to="e12" />
 <block kind="exp_body" company="Independent Projects" from="e15" to="e17" />

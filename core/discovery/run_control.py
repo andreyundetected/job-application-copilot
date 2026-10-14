@@ -92,27 +92,23 @@ def get_batch_stats() -> dict:
         return dict(_batch_stats)
 
 
-_eval_stats = {"evaluated_count": 0, "passed_count": 0, "archived_count": 0, "in_flight": 0}
+_flow = {
+    "screen": {"active": 0, "done": 0, "passed": 0, "skipped": 0},
+    "eval": {"queued": 0, "active": 0, "done": 0, "passed": 0, "archived": 0, "review": 0, "failed": 0},
+    "tailor": {"queued": 0, "active": 0, "done": 0},
+    "answers": {"queued": 0, "active": 0, "done": 0},
+    "telegram": {"sent": 0, "blocked": 0, "below_score": 0},
+}
 
 
-def eval_start() -> None:
+def flow_add(stage: str, key: str, delta: int = 1) -> None:
     with _lock:
-        _eval_stats["in_flight"] += 1
+        _flow[stage][key] = max(0, _flow[stage][key] + delta)
 
 
-def eval_finish(passed: bool, archived: bool) -> None:
+def get_flow() -> dict:
     with _lock:
-        _eval_stats["in_flight"] = max(0, _eval_stats["in_flight"] - 1)
-        _eval_stats["evaluated_count"] += 1
-        if passed:
-            _eval_stats["passed_count"] += 1
-        if archived:
-            _eval_stats["archived_count"] += 1
-
-
-def get_eval_stats() -> dict:
-    with _lock:
-        return dict(_eval_stats)
+        return {stage: dict(values) for stage, values in _flow.items()}
 
 
 def reset_run():
@@ -123,7 +119,9 @@ def reset_run():
         _batch_stats.update(
             {"last_batch_size": 0, "last_batch_skipped": 0, "last_batch_proceeded": 0, "evaluating_batch": False}
         )
-        _eval_stats.update({"evaluated_count": 0, "passed_count": 0, "archived_count": 0, "in_flight": 0})
+        for values in _flow.values():
+            for key in values:
+                values[key] = 0
         _stats.update(
             {
                 "phase": "wayback",

@@ -1,8 +1,10 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 import config
 from core.db import crud
 from core.db.session import SessionLocal
+from core.discovery import run_control
 from core.discovery.eval_executor import submit_eval_task
 from core.discovery.pipeline import process_discovered_posting
 from core.discovery.quick_filter import quick_filter_search_results
@@ -12,23 +14,51 @@ from core.providers.factory import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
-_BATCH_SIZE = config.DISCOVERY_SCREEN_CHUNK_SIZE
-
 
 def _chunked(items, size):
     for i in range(0, len(items), size):
         yield items[i : i + size]
 
 
-def _mark_discarded(discovered_posting_id: int) -> None:
+def _mark_discarded(discovered_posting_ids: list[int]) -> None:
+    if not discovered_posting_ids:
+        return
     session = DiscoverySessionLocal()
     try:
-        posting = session.get(DiscoveredJobPosting, discovered_posting_id)
-        if posting is not None:
-            posting.discarded_by_quick_screen = True
-            session.commit()
+        session.query(DiscoveredJobPosting).filter(DiscoveredJobPosting.id.in_(discovered_posting_ids)).update(
+            {DiscoveredJobPosting.discarded_by_quick_screen: True}, synchronize_session=False
+        )
+        session.commit()
     finally:
         session.close()
+
+
+def _screen_chunk(chunk, resume_text, linkedin_text, blockers, extra_info) -> tuple[int, int]:
+    size = len(chunk)
+    run_control.flow_add("screen", "active", size)
+    try:
+        try:
+            verdicts = quick_filter_search_results(
+                get_llm_provider(), chunk, resume_text, linkedin_text, blockers, extra_info
+            )
+        except Exception as error:
+            logger.error("[quick-screen] batch failed, failing open: %s", error)
+            verdicts = {item["id"]: "proceed" for item in chunk}
+
+        skipped_ids = [item["id"] for item in chunk if verdicts.get(item["id"], "proceed") == "skip"]
+        skipped_set = set(skipped_ids)
+        passed_ids = [item["id"] for item in chunk if item["id"] not in skipped_set]
+
+        _mark_discarded(skipped_ids)
+        for posting_id in passed_ids:
+            submit_eval_task(process_discovered_posting, posting_id)
+
+        run_control.flow_add("screen", "done", size)
+        run_control.flow_add("screen", "passed", len(passed_ids))
+        run_control.flow_add("screen", "skipped", len(skipped_ids))
+        return len(passed_ids), len(skipped_ids)
+    finally:
+        run_control.flow_add("screen", "active", -size)
 
 
 def quick_screen_and_dispatch(discovered_posting_ids: list[int]) -> dict:
@@ -68,24 +98,22 @@ def quick_screen_and_dispatch(discovered_posting_ids: list[int]) -> dict:
         label = posting.title or f"{company.ats_name}:{posting.external_id}"
         items.append({"id": posting.id, "title": label, "snippet": company.slug, "url": posting.url})
 
-    provider = get_llm_provider()
+    chunks = list(_chunked(items, max(1, config.DISCOVERY_SCREEN_CHUNK_SIZE)))
+    if not chunks:
+        return {"passed": 0, "skipped": 0}
+
+    workers = max(1, min(config.DISCOVERY_SCREEN_WORKERS, len(chunks)))
     passed_count = 0
     skipped_count = 0
 
-    for chunk in _chunked(items, _BATCH_SIZE):
-        try:
-            verdicts = quick_filter_search_results(provider, chunk, resume_text, linkedin_text, blockers, extra_info)
-        except Exception as error:
-            logger.error("[quick-screen] batch failed, failing open: %s", error)
-            verdicts = {item["id"]: "proceed" for item in chunk}
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="quick-screen") as pool:
+        futures = [
+            pool.submit(_screen_chunk, chunk, resume_text, linkedin_text, blockers, extra_info) for chunk in chunks
+        ]
+        for future in futures:
+            chunk_passed, chunk_skipped = future.result()
+            passed_count += chunk_passed
+            skipped_count += chunk_skipped
 
-        for item in chunk:
-            if verdicts.get(item["id"], "proceed") == "skip":
-                skipped_count += 1
-                _mark_discarded(item["id"])
-            else:
-                passed_count += 1
-                submit_eval_task(process_discovered_posting, item["id"])
-
-    logger.info("[quick-screen] %s passed, %s skipped", passed_count, skipped_count)
+    logger.info("[quick-screen] %s passed, %s skipped (%s chunks, %s workers)", passed_count, skipped_count, len(chunks), workers)
     return {"passed": passed_count, "skipped": skipped_count}

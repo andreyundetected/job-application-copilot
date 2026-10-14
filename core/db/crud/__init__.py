@@ -24,3 +24,6 @@ from core.db.crud.question_templates import *
 from core.db.crud.automation_base_questions import *
 from core.db.crud.manual_assist import *
 from core.db.crud.blocks import *
+from core.db.crud.known_skills import *
+from core.db.crud.title_rejections import *
+from core.db.crud.tailoring_letters import *

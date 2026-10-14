@@ -45,6 +45,19 @@ def update_writing_preferences(session: Session, writing_preferences: str) -> Ca
     return profile
 
 
+def update_letter_note(session: Session, letter_note: str) -> CandidateProfile:
+    profile = session.query(CandidateProfile).first()
+    if profile is None:
+        profile = CandidateProfile()
+        session.add(profile)
+
+    profile.letter_note = (letter_note or "").strip() or None
+
+    session.commit()
+    session.refresh(profile)
+    return profile
+
+
 def add_extra_link(session: Session, link: str) -> CandidateProfile:
     profile = session.query(CandidateProfile).first()
     if profile is None:

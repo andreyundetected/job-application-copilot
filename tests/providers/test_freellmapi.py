@@ -22,7 +22,7 @@ class _FakeResponse:
 def test_freellmapi_call_returns_content(monkeypatch):
     provider = FreeLLMAPIProvider()
 
-    def fake_create(model, messages):
+    def fake_create(model, messages, **kwargs):
         assert model == provider.model
         assert messages[0]["role"] == "system"
         assert messages[1]["role"] == "user"
@@ -62,7 +62,7 @@ def test_freellmapi_call_records_usage(monkeypatch):
     usage = _FakeUsage(prompt_tokens=120, completion_tokens=45, total_tokens=165, reasoning_tokens=10)
     response = _FakeResponseWithUsage("fake response text", "gpt-test", usage)
 
-    def fake_create(model, messages):
+    def fake_create(model, messages, **kwargs):
         return response
 
     monkeypatch.setattr(provider.client.chat.completions, "create", fake_create)
@@ -70,11 +70,13 @@ def test_freellmapi_call_records_usage(monkeypatch):
     provider.call("system prompt", "user prompt")
 
     assert provider.last_usage == {
+        "cost": None,
         "model": "gpt-test",
         "input_tokens": 120,
         "output_tokens": 45,
         "reasoning_tokens": 10,
         "total_tokens": 165,
+        "fallback": True,
     }
 
 
@@ -82,7 +84,7 @@ def test_freellmapi_call_records_usage(monkeypatch):
 def test_freellmapi_call_handles_missing_usage_gracefully(monkeypatch):
     provider = FreeLLMAPIProvider()
 
-    def fake_create(model, messages):
+    def fake_create(model, messages, **kwargs):
         return _FakeResponse("fake response text")
 
     monkeypatch.setattr(provider.client.chat.completions, "create", fake_create)
@@ -95,4 +97,5 @@ def test_freellmapi_call_handles_missing_usage_gracefully(monkeypatch):
         "output_tokens": None,
         "reasoning_tokens": None,
         "total_tokens": None,
+        "fallback": True,
     }

@@ -4,13 +4,14 @@ import requests
 
 from core.db import crud
 from core.db.session import SessionLocal
+from core.discovery import run_control
 
 logger = logging.getLogger(__name__)
 
 _API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 
 
-def _send_raw(token: str, chat_id: str, text: str) -> None:
+def _send_raw(token: str, chat_id: str, text: str) -> bool:
     try:
         response = requests.post(
             _API_URL.format(token=token),
@@ -19,8 +20,11 @@ def _send_raw(token: str, chat_id: str, text: str) -> None:
         )
         if response.status_code != 200:
             logger.warning("[telegram] sendMessage failed: status=%s body=%s", response.status_code, response.text[:300])
+            return False
+        return True
     except requests.RequestException as error:
         logger.warning("[telegram] sendMessage request failed: %s", error)
+        return False
 
 
 def notify_job_evaluated(
@@ -37,16 +41,21 @@ def notify_job_evaluated(
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
         return
 
-    if settings.telegram_notify_only_successful and (score is None or score <= 0 or blocked):
+    if blocked:
+        run_control.flow_add("telegram", "blocked")
+        return
+
+    if settings.telegram_notify_only_successful and (score is None or score <= 0):
+        run_control.flow_add("telegram", "below_score")
         return
 
     if settings.telegram_notify_min_score is not None and (score is None or score < settings.telegram_notify_min_score):
+        run_control.flow_add("telegram", "below_score")
         return
 
     text = (
         f"🆕 Новая вакансия оценена: <b>{score if score is not None else '?'}</b>\n"
         f"{company or 'Unknown company'} — {role or 'Unknown role'}"
     )
-    if blocked:
-        text += "\n🚫 Сработали блокеры"
-    _send_raw(settings.telegram_bot_token, settings.telegram_chat_id, text)
+    if _send_raw(settings.telegram_bot_token, settings.telegram_chat_id, text):
+        run_control.flow_add("telegram", "sent")

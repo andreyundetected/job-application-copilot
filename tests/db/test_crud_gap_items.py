@@ -40,9 +40,9 @@ def test_bulk_create_gap_items_defaults_included_by_status(db_session):
         db_session,
         tailoring_session.id,
         [
-            {"text": "Python", "status": "match", "suggested_field_paths": ["skills"]},
-            {"text": "Rust", "status": "miss"},
-            {"text": "COBOL", "status": "over", "recommend_keep": True},
+            {"text": "Python", "status": "can_add", "assigned_field_paths": ["skills"]},
+            {"text": "Rust", "status": "unknown"},
+            {"text": "COBOL", "status": "exact"},
         ],
     )
 

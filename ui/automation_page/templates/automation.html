@@ -37,7 +37,6 @@ h1 { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .tooltip-bubble::after { content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:var(--border); }
 .info-icon:hover .tooltip-bubble, .info-icon:focus .tooltip-bubble { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* =========================== POWER SWITCH (replaces tiny toggles for master on/off) =========================== */
 .power-switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; flex-shrink: 0; }
 .power-switch input { display: none; }
 .power-switch-track {
@@ -57,19 +56,17 @@ h1 { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .power-switch input:checked ~ .power-switch-state.on-text { display: inline; }
 .power-switch input:checked ~ .power-switch-state.off-text { display: none; }
 
-/* =========================== HERO =========================== */
 .hero {
     position: relative;
     background: linear-gradient(160deg, rgba(23,23,27,0.92), rgba(91,141,239,0.05) 60%);
     border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 22px 24px 20px; margin-bottom: 16px; overflow: hidden;
+    padding: 22px 24px 20px; margin-bottom: 18px; overflow: hidden;
 }
 .hero.is-listening { border-color: rgba(74,222,128,0.3); }
 .hero::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(560px 200px at 10% 0%, rgba(91,141,239,0.10), transparent 60%);
 }
-
 .hero-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; position: relative; z-index: 1; }
 
 .run-btn {
@@ -164,39 +161,113 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
 .inline-field label { margin: 0; display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-secondary); }
 .inline-field input[type="text"] { max-width: 170px; }
 
-.toggle-row { display: flex; align-items: center; gap: 10px; margin: 9px 0; }
 .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-slider { position: absolute; inset: 0; background-color: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; }
 .toggle-slider::before { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background-color: var(--text-secondary); border-radius: 50%; transition: transform 0.15s ease, background-color 0.15s ease; }
 .toggle-switch input:checked + .toggle-slider { background-color: var(--accent); border-color: var(--accent); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background-color: white; }
-.toggle-label { font-size: 12.5px; color: var(--text-primary); display: flex; align-items: center; gap: 5px; }
 
 .site-chip-row { display: block; line-height: 2.6; margin: 8px 0 4px; }
 .site-chip { display: inline-block; font-size: 12px; padding: 6px 13px; margin: 0 7px 7px 0; border-radius: 999px; background-color: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); white-space: nowrap; }
 
-/* =========================== PIPELINE CARDS =========================== */
-.pcard {
-    background-color: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--border);
-    border-radius: var(--radius-lg); padding: 18px 20px 20px; margin-bottom: 14px; transition: border-color 0.2s ease;
+.stage {
+    position: relative; overflow: hidden; background-color: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px 20px; margin-bottom: 14px;
+    transition: box-shadow 0.3s ease;
 }
-.pcard.accent-yellow { border-left-color: #facc15; }
-.pcard.accent-blue { border-left-color: var(--accent); }
-.pcard.accent-purple { border-left-color: #8b5cf6; }
-.pcard.accent-green { border-left-color: var(--score-high); }
-.pcard.accent-orange { border-left-color: #fb923c; }
-.pcard.accent-red { border-left-color: var(--score-low); }
+.stage.linked { margin-bottom: 0; }
+.stage.accent-yellow { border-left-color: #facc15; }
+.stage.accent-blue { border-left-color: var(--accent); }
+.stage.accent-purple { border-left-color: #8b5cf6; }
+.stage.accent-green { border-left-color: var(--score-high); }
+.stage.accent-orange { border-left-color: #fb923c; }
+.stage.working { box-shadow: 0 0 0 1px rgba(91,141,239,0.3), 0 12px 36px rgba(91,141,239,0.12); }
+.stage.working::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); background-size: 200% 100%;
+    animation: progress-indeterminate 1.4s linear infinite;
+}
 
-.pcard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.pcard-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.pcard-subtitle { font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
-.pcard-hint { font-size: 12px; color: var(--text-tertiary); line-height: 1.55; margin: 14px 0 4px; }
-.pcard-off-note { font-size: 11px; color: var(--text-tertiary); margin-top: 6px; }
+.stage-head { display: flex; align-items: center; gap: 12px; }
+.stage-num {
+    width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0; color: #fff; font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--accent), #8b5cf6);
+}
+.stage-titles { flex: 1; min-width: 0; }
+.stage-title { font-size: 14.5px; font-weight: 700; color: var(--text-primary); }
+.stage-sub { font-size: 11.5px; color: var(--text-tertiary); margin-top: 1px; }
+
+.stage-live-top { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
+.stage-since { font-size: 10px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+.stage-state {
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 3px 9px; border-radius: 999px; background: var(--bg-input); color: var(--text-tertiary); white-space: nowrap;
+}
+.stage.working .stage-state { background: var(--accent-soft); color: var(--accent); }
+
+.stage-flow { display: flex; align-items: stretch; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.flow-cell {
+    display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 96px;
+    padding: 10px 14px; border-radius: var(--radius); background: var(--bg-input); border: 1px solid var(--border);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+.flow-cell .v { font-size: 24px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text-secondary); transition: transform 0.24s ease, color 0.25s ease; }
+.flow-cell .v.bump { transform: scale(1.14); }
+.flow-cell .l { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); line-height: 1.25; }
+.flow-cell.queue .v { color: var(--score-mid); }
+.flow-cell.queue.has { border-color: rgba(250,204,21,0.35); background: rgba(250,204,21,0.06); }
+.flow-cell.active.has { border-color: rgba(91,141,239,0.5); background: var(--accent-soft); }
+.flow-cell.active.has .v { color: var(--accent); }
+.flow-cell.ok .v { color: var(--score-high); }
+.flow-cell.warn .v { color: var(--score-mid); }
+.flow-cell.bad .v { color: var(--score-low); }
+.flow-cell.skip .v { color: var(--text-secondary); }
+.flow-cell.rate .v { color: var(--text-primary); }
+.flow-arrow { align-self: center; color: var(--text-tertiary); font-size: 14px; flex-shrink: 0; }
+.flow-results {
+    flex: 1; min-width: 260px; display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px;
+    padding-left: 12px; border-left: 1px dashed var(--border-hover);
+}
+
+.flow-meter { display: flex; height: 5px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.06); margin-top: 12px; }
+.flow-meter-seg { height: 100%; width: 0%; transition: width 0.6s ease; }
+.flow-meter-seg.q { background: var(--score-mid); }
+.flow-meter-seg.a { background: var(--accent); }
+.flow-meter-seg.d { background: var(--score-high); }
+
+.stage-live-bottom { display: flex; align-items: flex-start; gap: 12px; margin-top: 10px; min-height: 18px; }
+.pipe-lights { display: flex; gap: 3px; flex-wrap: wrap; padding-top: 2px; }
+.pipe-light { width: 9px; height: 9px; border-radius: 3px; background: var(--border); }
+.pipe-light.lit { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: dot-breathe 1.2s ease-in-out infinite; }
+.stage-foot { font-size: 11px; color: var(--text-tertiary); line-height: 1.55; margin-left: auto; text-align: right; }
+.stage-foot .t { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.stage.off .stage-live { opacity: 0.45; }
+
+.stage-settings { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.stage-hint { font-size: 12px; color: var(--text-tertiary); line-height: 1.55; margin: 0 0 12px; }
+.stage-off-note { font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px; }
 .matrix-locked { opacity: 0.4; pointer-events: none; filter: grayscale(0.4); transition: opacity 0.2s ease; }
 
-/* ---- Two-column tailoring layout ---- */
-.tailor-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.connector { display: flex; flex-direction: column; align-items: center; height: 54px; position: relative; }
+.conn-line { width: 2px; flex: 1; background: var(--border); }
+.connector.flowing .conn-line {
+    background: repeating-linear-gradient(180deg, var(--accent) 0 6px, transparent 6px 12px);
+    background-size: 2px 12px; animation: conn-flow 0.7s linear infinite;
+}
+@keyframes conn-flow { from { background-position: 0 0; } to { background-position: 0 12px; } }
+.conn-pill {
+    display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 13px; border-radius: 999px; font-size: 11px;
+    font-weight: 600; color: var(--text-tertiary); background: var(--bg-elevated); border: 1px solid var(--border);
+    transition: border-color 0.3s ease, color 0.3s ease; white-space: nowrap;
+}
+.conn-pill b { font-size: 14px; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.connector.flowing .conn-pill { border-color: var(--accent); color: var(--accent); }
+.conn-arrow { width: 0; height: 0; border: 5px solid transparent; border-bottom: none; border-top-color: var(--border-hover); margin-top: -1px; }
+.connector.flowing .conn-arrow { border-top-color: var(--accent); }
+
+.tailor-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 640px) { .tailor-columns { grid-template-columns: 1fr; } }
 .tailor-column { background-color: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px; transition: border-color 0.25s ease; }
 .tailor-column.level-active { border-color: rgba(139,92,246,0.4); }
@@ -217,29 +288,8 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
 .add-row input[type="text"] { flex: 1; margin-top: 0; }
 .add-row .btn { margin-top: 0; white-space: nowrap; }
 
-/* ---- Quick batch card ---- */
-.batch-main-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 14px; }
-.batch-orb {
-    position: relative; width: 74px; height: 74px; border-radius: 50%; flex-shrink: 0;
-    background: radial-gradient(circle at 35% 30%, rgba(250,204,21,0.16), rgba(28,28,33,0.4));
-    border: 2px solid rgba(250,204,21,0.35); display: flex; align-items: center; justify-content: center;
-    flex-direction: column; transition: border-color 0.3s ease;
-}
-.batch-orb.evaluating { border-color: var(--accent); animation: orb-ring 1.4s ease-out infinite; }
-@keyframes orb-ring { 0% { box-shadow: 0 0 0 0 rgba(91,141,239,0.45); } 100% { box-shadow: 0 0 0 14px rgba(91,141,239,0); } }
-.batch-orb-value { font-size: 22px; font-weight: 800; color: var(--score-mid); font-variant-numeric: tabular-nums; transition: all 0.25s ease; }
-.batch-orb-value.zeroing { transform: scale(0.6); opacity: 0; }
-.batch-orb-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-top: 1px; }
+.batch-off-note { font-size: 12px; color: var(--text-tertiary); background: var(--bg-input); border-radius: var(--radius-sm); padding: 10px 12px; }
 
-.batch-info { flex: 1; min-width: 220px; }
-.batch-info-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
-.batch-info-sub strong { color: var(--score-mid); }
-.batch-info-timer { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; }
-.batch-last-cycle { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
-.batch-last-cycle b { color: var(--score-high); font-weight: 700; }
-.batch-last-cycle b.skip-count { color: var(--text-secondary); }
-
-/* ---- Secret field (bot token) ---- */
 .secret-field-wrap { position: relative; display: flex; align-items: center; }
 .secret-field-wrap input { padding-right: 34px; font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 0.02em; }
 .secret-field-wrap input:-webkit-autofill,
@@ -261,32 +311,12 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
 .secret-field-wrap.revealed .eye-on { display: none; }
 .secret-field-wrap.revealed .eye-off { display: block; }
 
-.eval-badge {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent);
-    background: var(--accent-soft); border-radius: 999px; padding: 4px 11px; margin-top: 6px;
-    opacity: 0; transform: translateY(3px); transition: all 0.25s ease;
+.pcard {
+    background-color: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px 20px; margin-bottom: 14px;
 }
-.eval-badge.visible { opacity: 1; transform: translateY(0); }
-
-.batch-off-note { font-size: 12px; color: var(--text-tertiary); background: var(--bg-input); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 12px; }
-
-/* ---- Evaluation card ---- */
-.eval-live-row { display: flex; align-items: center; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
-.eval-live-indicator {
-    display: flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 999px;
-    background-color: var(--bg-input); border: 1px solid var(--border); font-size: 12px; font-weight: 600;
-    color: var(--text-tertiary); transition: all 0.3s ease;
-}
-.eval-live-indicator.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
-.eval-live-indicator .live-spinner-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-tertiary); }
-.eval-live-indicator.active .live-spinner-dot { background-color: var(--accent); animation: dot-breathe 1s ease-in-out infinite; }
-.eval-session-stats { display: flex; gap: 18px; margin-left: auto; }
-.eval-session-stat { text-align: right; }
-.eval-session-stat-value { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.eval-session-stat-value.pass { color: var(--score-high); }
-.eval-session-stat-value.archive { color: var(--text-tertiary); }
-.eval-session-stat-label { font-size: 9.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
-
+.pcard.accent-red { border-left-color: var(--score-low); }
+.pcard-hint { font-size: 12px; color: var(--text-tertiary); line-height: 1.55; margin: 14px 0 4px; }
 .danger-card h3 { color: var(--score-low); margin: 0; font-size: 14px; }
 .btn-danger-ghost { background-color: transparent; border: 1px solid var(--score-low); color: var(--score-low); margin-top: 12px; padding: 9px 16px; font-size: 12.5px; }
 .btn-danger-ghost:hover { background-color: var(--score-low-soft); }
@@ -402,11 +432,12 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
     </details>
 </div>
 
-<div class="pcard accent-yellow">
-    <div class="pcard-header">
-        <div>
-            <h3 class="pcard-title">{{ t.batch_title }}</h3>
-            <div class="pcard-subtitle">{{ t.batch_subtitle }}</div>
+<section class="stage accent-yellow linked" id="stage-screen">
+    <div class="stage-head">
+        <span class="stage-num">1</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.batch_title }}</div>
+            <div class="stage-sub">{{ t.batch_subtitle }}</div>
         </div>
         <label class="power-switch">
             <input type="checkbox" id="quick_batch_enabled" {% if discovery_quick_batch_enabled %}checked{% endif %}>
@@ -415,66 +446,69 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
             <span class="power-switch-state off-text">{{ t.power_off }}</span>
         </label>
     </div>
-    <p class="pcard-hint">{{ t.batch_hint }}</p>
-
-    <div id="batch-body-on" style="{% if not discovery_quick_batch_enabled %}display:none;{% endif %}">
-        <div class="batch-main-row">
-            <div class="batch-orb" id="batch-orb">
-                <span class="batch-orb-value" id="batch-orb-value">0</span>
-                <span class="batch-orb-label">{{ t.batch_counter_label }}</span>
-            </div>
-            <div class="batch-info">
-                <div class="batch-info-sub" id="batch-info-sub"></div>
-                <div class="batch-last-cycle" id="batch-last-cycle"></div>
-                <span class="eval-badge" id="batch-eval-badge">{{ t.batch_evaluating_label }}</span>
-            </div>
-            <div class="inline-field">
-                <label for="batch_window_minutes">{{ t.batch_window_label }}</label>
-                <input type="text" inputmode="numeric" id="batch_window_minutes" value="{{ discovery_batch_window_minutes }}" style="max-width:80px;">
-            </div>
-            <div class="inline-field">
-                <label for="batch_force_flush_size">{{ t.batch_force_flush_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.batch_force_flush_tooltip }}</span></span></label>
-                <input type="text" inputmode="numeric" id="batch_force_flush_size" value="{{ discovery_batch_force_flush_size }}" style="max-width:80px;">
+    <div class="stage-live" id="live-screen"></div>
+    <div class="stage-settings">
+        <p class="stage-hint">{{ t.batch_hint }}</p>
+        <div id="batch-body-on" style="{% if not discovery_quick_batch_enabled %}display:none;{% endif %}">
+            <div class="inline-fields">
+                <div class="inline-field">
+                    <label for="batch_window_minutes">{{ t.batch_window_label }}</label>
+                    <input type="text" inputmode="numeric" id="batch_window_minutes" value="{{ discovery_batch_window_minutes }}" style="max-width:80px;">
+                </div>
+                <div class="inline-field">
+                    <label for="batch_force_flush_size">{{ t.batch_force_flush_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.batch_force_flush_tooltip }}</span></span></label>
+                    <input type="text" inputmode="numeric" id="batch_force_flush_size" value="{{ discovery_batch_force_flush_size }}" style="max-width:80px;">
+                </div>
             </div>
         </div>
+        <div id="batch-body-off" class="batch-off-note" style="{% if discovery_quick_batch_enabled %}display:none;{% endif %}">{{ t.batch_off_note }}</div>
     </div>
-    <div id="batch-body-off" class="batch-off-note" style="{% if discovery_quick_batch_enabled %}display:none;{% endif %}">{{ t.batch_off_note }}</div>
+</section>
+
+<div class="connector" id="conn-eval">
+    <span class="conn-line"></span>
+    <span class="conn-pill"><b id="conn-eval-n">0</b><span>{{ t.pipe_conn_eval }}</span></span>
+    <span class="conn-line"></span>
+    <span class="conn-arrow"></span>
 </div>
 
-<div class="pcard accent-blue">
-    <div class="pcard-header">
-        <div>
-            <h3 class="pcard-title">{{ t.step3_title }}</h3>
-            <div class="pcard-subtitle">{{ t.step3_subtitle }}</div>
+<section class="stage accent-blue linked" id="stage-eval">
+    <div class="stage-head">
+        <span class="stage-num">2</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.step3_title }}</div>
+            <div class="stage-sub">{{ t.step3_subtitle }}</div>
         </div>
     </div>
-    <p class="pcard-hint">{{ t.step3_hint }}</p>
+    <div class="stage-live" id="live-eval"></div>
+    <div class="stage-settings">
+        <p class="stage-hint">{{ t.step3_hint }}</p>
+        <div class="inline-fields">
+            <div class="inline-field">
+                <label for="min_score_to_proceed">{{ t.min_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span></label>
+                <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}" style="max-width:80px;">
+            </div>
+            <div class="inline-field">
+                <label for="max_score_to_archive">{{ t.max_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span></label>
+                <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}" style="max-width:80px;">
+            </div>
+        </div>
+    </div>
+</section>
 
-    <div class="eval-live-row">
-        <span class="eval-live-indicator" id="eval-live-indicator"><span class="live-spinner-dot"></span><span id="eval-live-text">{{ t.eval_idle_label }}</span></span>
-        <div class="eval-session-stats">
-            <div class="eval-session-stat"><div class="eval-session-stat-value pass" id="stat-eval-passed">0</div><div class="eval-session-stat-label">{{ t.eval_passed_label }}</div></div>
-            <div class="eval-session-stat"><div class="eval-session-stat-value archive" id="stat-eval-archived">0</div><div class="eval-session-stat-label">{{ t.eval_archived_label }}</div></div>
-        </div>
-    </div>
-
-    <div class="inline-fields" style="margin-top:16px;">
-        <div class="inline-field">
-            <label for="min_score_to_proceed">{{ t.min_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.min_score_tooltip }}</span></span></label>
-            <input type="text" inputmode="numeric" id="min_score_to_proceed" value="{{ settings.min_score_to_proceed }}" style="max-width:80px;">
-        </div>
-        <div class="inline-field">
-            <label for="max_score_to_archive">{{ t.max_score_label }} <span class="info-icon">i<span class="tooltip-bubble">{{ t.max_score_tooltip }}</span></span></label>
-            <input type="text" inputmode="numeric" id="max_score_to_archive" value="{{ settings.max_score_to_archive }}" style="max-width:80px;">
-        </div>
-    </div>
+<div class="connector" id="conn-post">
+    <span class="conn-line"></span>
+    <span class="conn-pill"><b id="conn-post-n">0</b><span>{{ t.pipe_conn_post }}</span></span>
+    <span class="conn-line"></span>
+    <span class="conn-arrow"></span>
 </div>
 
-<div class="pcard accent-purple">
-    <div class="pcard-header">
-        <div>
-            <h3 class="pcard-title">{{ t.step4_title }}</h3>
-            <div class="pcard-subtitle">{{ t.step4_subtitle }}</div>
+<section class="stage accent-purple" id="stage-tailor">
+    <div class="stage-head">
+        <span class="stage-num">3</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.step4_title }}</div>
+            <div class="stage-sub">{{ t.step4_subtitle }}</div>
         </div>
         <label class="power-switch">
             <input type="checkbox" id="auto_tailor_master_enabled" {% if auto_tailor_master_enabled %}checked{% endif %}>
@@ -483,48 +517,51 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
             <span class="power-switch-state off-text">{{ t.power_off }}</span>
         </label>
     </div>
-    <p class="pcard-hint">{{ t.step4_hint }}</p>
-    <div class="pcard-off-note" id="tailor-off-note" style="{% if auto_tailor_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
-
-    <div class="tailor-columns {% if not auto_tailor_master_enabled %}matrix-locked{% endif %}" id="tailoring-matrix">
-        <div class="tailor-column" data-level="soft">
-            <div class="tailor-column-header"><span class="tailor-column-dot" id="soft-status-dot"></span>{{ t.level_soft }}</div>
-            <div class="tailor-column-hint">{{ t.level_soft_hint }}</div>
-            {% for row in tailoring_matrix %}
-            {% if row.level == "soft" %}
-            <div class="tailor-row" data-level="soft" data-change-type="{{ row.change_type }}">
-                <label class="toggle-switch">
-                    <input type="checkbox" class="tailoring-checkbox" data-level="soft" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+    <div class="stage-live" id="live-tailor"></div>
+    <div class="stage-settings">
+        <p class="stage-hint">{{ t.step4_hint }}</p>
+        <div class="stage-off-note" id="tailor-off-note" style="{% if auto_tailor_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
+        <div class="tailor-columns {% if not auto_tailor_master_enabled %}matrix-locked{% endif %}" id="tailoring-matrix">
+            <div class="tailor-column {% if soft_active %}level-active{% endif %}" data-level="soft">
+                <div class="tailor-column-header"><span class="tailor-column-dot {% if soft_active %}on{% endif %}" id="soft-status-dot"></span>{{ t.level_soft }}</div>
+                <div class="tailor-column-hint">{{ t.level_soft_hint }}</div>
+                {% for row in tailoring_matrix %}
+                {% if row.level == "soft" %}
+                <div class="tailor-row" data-level="soft" data-change-type="{{ row.change_type }}">
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="tailoring-checkbox" data-level="soft" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+                </div>
+                {% endif %}
+                {% endfor %}
             </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-        <div class="tailor-column" data-level="medium">
-            <div class="tailor-column-header"><span class="tailor-column-dot" id="medium-status-dot"></span>{{ t.level_medium }}</div>
-            <div class="tailor-column-hint">{{ t.level_medium_hint }}</div>
-            {% for row in tailoring_matrix %}
-            {% if row.level == "medium" %}
-            <div class="tailor-row" data-level="medium" data-change-type="{{ row.change_type }}">
-                <label class="toggle-switch">
-                    <input type="checkbox" class="tailoring-checkbox" data-level="medium" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+            <div class="tailor-column {% if medium_active %}level-active{% endif %}" data-level="medium">
+                <div class="tailor-column-header"><span class="tailor-column-dot {% if medium_active %}on{% endif %}" id="medium-status-dot"></span>{{ t.level_medium }}</div>
+                <div class="tailor-column-hint">{{ t.level_medium_hint }}</div>
+                {% for row in tailoring_matrix %}
+                {% if row.level == "medium" %}
+                <div class="tailor-row" data-level="medium" data-change-type="{{ row.change_type }}">
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="tailoring-checkbox" data-level="medium" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
+                </div>
+                {% endif %}
+                {% endfor %}
             </div>
-            {% endif %}
-            {% endfor %}
         </div>
     </div>
-</div>
+</section>
 
-<div class="pcard accent-green">
-    <div class="pcard-header">
-        <div>
-            <h3 class="pcard-title">{{ t.step5_title }}</h3>
-            <div class="pcard-subtitle">{{ t.step5_subtitle }}</div>
+<section class="stage accent-green" id="stage-answers">
+    <div class="stage-head">
+        <span class="stage-num">4</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.step5_title }}</div>
+            <div class="stage-sub">{{ t.step5_subtitle }}</div>
         </div>
         <label class="power-switch">
             <input type="checkbox" id="auto_questions_master_enabled" {% if auto_questions_master_enabled %}checked{% endif %}>
@@ -533,28 +570,31 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
             <span class="power-switch-state off-text">{{ t.power_off }}</span>
         </label>
     </div>
-    <p class="pcard-hint">{{ t.step5_hint }}</p>
-    <div class="pcard-off-note" id="questions-off-note" style="{% if auto_questions_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
-
-    <div id="base-question-list" class="{% if not auto_questions_master_enabled %}matrix-locked{% endif %}" style="margin-top:12px;">
-        {% for question in base_questions %}
-        <div class="preset-row" data-question-id="{{ question.id }}">
-            <span>{{ question.question_text }}</span>
-            <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+    <div class="stage-live" id="live-answers"></div>
+    <div class="stage-settings">
+        <p class="stage-hint">{{ t.step5_hint }}</p>
+        <div class="stage-off-note" id="questions-off-note" style="{% if auto_questions_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
+        <div id="base-question-list" class="{% if not auto_questions_master_enabled %}matrix-locked{% endif %}">
+            {% for question in base_questions %}
+            <div class="preset-row" data-question-id="{{ question.id }}">
+                <span>{{ question.question_text }}</span>
+                <button type="button" class="btn-ghost btn delete-base-question-btn" style="margin-top:0;padding:4px 9px;font-size:11px;">{{ t.btn_remove }}</button>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        <div class="add-row {% if not auto_questions_master_enabled %}matrix-locked{% endif %}" id="base-question-add-row">
+            <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder_example }}">
+            <button type="button" class="btn" id="btn-add-base-question">{{ t.add_base_question_button }}</button>
+        </div>
     </div>
-    <div class="add-row {% if not auto_questions_master_enabled %}matrix-locked{% endif %}" id="base-question-add-row">
-        <input type="text" id="base_question_input" placeholder="{{ t.base_question_placeholder_example }}">
-        <button type="button" class="btn" id="btn-add-base-question">{{ t.add_base_question_button }}</button>
-    </div>
-</div>
+</section>
 
-<div class="pcard accent-orange">
-    <div class="pcard-header">
-        <div>
-            <h3 class="pcard-title">{{ t.notifications_title }}</h3>
-            <div class="pcard-subtitle">{{ t.step2_hint }}</div>
+<section class="stage accent-orange" id="stage-telegram">
+    <div class="stage-head">
+        <span class="stage-num">5</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.notifications_title }}</div>
+            <div class="stage-sub">{{ t.step2_hint }}</div>
         </div>
         <label class="power-switch">
             <input type="checkbox" id="telegram_notify_enabled" {% if telegram_notify_enabled %}checked{% endif %}>
@@ -563,28 +603,30 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
             <span class="power-switch-state off-text">{{ t.power_off }}</span>
         </label>
     </div>
-
-    <div class="inline-fields" style="margin-top:16px;">
-        <div class="inline-field">
-            <label for="telegram_bot_token">{{ t.telegram_bot_token_label }}</label>
-            <div class="secret-field-wrap" id="telegram-token-wrap">
-                <input type="password" id="telegram_bot_token" value="{{ telegram_bot_token }}" style="max-width:240px;" autocomplete="off">
-                <button type="button" class="secret-field-toggle" id="telegram-token-eye" tabindex="-1">
-                    <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                </button>
+    <div class="stage-live" id="live-telegram"></div>
+    <div class="stage-settings">
+        <div class="inline-fields">
+            <div class="inline-field">
+                <label for="telegram_bot_token">{{ t.telegram_bot_token_label }}</label>
+                <div class="secret-field-wrap" id="telegram-token-wrap">
+                    <input type="password" id="telegram_bot_token" value="{{ telegram_bot_token }}" style="max-width:240px;" autocomplete="off">
+                    <button type="button" class="secret-field-toggle" id="telegram-token-eye" tabindex="-1">
+                        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="inline-field">
+                <label for="telegram_chat_id">{{ t.telegram_chat_id_label }}</label>
+                <input type="text" id="telegram_chat_id" value="{{ telegram_chat_id }}">
+            </div>
+            <div class="inline-field">
+                <label for="telegram_notify_min_score">{{ t.notifications_min_score_label }}</label>
+                <input type="text" inputmode="numeric" id="telegram_notify_min_score" value="{{ telegram_notify_min_score or '' }}" style="max-width:80px;">
             </div>
         </div>
-        <div class="inline-field">
-            <label for="telegram_chat_id">{{ t.telegram_chat_id_label }}</label>
-            <input type="text" id="telegram_chat_id" value="{{ telegram_chat_id }}">
-        </div>
-        <div class="inline-field">
-            <label for="telegram_notify_min_score">{{ t.notifications_min_score_label }}</label>
-            <input type="text" inputmode="numeric" id="telegram_notify_min_score" value="{{ telegram_notify_min_score or '' }}" style="max-width:80px;">
-        </div>
     </div>
-</div>
+</section>
 
 <div class="pcard accent-red danger-card">
     <h3>{{ t.danger_zone_title }}</h3>
@@ -788,7 +830,7 @@ document.getElementById("btn-run-without-wayback").addEventListener("click", () 
 document.getElementById("btn-run-full-scan").addEventListener("click", () => startDiscovery(false, true));
 
 runBtn.addEventListener("click", async () => {
-    if (!discoveryListening) { await startDiscovery(false); return; }
+    if (!discoveryListening) { await startDiscovery(false, false); return; }
     runBtn.disabled = true;
     runBtnSpinner.style.display = "inline-block";
     const response = await fetch("/automation/discovery/stop", { method: "POST" });
@@ -863,14 +905,6 @@ function renderStage(phase) {
     if (currentIndex === -1) document.getElementById("hero-detail-idle").style.display = "block";
 }
 
-function formatSecondsDuration(seconds) {
-    if (seconds === null || seconds === undefined) return "–";
-    if (seconds < 90) return `${Math.round(seconds)}s`;
-    const minutes = seconds / 60;
-    if (minutes < 90) return `${Math.round(minutes)}m`;
-    return `${(minutes / 60).toFixed(1)}h`;
-}
-
 function refreshDiscoveryStatus() {
     fetch("/automation/discovery/status")
         .then((response) => response.json())
@@ -917,81 +951,181 @@ function refreshDiscoveryMetrics() {
 refreshDiscoveryMetrics();
 setInterval(refreshDiscoveryMetrics, 15000);
 
-// ---------------- Quick batch + evaluation live stats ----------------
-const batchOrb = document.getElementById("batch-orb");
-const batchOrbValue = document.getElementById("batch-orb-value");
-const batchInfoSub = document.getElementById("batch-info-sub");
-const batchLastCycle = document.getElementById("batch-last-cycle");
-const batchEvalBadge = document.getElementById("batch-eval-badge");
-let lastBatchPending = 0;
+const STAGE_DEFS = {
+    screen: { queue: true, active: true, results: [["passed", "ok"], ["skipped", "skip"]], rate: ["passed", ["passed", "skipped"]] },
+    eval: { queue: true, active: true, results: [["passed", "ok"], ["review", "warn"], ["archived", "skip"], ["failed", "bad"]], rate: ["passed", ["passed", "review", "archived"]] },
+    tailor: { queue: true, active: true, results: [["done", "ok"]], rate: null },
+    answers: { queue: true, active: true, results: [["done", "ok"]], rate: null },
+    telegram: { queue: false, active: false, results: [["sent", "ok"], ["blocked", "skip"], ["below_score", "skip"]], rate: null },
+};
+const RESULT_LABELS = {
+    passed: "pipe_res_passed", skipped: "pipe_res_skipped", review: "pipe_res_review", archived: "pipe_res_archived",
+    failed: "pipe_res_failed", done: "pipe_res_done", sent: "pipe_res_sent", blocked: "pipe_res_blocked", below_score: "pipe_res_below",
+};
 
-function setBatchCount(newCount) {
-    if (newCount < lastBatchPending) {
-        batchOrbValue.classList.add("zeroing");
-        setTimeout(() => { batchOrbValue.textContent = newCount; batchOrbValue.classList.remove("zeroing"); }, 220);
-    } else {
-        batchOrbValue.textContent = newCount;
-    }
-    lastBatchPending = newCount;
+function escapeHtml(value) {
+    return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-const evalLiveIndicator = document.getElementById("eval-live-indicator");
-const evalLiveText = document.getElementById("eval-live-text");
+function flowCell(key, name, label, kind) {
+    return `<div class="flow-cell ${kind}" id="st-${key}-c-${name}"><span class="v" id="st-${key}-${name}">0</span><span class="l">${label}</span></div>`;
+}
+
+function buildStage(key) {
+    const def = STAGE_DEFS[key];
+    const lead = [];
+    if (def.queue) lead.push(flowCell(key, "queue", I18N.pipe_lane_queue, "queue"));
+    if (def.active) lead.push(flowCell(key, "active", I18N.pipe_lane_active, "active"));
+
+    let results = def.results.map(([name, kind]) => flowCell(key, name, I18N[RESULT_LABELS[name]], kind)).join("");
+    if (def.rate) results += flowCell(key, "rate", I18N.pipe_res_rate, "rate");
+
+    let html = `<div class="stage-live-top"><span class="stage-since">${I18N.pipe_since_run}</span><span class="stage-state" id="st-${key}-state"></span></div>`;
+    html += `<div class="stage-flow">${lead.join('<span class="flow-arrow">→</span>')}${lead.length ? '<span class="flow-arrow">→</span>' : ""}<div class="flow-results">${results}</div></div>`;
+    if (def.queue) {
+        html += `<div class="flow-meter"><div class="flow-meter-seg q" id="st-${key}-seg-q"></div><div class="flow-meter-seg a" id="st-${key}-seg-a"></div><div class="flow-meter-seg d" id="st-${key}-seg-d"></div></div>`;
+    }
+    html += `<div class="stage-live-bottom"><div class="pipe-lights" id="st-${key}-lights"></div><div class="stage-foot" id="st-${key}-foot"></div></div>`;
+    document.getElementById(`live-${key}`).innerHTML = html;
+}
+Object.keys(STAGE_DEFS).forEach(buildStage);
+
+const pipeLast = {};
+
+function setPipeNumber(id, value) {
+    const el = document.getElementById(id);
+    if (!el || pipeLast[id] === value) return;
+    const first = pipeLast[id] === undefined;
+    pipeLast[id] = value;
+    el.textContent = value.toLocaleString();
+    if (first) return;
+    el.classList.add("bump");
+    setTimeout(() => el.classList.remove("bump"), 240);
+}
+
+function renderLights(key, total, lit) {
+    const el = document.getElementById(`st-${key}-lights`);
+    const signature = `${total}:${lit}`;
+    if (el.dataset.signature === signature) return;
+    el.dataset.signature = signature;
+    el.innerHTML = Array.from({ length: total }, (_, index) => `<span class="pipe-light${index < lit ? " lit" : ""}"></span>`).join("");
+}
+
+function rateText(values, def) {
+    if (!def.rate) return "";
+    const numerator = values[def.rate[0]] || 0;
+    const denominator = def.rate[1].reduce((sum, name) => sum + (values[name] || 0), 0);
+    return denominator > 0 ? `${Math.round((numerator / denominator) * 100)}%` : "–";
+}
+
+function formatTimer(seconds) {
+    const mm = Math.floor(seconds / 60);
+    const ss = String(seconds % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+}
+
+function screenFoot(data) {
+    if (!data.quick_batch_enabled) return I18N.pipe_screen_off;
+    const lines = [];
+    if (!data.batch_loop_alive) {
+        lines.push(I18N.pipe_screen_stalled);
+    } else if (data.batch_flush_running) {
+        lines.push(I18N.pipe_screen_running);
+    } else if (data.batch_seconds_until_flush !== null && data.batch_seconds_until_flush !== undefined) {
+        lines.push(I18N.pipe_screen_next.replace("{timer}", `<span class="t">${formatTimer(data.batch_seconds_until_flush)}</span>`));
+    }
+    lines.push(I18N.pipe_screen_parallel.replace("{chunk}", data.chunk_size).replace("{workers}", data.screen_workers));
+    if (data.batch_force_flush_size) {
+        lines.push(I18N.pipe_screen_force.replace("{pending}", data.screen_pending_total).replace("{size}", data.batch_force_flush_size));
+    }
+    if (data.batch_last_error) lines.push(escapeHtml(data.batch_last_error));
+    return lines.join("<br>");
+}
+
+function stageFoot(key, data, off) {
+    if (key === "screen") return screenFoot(data);
+    if (key === "eval") return I18N.pipe_eval_foot.replace("{workers}", data.eval_workers);
+    if (key === "telegram") return off ? I18N.pipe_tg_off : I18N.pipe_tg_foot;
+    return off ? I18N.pipe_post_off : I18N.pipe_post_parallel.replace("{workers}", data.post_workers);
+}
+
+function renderPipelineStage(key, data, queue, off, lightsTotal, lightsLit) {
+    const def = STAGE_DEFS[key];
+    const values = data.flow[key];
+    const active = values.active || 0;
+    const done = values.done || 0;
+
+    const stageEl = document.getElementById(`stage-${key}`);
+    stageEl.classList.toggle("working", active > 0 && !off);
+    stageEl.classList.toggle("off", off);
+
+    if (def.queue) {
+        setPipeNumber(`st-${key}-queue`, queue);
+        document.getElementById(`st-${key}-c-queue`).classList.toggle("has", queue > 0);
+        setPipeNumber(`st-${key}-active`, active);
+        document.getElementById(`st-${key}-c-active`).classList.toggle("has", active > 0);
+
+        const total = Math.max(1, queue + active + done);
+        document.getElementById(`st-${key}-seg-q`).style.width = `${(queue / total) * 100}%`;
+        document.getElementById(`st-${key}-seg-a`).style.width = `${(active / total) * 100}%`;
+        document.getElementById(`st-${key}-seg-d`).style.width = `${(done / total) * 100}%`;
+    }
+
+    def.results.forEach(([name]) => setPipeNumber(`st-${key}-${name}`, values[name] || 0));
+    if (def.rate) document.getElementById(`st-${key}-rate`).textContent = rateText(values, def);
+
+    let stateKey = "idle";
+    if (off) stateKey = "off";
+    else if (active > 0) stateKey = "working";
+    else if (queue > 0) stateKey = "waiting";
+    document.getElementById(`st-${key}-state`).textContent = I18N["pipe_state_" + stateKey];
+
+    renderLights(key, lightsTotal, lightsLit);
+    document.getElementById(`st-${key}-foot`).innerHTML = stageFoot(key, data, off);
+}
+
+function renderConnector(id, count, flowing) {
+    setPipeNumber(`${id}-n`, count);
+    document.getElementById(id).classList.toggle("flowing", flowing);
+}
 
 function refreshLiveStats() {
     fetch("/automation/discovery/live-stats")
         .then((response) => response.json())
         .then((data) => {
+            const flow = data.flow;
+
             document.getElementById("quick_batch_enabled").checked = data.quick_batch_enabled;
             document.getElementById("batch-body-on").style.display = data.quick_batch_enabled ? "block" : "none";
             document.getElementById("batch-body-off").style.display = data.quick_batch_enabled ? "none" : "block";
 
-            if (data.quick_batch_enabled) {
-                setBatchCount(data.pending_count);
-                batchOrb.classList.toggle("evaluating", data.batch_evaluating);
-                batchEvalBadge.classList.toggle("visible", data.batch_evaluating);
+            renderPipelineStage(
+                "screen", data, data.screen_queue, !data.quick_batch_enabled,
+                data.screen_workers, Math.min(data.screen_workers, Math.ceil(flow.screen.active / Math.max(1, data.chunk_size)))
+            );
+            renderPipelineStage(
+                "eval", data, flow.eval.queued, false,
+                data.eval_workers, Math.min(data.eval_workers, flow.eval.active)
+            );
+            renderPipelineStage(
+                "tailor", data, flow.tailor.queued, !data.tailor_enabled,
+                data.post_workers, Math.min(data.post_workers, flow.tailor.active)
+            );
+            renderPipelineStage(
+                "answers", data, flow.answers.queued, !data.answers_enabled,
+                data.post_workers, Math.min(data.post_workers, flow.answers.active)
+            );
+            renderPipelineStage("telegram", data, 0, !data.telegram_enabled, 0, 0);
 
-                let timerText = I18N.batch_timer_paused;
-                if (!data.batch_loop_alive) {
-                    timerText = `<span class="batch-info-timer">${I18N.batch_timer_stalled}</span>`;
-                } else if (data.batch_flush_running) {
-                    timerText = `<span class="batch-info-timer">${I18N.batch_timer_running}</span>`;
-                } else if (data.batch_seconds_until_flush !== null && data.batch_seconds_until_flush !== undefined) {
-                    const remainingSeconds = data.batch_seconds_until_flush;
-                    const mm = Math.floor(remainingSeconds / 60);
-                    const ss = String(remainingSeconds % 60).padStart(2, "0");
-                    timerText = `<span class="batch-info-timer">${mm}:${ss}</span>`;
-                }
-
-                batchInfoSub.innerHTML = I18N.batch_info_sub_template
-                    .replace("{count}", `<strong>${data.pending_count}</strong>`)
-                    .replace("{timer}", timerText);
-
-                if (data.last_batch_size > 0) {
-                    batchLastCycle.innerHTML = I18N.batch_last_cycle_template
-                        .replace("{size}", data.last_batch_size)
-                        .replace("{proceeded}", `<b>${data.last_batch_proceeded}</b>`)
-                        .replace("{skipped}", `<b class="skip-count">${data.last_batch_skipped}</b>`);
-                } else {
-                    batchLastCycle.textContent = "";
-                }
-            }
-
-            const evaluating = data.eval_in_flight > 0;
-            evalLiveIndicator.classList.toggle("active", evaluating);
-            evalLiveText.textContent = evaluating
-                ? I18N.eval_active_label.replace("{count}", data.eval_in_flight)
-                : I18N.eval_idle_label;
-
-            document.getElementById("stat-eval-passed").textContent = data.eval_passed_count;
-            document.getElementById("stat-eval-archived").textContent = data.eval_archived_count;
+            const enteredEval = flow.eval.queued + flow.eval.active + flow.eval.done;
+            renderConnector("conn-eval", enteredEval, flow.screen.active > 0 || flow.eval.queued > 0);
+            renderConnector("conn-post", flow.eval.passed, flow.tailor.queued + flow.tailor.active + flow.answers.queued + flow.answers.active > 0);
         })
         .catch(() => {});
 }
 refreshLiveStats();
-setInterval(refreshLiveStats, 2500);
+setInterval(refreshLiveStats, 2000);
 
-// ---------------- New-job toasts (stacked, uses the shared toast system) ----------------
 let seenJobIds = null;
 
 function pollNewJobs() {

@@ -18,9 +18,12 @@ def bulk_create_gap_items(session: Session, session_id: int, items: list[dict]) 
             original_field_path=item.get("original_field_path"),
             suggested_field_paths=suggested_paths,
             suggested_reason=item.get("suggested_reason"),
-            assigned_field_paths=list(suggested_paths) if item["status"] == "match" else [],
+            assigned_field_paths=list(item.get("assigned_field_paths") or []),
             recommend_keep=item.get("recommend_keep"),
-            included=item["status"] == "match",
+            resume_form=item.get("resume_form"),
+            suggested_form=item.get("suggested_form"),
+            evidence=(item.get("evidence") or None) and str(item.get("evidence"))[:1000],
+            included=bool(item.get("assigned_field_paths")),
         )
         session.add(row)
         created.append(row)

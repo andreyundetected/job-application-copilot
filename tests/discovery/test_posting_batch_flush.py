@@ -13,6 +13,7 @@ def _isolated(monkeypatch):
     monkeypatch.setattr(posting_batch, "_retry_not_before", 0.0)
     monkeypatch.setattr(posting_batch, "_last_error", None)
     monkeypatch.setattr(config, "DISCOVERY_SCREEN_CHUNK_SIZE", 10)
+    monkeypatch.setattr(config, "DISCOVERY_SCREEN_WORKERS", 1)
     posting_batch._stop_event.clear()
     yield
     posting_batch._pending_ids.clear()

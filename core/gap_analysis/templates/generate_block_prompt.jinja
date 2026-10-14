@@ -1,32 +1,23 @@
-You align the terminology of exactly one block of a candidate's resume with a target job posting. The resume is already strong and truthful. You do not improve it. You only make its wording match the posting, so that ATS filters, quick screens and diagonal reading find the same words and role names.
+{% if kind == "skills" %}
+You update the SKILLS block of a candidate's resume for a target job posting. The block is a list of terms grouped by category, one category per line. Make the keywords below present in the list, in the posting's own wording, and leave the rest of the list as it is.
 
-FULL RESUME (read-only context, so you know what the rest of the resume already says - do NOT rewrite it)
-{{ full_resume_text }}
-
-TARGET JOB POSTING (source of the terminology)
+TARGET JOB POSTING
 {{ job_posting_text }}
 
-BLOCK: {{ label }} ({{ kind }})
-The block has {{ words }} words and is split into numbered units. A unit is either a paragraph or a bullet list.
+FULL RESUME (read-only context, so you know what the candidate really did)
+{{ full_resume_text }}
+
+SKILLS BLOCK ({{ words }} words), split into numbered units. Line breaks inside a unit are part of its structure.
 
 {% for unit in units %}
 <el n="{{ unit.n }}"{% if unit.list %} list="true"{% endif %}>{% if unit.list %}{% for item in unit["items"] %}<li>{{ item }}</li>{% endfor %}{% else %}{{ unit.text }}{% endif %}</el>
 {% endfor %}
 
-ITEMS TO WORK INTO THIS BLOCK
-{% for item in included_items %}
+KEYWORDS TO ADD
+Each keyword may come with its basis: a quote that shows what the candidate really did.
+{% for item in add_items %}
 - {{ item }}
 {% endfor %}
-{% if not included_items %}
-(none)
-{% endif %}
-
-{% if keep_items %}
-ITEMS ALREADY IN THIS BLOCK THAT MUST STAY
-{% for item in keep_items %}
-- {{ item }}
-{% endfor %}
-{% endif %}
 
 {% if comment %}
 CANDIDATE'S NOTE ABOUT THIS BLOCK (follow it, and do not invent anything beyond it)
@@ -34,31 +25,69 @@ CANDIDATE'S NOTE ABOUT THIS BLOCK (follow it, and do not invent anything beyond 
 {% endif %}
 
 WHAT YOU DO
-- Replace a word or a name with the posting's wording when it means the same thing (for example "ML Engineer" -> "AI Engineer", "containers" -> "Docker" only if that is what the text already describes).
-- Insert a missing keyword or a short phrase (for example "with Docker") into the sentence where it truthfully belongs, only when the block already describes that work.
-- Work in the listed items where they truthfully fit.
-- Return a unit unchanged when nothing has to change in it. Returning the whole block unchanged is a normal and correct result.
-{% if kind == "skills" %}
-
-THIS IS A SKILLS BLOCK: a list of terms, not prose. You may put the terms most relevant to the posting first, rename a term to the posting's wording, and add terms from the items above. Do not delete a term unless it duplicates another one. Keep the same grouping and separators.
-{% else %}
-
-WHAT YOU NEVER DO
-- Do not improve, shorten, expand, reorder or rephrase sentences for style, and do not strengthen verbs.
-- Never remove or change numbers, metrics, names, dates or employers, and never add a claim, technology or achievement that the resume or the note does not support.
-- Do not touch service words: work format (remote, hybrid, full-time), dates, locations and headings. Leave them exactly as they are.
-- Do not add or remove units, bullets or list items. A paragraph stays a paragraph, a list keeps the same number of items.
-- Do not repeat information the rest of the resume already covers just to fit an item in.
-{% endif %}
+- Add every keyword from the list as a term, written exactly as in the list. Put it into the existing category whose terms are of the same kind: a database next to databases, a technique next to techniques, a framework next to frameworks, a platform next to platforms. A technique or a discipline never goes into a category of libraries or tools (do not put "multimodal generation" next to PyTorch and Pandas): it goes into the techniques category, or the keyword is skipped. Prefer the closest existing category even when the fit is loose: APIs, SDKs and protocols go to the backend category, libraries to the libraries category. Create a new last line only when the keyword fits no existing category at all (for example a cloud platform when the list has no platform category), and then give it a normal category name of one or two words, never a name that repeats the keywords ("APIs and SDKs"). Use at most one new line.
+- Add a keyword only if it reads as a short term in a skills list (a tool, a language, a framework, a library, a technique, a protocol, a platform). A keyword that is a duty, an industry or a way of working (backend engineering, production systems, frontend delivery, stakeholder communication) does not belong in this list: skip it, even though it is in the keyword list.
+- Never add a term that is not in the keyword list. Do not add tools or languages from your own knowledge, and do not copy tools from the job posting. Before you answer, check every term you added against the keyword list: a term that is not in the list is removed. Example: the posting names LlamaIndex and Vercel AI SDK, the keyword list does not: they must not appear in your answer.
+- Keep the candidate's programming languages and main frameworks and libraries in the list.
+- Inside a category put the terms most relevant to the posting first. Keep the category order, the category labels exactly as written, the separators and the line breaks.
+- Remove a term only when it is clearly irrelevant to this posting and a keyword of the same kind takes its place in that category. Remove at most 3 terms in total.
 
 OUTPUT RULES
 - Return every unit with the same number n and the same type.
-- Copy a unit or list item verbatim when nothing changes in it.
-- Every item under "MUST STAY" must still be present.
+- Plain text only: no markdown, no HTML other than the tags shown below.
+
+OUTPUT FORMAT
+Only the units, nothing else:
+
+<el n="0">first category: term, term
+second category: term, term</el>
+{% else %}
+You update the SUMMARY of a candidate's resume so that a recruiter's keyword search finds the keywords below. Change the text as little as possible.
+
+TARGET JOB POSTING
+{{ job_posting_text }}
+
+FULL RESUME (read-only context, so you know what the candidate really did)
+{{ full_resume_text }}
+
+SUMMARY ({{ words }} words), split into numbered units. A unit is a paragraph.
+
+{% for unit in units %}
+<el n="{{ unit.n }}"{% if unit.list %} list="true"{% endif %}>{% if unit.list %}{% for item in unit["items"] %}<li>{{ item }}</li>{% endfor %}{% else %}{{ unit.text }}{% endif %}</el>
+{% endfor %}
+
+KEYWORDS TO ADD
+Each keyword may come with its basis: a quote that shows what the candidate really did.
+{% for item in add_items %}
+- {{ item }}
+{% endfor %}
+
+{% if comment %}
+CANDIDATE'S NOTE ABOUT THIS BLOCK (follow it, and do not invent anything beyond it)
+{{ comment }}
+{% endif %}
+
+WHAT YOU DO
+- Work the keywords into the existing sentence. The summary already lists things the candidate built or worked with: a keyword can join such a list or extend a phrase. Use the keyword's exact wording.
+- Add at most 12 new words in total. Keep the sentence structure, every number and name, and the order of the existing ideas.
+- Claim nothing beyond the keyword's basis and the rest of the resume.
+- A domain or industry keyword goes only next to wording that names work done for that industry. Never attach it to something the candidate built for other customers.
+- Never write the candidate into a job title or a role ("as an X Engineer").
+- Skip a keyword when it cannot be added naturally, or when the summary already says the same thing. Adding only some of the keywords, or none, is a normal result.
+- The result must read as natural English written by the candidate: no keywords tacked on at the end, no repeated words.
+
+WHAT YOU NEVER DO
+- Do not improve, shorten, reorder or rephrase sentences for style, and do not strengthen verbs.
+- Never remove or change numbers, metrics, names, dates or employers.
+- Keep every other word of the original exactly as it is.
+
+OUTPUT RULES
+- Return every unit with the same number n and the same type.
+- Copy a unit verbatim when nothing changes in it.
 - Plain text only: no markdown, no HTML other than the tags shown below.
 
 OUTPUT FORMAT
 Only the units, nothing else:
 
 <el n="0">paragraph text</el>
-<el n="1" list="true"><li>bullet</li><li>bullet</li></el>
+{% endif %}
