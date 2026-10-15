@@ -160,12 +160,40 @@ main {
     resize: vertical; box-sizing: border-box; font-family: inherit; transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 .bc-comment:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.lane-field-label { margin: 12px 0 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.lane-field-label + .bc-comment { margin-top: 6px; }
+.letter-comment { min-height: 76px; border-color: color-mix(in srgb, var(--c, #f59e0b) 45%, var(--border)); }
+.letter-empty { top: 100px; }
+.fold { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 4px; }
+.fold-toggle {
+    display: flex; align-items: center; gap: 8px; width: 100%; height: auto; margin: 0; padding: 9px 0; border: none;
+    background: transparent; color: var(--text-secondary); font: inherit; font-size: 11.5px; font-weight: 600;
+    text-align: left; cursor: pointer; transition: color 0.12s ease;
+}
+.fold-toggle:hover { color: var(--text-primary); }
+.fold-arrow { display: inline-block; font-size: 10px; transition: transform 0.24s ease; }
+.fold.open .fold-arrow { transform: rotate(90deg); }
+.fold-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.28s ease, opacity 0.22s ease; }
+.fold.open .fold-body { grid-template-rows: 1fr; opacity: 1; }
+.fold-inner { min-height: 0; overflow: hidden; padding: 0 4px 4px; }
+.fold-hint { margin: 0; font-size: 11px; line-height: 1.45; color: var(--text-tertiary); }
+.fold-inner .bc-comment { margin-top: 8px; }
+.letter-empty-comment {
+    display: block; width: 100%; max-width: 420px; min-height: 84px; margin: 0 auto 16px; padding: 10px 12px;
+    border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; color: #111; font-family: inherit;
+    font-size: 12.5px; line-height: 1.5; text-align: left; resize: vertical; box-sizing: border-box; pointer-events: auto;
+}
+.letter-empty-comment:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .role-chip { font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: rgba(139, 92, 246, 0.16); color: #c4b5fd; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.tcard { padding: 10px 0 12px; border-top: 1px solid var(--border); }
-.tcard:first-of-type { border-top: none; padding-top: 2px; }
-.tcard.hot .tcard-current { color: var(--accent); }
+.tcard { position: relative; margin: 0 -8px; padding: 10px 8px 12px 12px; border-top: 1px solid var(--border); border-radius: 12px; transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+.lane-head + .tcard { border-top-color: transparent; padding-top: 6px; }
+.tcard::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--c); opacity: 0; transition: opacity 0.15s ease; }
+.tcard.hot { background: color-mix(in srgb, var(--c) 12%, transparent); border-top-color: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent); }
+.tcard.hot::before { opacity: 1; }
+.tcard.hot + .tcard { border-top-color: transparent; }
+.tcard.hot .tcard-label { color: var(--c); }
 .tcard-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .tcard-label { flex: 1; min-width: 0; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tcard-current { font-size: 12.5px; font-weight: 600; color: var(--text-primary); line-height: 1.4; word-break: break-word; }
@@ -218,7 +246,7 @@ main {
 .resume-doc ul { margin: 3px 0 8px; padding-left: 20px; }
 .resume-doc li { margin: 1px 0; line-height: 1.4; }
 .resume-doc [data-blk] { border-radius: 3px; transition: background-color 0.15s ease, box-shadow 0.15s ease; }
-.resume-doc .blk-hot { background-color: rgba(91, 141, 239, 0.18); }
+.resume-doc .blk-hot { background-color: rgba(91, 141, 239, 0.16); outline: 2px solid rgba(91, 141, 239, 0.4); outline-offset: 2px; }
 .resume-doc .blk-edited { box-shadow: inset 3px 0 0 var(--score-high); }
 
 .letter-page { position: relative; background: #ffffff; color: #111; border-radius: 16px; padding: 56px 64px; box-sizing: border-box; font-family: "Calibri", "Segoe UI", sans-serif; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); }
@@ -411,6 +439,8 @@ main {
 
                 <div class="tools hidden" id="letter-tools">
                     <span id="letter-words" class="word-count-badge hidden"></span>
+                    <button type="button" class="ibtn" id="letter-undo" title="{{ t.undo_button }}" disabled>↩</button>
+                    <button type="button" class="ibtn" id="letter-redo" title="{{ t.redo_button }}" disabled>↪</button>
                     <div class="custom-select fmt-pick" id="letter-format" data-value="docx">
                         <button type="button" class="custom-select-trigger">
                             <span data-select-label>DOCX</span>
@@ -439,6 +469,7 @@ main {
                             <div class="empty-ico">✉</div>
                             <b>{{ t.letter_empty_title }}</b>
                             <p>{{ t.letter_empty_text }}</p>
+                            <textarea class="letter-empty-comment" id="letter-comment-empty" placeholder="{{ t.letter_comment_placeholder }}"></textarea>
                             <button type="button" class="cta" id="letter-empty-gen">{{ t.lane_generate }}</button>
                         </div>
                         <textarea class="letter-area" id="letter-doc"></textarea>
@@ -586,7 +617,7 @@ main {
     const SKILL_CATS = new Set(["skill", "tool", "cert"]);
     const DEST_KEYS = { skills: "dest_skills", summary: "dest_summary", letter: "dest_letter" };
     const RESUME_RANGE = [400, 475, 600, 725];
-    const LETTER_RANGE = [200, 250, 350, 400];
+    const LETTER_RANGE = [200, 250, 400, 450];
     const RESUME_TIPS = { ok: "resume_words_ok", short: "resume_words_short", very_short: "resume_words_very_short", long: "resume_words_long", very_long: "resume_words_very_long" };
     const LETTER_TIPS = { ok: "letter_words_ok", short: "letter_words_short", very_short: "letter_words_very_short", long: "letter_words_long", very_long: "letter_words_very_long" };
 
@@ -747,13 +778,20 @@ main {
     redoBtn.addEventListener("click", () => redoHistory());
 
     document.addEventListener("keydown", (e) => {
-        if (stageTab !== "resume") return;
+        if (stageTab !== "resume" && stageTab !== "letter") return;
         const isMac = navigator.platform.toUpperCase().includes("MAC");
         const modifier = isMac ? e.metaKey : e.ctrlKey;
         if (!modifier) return;
         const isZKey = e.code ? e.code === "KeyZ" : e.key.toLowerCase() === "z";
         if (!isZKey) return;
-        if (document.activeElement && document.activeElement.tagName === "TEXTAREA") return;
+        const active = document.activeElement;
+        if (stageTab === "letter") {
+            if (active && active !== letterDoc && (active.tagName === "TEXTAREA" || active.tagName === "INPUT")) return;
+            e.preventDefault();
+            if (e.shiftKey) redoLetter(); else undoLetter();
+            return;
+        }
+        if (active && active.tagName === "TEXTAREA") return;
         e.preventDefault();
         if (e.shiftKey) redoHistory(); else undoHistory();
     });
@@ -1056,7 +1094,7 @@ main {
         opts = opts || {};
         const els = [...resumeDoc.querySelectorAll(`[data-blk="${attrEscape(path)}"]`)];
         els.forEach((el) => el.classList.toggle("blk-hot", on));
-        if (path === "letter") letterDoc.classList.toggle("blk-hot", on);
+        if (path === "letter") letterDoc.classList.toggle("blk-hot", on && letterState.content.trim().length > 0);
         if (on && opts.scrollResume && els[0] && stageTab === "resume") els[0].scrollIntoView({ behavior: "smooth", block: "center" });
         paneWork.querySelectorAll("[data-hot-path]").forEach((card) => {
             if (card.dataset.hotPath !== path) return;
@@ -1752,19 +1790,26 @@ main {
         const lane = document.createElement("section");
         lane.className = "lane k-letter";
         const items = gapItems().filter((item) => destinations(item).includes("letter"));
-        const noteOpen = openNotes.has("letter") || !!letterState.notes;
+        const noteOpen = openNotes.has("letter");
 
         lane.innerHTML = `
             <div class="lane-head">
                 <span class="lane-title">${esc(tr("lane_letter"))}</span>
                 <span class="lane-count">${items.length}</span>
                 <span class="lane-spacer"></span>
-                ${noteToggleHtml("letter", letterState.notes)}
                 <button type="button" class="lane-run letter-run${letterState.busy ? " busy" : ""}">${esc(tr(letterState.busy ? "lane_generating" : "lane_generate"))}</button>
             </div>
             <p class="lane-hint">${esc(tr("lane_letter_hint"))}</p>
             <div class="chip-row">${chipsHtml(items, "letter")}</div>
-            ${noteOpen ? `<textarea class="bc-comment letter-notes" placeholder="${esc(tr("letter_note_placeholder"))}">${esc(letterState.notes)}</textarea>` : ""}`;
+            <div class="lane-field-label">${esc(tr("letter_comment_label"))}</div>
+            <textarea class="bc-comment letter-comment" placeholder="${esc(tr("letter_comment_placeholder"))}">${esc(letterState.comment)}</textarea>
+            <div class="fold${noteOpen ? " open" : ""}">
+                <button type="button" class="fold-toggle"><span class="fold-arrow">▸</span><span>${esc(tr("letter_standing_label"))}</span></button>
+                <div class="fold-body"><div class="fold-inner">
+                    <p class="fold-hint">${esc(tr("letter_standing_hint"))}</p>
+                    <textarea class="bc-comment letter-notes" placeholder="${esc(tr("letter_note_placeholder"))}">${esc(letterState.notes)}</textarea>
+                </div></div>
+            </div>`;
 
         bindHot(lane, "letter");
         bindDrop(lane, "letter");
@@ -1788,7 +1833,7 @@ main {
         paneWork.scrollTop = scrollTop;
     }
 
-    let letterState = { content: "", notes: "", standing: "", busy: false };
+    let letterState = { content: "", notes: "", standing: "", comment: "", busy: false };
     let letterSaveTimeout = null;
 
     function letterWordCount(text) {
@@ -1800,7 +1845,7 @@ main {
         letterSaveTimeout = setTimeout(() => {
             fetch(`/tailor/session/${SESSION_ID}/letter`, {
                 method: "POST",
-                body: new URLSearchParams({ content: letterState.content, notes: letterState.notes }),
+                body: new URLSearchParams({ content: letterState.content, notes: letterState.notes, comment: letterState.comment }),
             });
         }, 700);
     }
@@ -1814,13 +1859,75 @@ main {
     const letterFormatSelect = document.getElementById("letter-format");
     const letterWordsEl = document.getElementById("letter-words");
     const letterDot = document.getElementById("letter-dot");
+    const letterCommentEmpty = document.getElementById("letter-comment-empty");
+    const letterUndoBtn = document.getElementById("letter-undo");
+    const letterRedoBtn = document.getElementById("letter-redo");
+    const LETTER_HISTORY_LIMIT = 100;
+    let letterUndoStack = [""];
+    let letterRedoStack = [];
+    let letterTypingTimeout = null;
+
+    function updateLetterHistoryButtons() {
+        letterUndoBtn.disabled = letterUndoStack.length < 2;
+        letterRedoBtn.disabled = letterRedoStack.length === 0;
+    }
+
+    function pushLetterSnapshot() {
+        const snapshot = letterState.content;
+        if (letterUndoStack[letterUndoStack.length - 1] === snapshot) { updateLetterHistoryButtons(); return; }
+        letterUndoStack.push(snapshot);
+        if (letterUndoStack.length > LETTER_HISTORY_LIMIT) letterUndoStack.shift();
+        letterRedoStack = [];
+        updateLetterHistoryButtons();
+    }
+
+    function resetLetterHistory() {
+        letterUndoStack = [letterState.content];
+        letterRedoStack = [];
+        updateLetterHistoryButtons();
+    }
+
+    function flushLetterTyping() {
+        if (letterTypingTimeout === null) return;
+        clearTimeout(letterTypingTimeout);
+        letterTypingTimeout = null;
+        pushLetterSnapshot();
+    }
+
+    function applyLetterSnapshot(snapshot) {
+        letterState.content = snapshot;
+        syncLetterPage();
+        scheduleLetterSave();
+        updateLetterHistoryButtons();
+    }
+
+    function undoLetter() {
+        flushLetterTyping();
+        if (letterUndoStack.length < 2) return;
+        letterRedoStack.push(letterUndoStack.pop());
+        applyLetterSnapshot(letterUndoStack[letterUndoStack.length - 1]);
+    }
+
+    function redoLetter() {
+        flushLetterTyping();
+        if (!letterRedoStack.length) return;
+        const snapshot = letterRedoStack.pop();
+        letterUndoStack.push(snapshot);
+        applyLetterSnapshot(snapshot);
+    }
+
+    letterUndoBtn.addEventListener("click", undoLetter);
+    letterRedoBtn.addEventListener("click", redoLetter);
+    updateLetterHistoryButtons();
 
     letterDoc.addEventListener("mouseenter", () => setBlockHot("letter", true, { scrollSchema: true }));
     letterDoc.addEventListener("mouseleave", () => setBlockHot("letter", false, {}));
 
     function syncLetterPage() {
         if (letterDoc.value !== letterState.content) letterDoc.value = letterState.content;
+        if (letterCommentEmpty.value !== letterState.comment) letterCommentEmpty.value = letterState.comment;
         const filled = letterState.content.trim().length > 0;
+        if (!filled) letterDoc.classList.remove("blk-hot");
         letterEmpty.classList.toggle("hidden", filled);
         letterCopyBtn.classList.toggle("hidden", !filled);
         letterDownloadBtn.disabled = !filled;
@@ -1840,7 +1947,8 @@ main {
         letterState.content = data.content || "";
         letterState.standing = data.standing || "";
         letterState.notes = data.notes || letterState.standing;
-        if (letterState.notes) openNotes.add("letter");
+        letterState.comment = data.comment || "";
+        resetLetterHistory();
         renderWork();
         syncLetterPage();
     }
@@ -1883,7 +1991,7 @@ main {
         try {
             const response = await fetch(`/tailor/session/${SESSION_ID}/generate-letter`, {
                 method: "POST",
-                body: new URLSearchParams({ notes: letterState.notes }),
+                body: new URLSearchParams({ notes: letterState.notes, comment: letterState.comment, previous: letterState.content }),
             });
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
@@ -1891,7 +1999,9 @@ main {
                 return;
             }
             const data = await response.json();
+            flushLetterTyping();
             letterState.content = data.content || "";
+            pushLetterSnapshot();
             setTab("letter");
             showToast(tr("toast_letter_ready"), "success", { key: "tailoring" });
         } finally {
@@ -1917,9 +2027,21 @@ main {
         letterState.content = letterDoc.value;
         syncLetterPage();
         scheduleLetterSave();
+        clearTimeout(letterTypingTimeout);
+        letterTypingTimeout = setTimeout(() => {
+            letterTypingTimeout = null;
+            pushLetterSnapshot();
+        }, 500);
     });
 
     letterEmptyGen.addEventListener("click", generateLetter);
+
+    letterCommentEmpty.addEventListener("input", () => {
+        letterState.comment = letterCommentEmpty.value;
+        const laneField = paneWork.querySelector(".letter-comment");
+        if (laneField) laneField.value = letterState.comment;
+        scheduleLetterSave();
+    });
 
     let copyResetTimeout = null;
     letterCopyBtn.addEventListener("click", async () => {
@@ -2043,6 +2165,13 @@ main {
             return;
         }
 
+        const foldToggle = e.target.closest(".fold-toggle");
+        if (foldToggle) {
+            const open = foldToggle.closest(".fold").classList.toggle("open");
+            if (open) openNotes.add("letter"); else openNotes.delete("letter");
+            return;
+        }
+
         const noteToggle = e.target.closest(".note-toggle");
         if (noteToggle) {
             const key = noteToggle.dataset.note;
@@ -2095,6 +2224,12 @@ main {
 
     let commentSaveTimeout = null;
     paneWork.addEventListener("input", (e) => {
+        if (e.target.classList.contains("letter-comment")) {
+            letterState.comment = e.target.value;
+            letterCommentEmpty.value = e.target.value;
+            scheduleLetterSave();
+            return;
+        }
         if (e.target.classList.contains("letter-notes")) {
             letterState.notes = e.target.value;
             scheduleLetterSave();

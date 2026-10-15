@@ -21,6 +21,11 @@ def upsert_automation_settings(
     max_pages_per_query: int | None = None,
     auto_tailor_master_enabled: bool | None = None,
     auto_questions_master_enabled: bool | None = None,
+    auto_letter_master_enabled: bool | None = None,
+    auto_apply_title_main: bool | None = None,
+    auto_apply_exp_titles: bool | None = None,
+    auto_apply_summary: bool | None = None,
+    auto_apply_skills: bool | None = None,
 ) -> AutomationSettings:
     settings_row = session.query(AutomationSettings).first()
 
@@ -38,6 +43,11 @@ def upsert_automation_settings(
             max_pages_per_query=max_pages_per_query if max_pages_per_query is not None else 10,
             auto_tailor_master_enabled=auto_tailor_master_enabled if auto_tailor_master_enabled is not None else False,
             auto_questions_master_enabled=auto_questions_master_enabled if auto_questions_master_enabled is not None else False,
+            auto_letter_master_enabled=auto_letter_master_enabled if auto_letter_master_enabled is not None else False,
+            auto_apply_title_main=auto_apply_title_main if auto_apply_title_main is not None else True,
+            auto_apply_exp_titles=auto_apply_exp_titles if auto_apply_exp_titles is not None else True,
+            auto_apply_summary=auto_apply_summary if auto_apply_summary is not None else True,
+            auto_apply_skills=auto_apply_skills if auto_apply_skills is not None else True,
         )
         session.add(settings_row)
     else:
@@ -65,6 +75,16 @@ def upsert_automation_settings(
             settings_row.auto_tailor_master_enabled = auto_tailor_master_enabled
         if auto_questions_master_enabled is not None:
             settings_row.auto_questions_master_enabled = auto_questions_master_enabled
+        if auto_letter_master_enabled is not None:
+            settings_row.auto_letter_master_enabled = auto_letter_master_enabled
+        if auto_apply_title_main is not None:
+            settings_row.auto_apply_title_main = auto_apply_title_main
+        if auto_apply_exp_titles is not None:
+            settings_row.auto_apply_exp_titles = auto_apply_exp_titles
+        if auto_apply_summary is not None:
+            settings_row.auto_apply_summary = auto_apply_summary
+        if auto_apply_skills is not None:
+            settings_row.auto_apply_skills = auto_apply_skills
 
     session.commit()
     session.refresh(settings_row)

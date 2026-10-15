@@ -36,8 +36,9 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 
 TASK_MAX_WORKERS = int(os.getenv("TASK_MAX_WORKERS", "25"))
 
-LLM_TEMPERATURE = 0.0
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE") or "0")
 LLM_REASONING_EFFORT = "off"
+LETTER_TEMPERATURE = float(os.getenv("LETTER_TEMPERATURE") or "0.8")
 
 _evaluator_temperature_raw = os.getenv("EVALUATOR_TEMPERATURE", "0").strip()
 EVALUATOR_TEMPERATURE = float(_evaluator_temperature_raw) if _evaluator_temperature_raw else None

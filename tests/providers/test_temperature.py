@@ -51,7 +51,7 @@ def test_temperature_is_sent_together_with_reasoning_effort(monkeypatch):
     provider = FreeLLMAPIProvider()
     calls = _capture(monkeypatch, provider)
 
-    provider.call("system", "user", reasoning_effort="low", temperature=0.7)
+    provider.call("system", "user", reasoning_effort="low", temperature=0)
 
     assert calls[0]["temperature"] == 0
     assert "extra_body" not in calls[0]

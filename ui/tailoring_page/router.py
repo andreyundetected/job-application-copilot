@@ -805,6 +805,7 @@ def get_letter_endpoint(session_id: int, session: Session = Depends(get_session)
         {
             "content": (row.content or "") if row else "",
             "notes": (row.notes or "") if row else "",
+            "comment": (row.comment or "") if row else "",
             "standing": (profile.letter_note or "") if profile else "",
         }
     )
@@ -815,11 +816,12 @@ def save_letter_endpoint(
     session_id: int,
     content: str = Form(""),
     notes: str = Form(""),
+    comment: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     if crud.get_tailoring_session(session, session_id) is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    crud.save_letter(session, session_id, content, notes)
+    crud.save_letter(session, session_id, content, notes, comment)
     return JSONResponse({"status": "ok"})
 
 
@@ -905,6 +907,8 @@ def download_letter_endpoint(
 def generate_letter_endpoint(
     session_id: int,
     notes: str = Form(""),
+    comment: str = Form(""),
+    previous: str = Form(""),
     session: Session = Depends(get_session),
     lang: str = Depends(get_language),
 ):
@@ -969,12 +973,16 @@ def generate_letter_endpoint(
             not_proven,
             notes.strip(),
             contacts=contacts,
+            candidate_name=(profile.full_name or "") if profile else "",
+            writing_preferences=(profile.writing_preferences or "") if profile else "",
+            comment=comment.strip(),
+            previous_letter=previous.strip(),
         )
     except Exception as error:
         message = load_page_strings("ui/tailoring_page", lang)["err_letter_failed"]
         raise HTTPException(status_code=502, detail=message.replace("{error}", str(error)))
 
-    crud.save_letter(session, session_id, content, notes.strip())
+    crud.save_letter(session, session_id, content, notes.strip(), comment.strip())
     return JSONResponse({"content": content, "topics": [item["text"] for item in chosen]})
 
 

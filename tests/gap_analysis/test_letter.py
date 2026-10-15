@@ -1,29 +1,23 @@
 import pytest
 
+import config
 from core.gap_analysis.keywords import classify_requirements
-from core.gap_analysis.letter import generate_cover_letter, validate_letter
+from core.gap_analysis.letter import generate_cover_letter
+
 
 
 class _FakeProvider:
     def __init__(self, response_text):
         self.response_text = response_text
         self.last_prompt = ""
-
-    def call(self, system_prompt, user_prompt, max_tokens=None, **kwargs):
-        self.last_prompt = user_prompt
-        return self.response_text
-
-
-class _SequenceProvider:
-    def __init__(self, responses):
-        self.responses = list(responses)
         self.calls = 0
-        self.prompts = []
+        self.seen_temperature = "unset"
 
     def call(self, system_prompt, user_prompt, max_tokens=None, **kwargs):
         self.calls += 1
-        self.prompts.append(user_prompt)
-        return self.responses.pop(0)
+        self.last_prompt = user_prompt
+        self.seen_temperature = kwargs.get("temperature", "unset")
+        return self.response_text
 
 
 _BLOCKS = [
@@ -40,9 +34,20 @@ def _classify(provider, requirements):
     return classify_requirements(provider, requirements, _BLOCKS, "Built agents Python", "", None, [])
 
 
-def _good_letter(words=280):
-    body = " ".join(["pipeline"] * words)
-    return f"<letter>\nDear Hiring Team,\n\nYour retrieval work needs {body}.\n\nBest regards,\nSample Name\n</letter>"
+def _generate(provider, **overrides):
+    values = {
+        "company": "Acme",
+        "job_title": "AI Engineer",
+        "job_posting_text": "posting",
+        "resume_text": "resume",
+        "linkedin_text": "",
+        "extra_info": None,
+        "topics": [],
+        "not_proven": [],
+        "notes": "",
+    }
+    values.update(overrides)
+    return generate_cover_letter(provider, **values)
 
 
 @pytest.mark.gap_analysis
@@ -69,105 +74,104 @@ def test_missing_destination_falls_back_by_category():
 
 
 @pytest.mark.gap_analysis
-def test_letter_text_is_taken_from_the_tag():
-    provider = _FakeProvider("noise <letter>\nDear Team,\n\nHello.   \n</letter> noise")
+def test_letter_text_is_taken_from_the_tag_and_the_plan_is_dropped():
+    provider = _FakeProvider("noise <plan>my plan</plan> <letter>\nDear Team,\n\nHello.   \n</letter> noise")
 
-    text = generate_cover_letter(provider, "Acme", "AI Engineer", "posting", "resume", "", None, [], [], "")
-
-    assert text == "Dear Team,\n\nHello."
+    assert _generate(provider) == "Dear Team,\n\nHello."
 
 
 @pytest.mark.gap_analysis
 def test_letter_without_tag_uses_the_whole_answer():
-    provider = _FakeProvider("Dear Team, hello.")
+    assert _generate(_FakeProvider("Dear Team, hello.")) == "Dear Team, hello."
 
-    assert generate_cover_letter(provider, "", "", "posting", "resume", "", None, [], [], "") == "Dear Team, hello."
+
+@pytest.mark.gap_analysis
+def test_text_after_the_plan_is_used_when_the_letter_tag_is_missing():
+    assert _generate(_FakeProvider("<plan>p</plan>\nDear Team, hello.")) == "Dear Team, hello."
+
+
+@pytest.mark.gap_analysis
+def test_an_unclosed_letter_tag_is_still_read():
+    assert _generate(_FakeProvider("<letter>Dear Team, hello.")) == "Dear Team, hello."
 
 
 @pytest.mark.gap_analysis
 def test_empty_letter_raises():
-    provider = _FakeProvider("<letter>  </letter>")
-
     with pytest.raises(ValueError):
-        generate_cover_letter(provider, "", "", "posting", "resume", "", None, [], [], "")
+        _generate(_FakeProvider("<letter>  </letter>"))
 
 
 @pytest.mark.gap_analysis
-def test_topics_not_proven_and_notes_reach_the_prompt():
+def test_the_model_is_called_once():
+    provider = _FakeProvider("<letter>Dear Team.</letter>")
+
+    _generate(provider)
+
+    assert provider.calls == 1
+
+
+@pytest.mark.gap_analysis
+def test_topics_not_proven_name_and_contacts_reach_the_prompt():
     provider = _FakeProvider("<letter>x</letter>")
 
-    generate_cover_letter(
+    _generate(
         provider,
-        "Acme",
-        "AI Engineer",
-        "posting",
-        "resume",
-        "",
-        None,
-        ['client-facing work (basis: "delivered to a client")'],
-        ["Snowflake"],
-        "keep it warm",
-    )
-
-    assert 'delivered to a client' in provider.last_prompt
-    assert "Snowflake" in provider.last_prompt
-    assert "keep it warm" in provider.last_prompt
-
-
-@pytest.mark.gap_analysis
-def test_contacts_reach_the_prompt():
-    provider = _FakeProvider(_good_letter())
-
-    generate_cover_letter(
-        provider, "Acme", "AI Engineer", "posting", "resume", "", None, [], [], "",
+        topics=['client-facing work (basis: "delivered to a client")'],
+        not_proven=["Snowflake"],
+        candidate_name="Jane Sample",
         contacts=["sample@example.com", "github.com/sampleuser"],
     )
 
+    assert "delivered to a client" in provider.last_prompt
+    assert "Snowflake" in provider.last_prompt
+    assert '"Jane Sample"' in provider.last_prompt
     assert "sample@example.com" in provider.last_prompt
     assert "github.com/sampleuser" in provider.last_prompt
 
 
 @pytest.mark.gap_analysis
-def test_validate_flags_generic_opener():
-    text = "Dear Team,\n\nI am writing to apply for the role. " + "word " * 280
+def test_notes_and_writing_preferences_come_last_before_the_output_format():
+    provider = _FakeProvider("<letter>x</letter>")
 
-    issues = validate_letter(text)
+    _generate(provider, notes="keep it warm", writing_preferences="never mention salary")
 
-    assert any("first sentence" in issue for issue in issues)
-
-
-@pytest.mark.gap_analysis
-def test_validate_flags_length_and_buzzwords():
-    assert any("too short" in issue for issue in validate_letter("Dear Team, hello."))
-    assert any("too long" in issue for issue in validate_letter("word " * 450))
-    assert any("buzzwords" in issue for issue in validate_letter("I am thrilled " + "word " * 280))
+    prompt = provider.last_prompt
+    assert prompt.index("GREETING AND SIGNATURE") < prompt.index("keep it warm") < prompt.index("OUTPUT FORMAT")
+    assert prompt.index("GREETING AND SIGNATURE") < prompt.index("never mention salary") < prompt.index("OUTPUT FORMAT")
 
 
 @pytest.mark.gap_analysis
-def test_validate_passes_a_clean_letter():
-    clean = "Dear Hiring Team,\n\nYour retrieval stack needs " + "pipeline " * 280
+def test_instruction_block_is_absent_without_notes_or_preferences():
+    provider = _FakeProvider("<letter>x</letter>")
 
-    assert validate_letter(clean) == []
+    _generate(provider)
 
-
-@pytest.mark.gap_analysis
-def test_letter_is_regenerated_once_with_the_problems_listed():
-    bad = "<letter>I am writing to apply for the role. " + "word " * 280 + "</letter>"
-    provider = _SequenceProvider([bad, _good_letter()])
-
-    text = generate_cover_letter(provider, "Acme", "AI Engineer", "posting", "resume", "", None, [], [], "")
-
-    assert provider.calls == 2
-    assert "FIX THESE PROBLEMS" not in provider.prompts[0]
-    assert "FIX THESE PROBLEMS" in provider.prompts[1]
-    assert "generic opener" in provider.prompts[1]
-    assert "Dear Hiring Team" in text
+    assert "MANDATORY INSTRUCTIONS" not in provider.last_prompt
 
 
 @pytest.mark.gap_analysis
-def test_clean_letter_needs_a_single_call():
-    provider = _SequenceProvider([_good_letter()])
+def test_russian_posting_switches_the_letter_language():
+    provider = _FakeProvider("<letter>x</letter>")
 
-    generate_cover_letter(provider, "Acme", "AI Engineer", "posting", "resume", "", None, [], [], "")
+    _generate(provider, job_posting_text="Мы ищем инженера по поиску и ретривалу для команды поддержки.")
 
-    assert provider.calls == 1
+    assert "Russian" in provider.last_prompt
+    assert "officialese" in provider.last_prompt
+
+
+@pytest.mark.gap_analysis
+def test_letter_uses_the_configured_temperature_only_during_the_call():
+    provider = _FakeProvider("<letter>x</letter>")
+
+    _generate(provider)
+
+    assert provider.seen_temperature == config.LETTER_TEMPERATURE
+
+
+@pytest.mark.gap_analysis
+def test_explicit_temperature_wins():
+    provider = _FakeProvider("<letter>x</letter>")
+
+    _generate(provider, temperature=1.1)
+
+    assert provider.seen_temperature == 1.1

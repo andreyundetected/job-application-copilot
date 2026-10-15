@@ -521,44 +521,50 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
     <div class="stage-settings">
         <p class="stage-hint">{{ t.step4_hint }}</p>
         <div class="stage-off-note" id="tailor-off-note" style="{% if auto_tailor_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
-        <div class="tailor-columns {% if not auto_tailor_master_enabled %}matrix-locked{% endif %}" id="tailoring-matrix">
-            <div class="tailor-column {% if soft_active %}level-active{% endif %}" data-level="soft">
-                <div class="tailor-column-header"><span class="tailor-column-dot {% if soft_active %}on{% endif %}" id="soft-status-dot"></span>{{ t.level_soft }}</div>
-                <div class="tailor-column-hint">{{ t.level_soft_hint }}</div>
-                {% for row in tailoring_matrix %}
-                {% if row.level == "soft" %}
-                <div class="tailor-row" data-level="soft" data-change-type="{{ row.change_type }}">
-                    <label class="toggle-switch">
-                        <input type="checkbox" class="tailoring-checkbox" data-level="soft" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
-                </div>
-                {% endif %}
-                {% endfor %}
+        <div class="tailor-column level-active {% if not auto_tailor_master_enabled %}matrix-locked{% endif %}" id="tailoring-matrix">
+            <div class="tailor-column-header"><span class="tailor-column-dot on"></span>{{ t.resume_apply_title }}</div>
+            <div class="tailor-column-hint">{{ t.resume_apply_hint }}</div>
+            {% for target in resume_apply_targets %}
+            <div class="tailor-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" class="resume-apply-checkbox" data-key="{{ target.key }}" {% if target.enabled %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="tailor-row-label">{{ t["resume_apply_" + target.key] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["resume_apply_" + target.key + "_tooltip"] }}</span></span></span>
             </div>
-            <div class="tailor-column {% if medium_active %}level-active{% endif %}" data-level="medium">
-                <div class="tailor-column-header"><span class="tailor-column-dot {% if medium_active %}on{% endif %}" id="medium-status-dot"></span>{{ t.level_medium }}</div>
-                <div class="tailor-column-hint">{{ t.level_medium_hint }}</div>
-                {% for row in tailoring_matrix %}
-                {% if row.level == "medium" %}
-                <div class="tailor-row" data-level="medium" data-change-type="{{ row.change_type }}">
-                    <label class="toggle-switch">
-                        <input type="checkbox" class="tailoring-checkbox" data-level="medium" data-change-type="{{ row.change_type }}" {% if row.auto_apply %}checked{% endif %}>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="tailor-row-label">{{ t["change_type_" + row.change_type] }}<span class="info-icon">i<span class="tooltip-bubble">{{ t["change_type_" + row.change_type + "_tooltip"] }}</span></span></span>
-                </div>
-                {% endif %}
-                {% endfor %}
-            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="stage accent-yellow" id="stage-letter">
+    <div class="stage-head">
+        <span class="stage-num">4</span>
+        <div class="stage-titles">
+            <div class="stage-title">{{ t.step_letter_title }}</div>
+            <div class="stage-sub">{{ t.step_letter_subtitle }}</div>
+        </div>
+        <label class="power-switch">
+            <input type="checkbox" id="auto_letter_master_enabled" {% if auto_letter_master_enabled %}checked{% endif %}>
+            <span class="power-switch-track"><span class="power-switch-thumb"></span></span>
+            <span class="power-switch-state on-text">{{ t.power_on }}</span>
+            <span class="power-switch-state off-text">{{ t.power_off }}</span>
+        </label>
+    </div>
+    <div class="stage-settings">
+        <p class="stage-hint">{{ t.step_letter_hint }}</p>
+        <div class="stage-off-note" id="letter-off-note" style="{% if auto_letter_master_enabled %}display:none;{% endif %}">{{ t.master_toggle_off_note }}</div>
+        <div id="letter-note-wrap" class="{% if not auto_letter_master_enabled %}matrix-locked{% endif %}">
+            <label for="letter_note">{{ t.letter_note_label }}</label>
+            <textarea id="letter_note" placeholder="{{ t.letter_note_placeholder }}" style="min-height:90px;">{{ letter_note }}</textarea>
+            <p class="stage-hint" style="margin:6px 0 0;">{{ t.letter_note_synced }}</p>
         </div>
     </div>
 </section>
 
 <section class="stage accent-green" id="stage-answers">
     <div class="stage-head">
-        <span class="stage-num">4</span>
+        <span class="stage-num">5</span>
         <div class="stage-titles">
             <div class="stage-title">{{ t.step5_title }}</div>
             <div class="stage-sub">{{ t.step5_subtitle }}</div>
@@ -591,7 +597,7 @@ details.advanced-settings .advanced-body { margin-top: 13px; }
 
 <section class="stage accent-orange" id="stage-telegram">
     <div class="stage-head">
-        <span class="stage-num">5</span>
+        <span class="stage-num">6</span>
         <div class="stage-titles">
             <div class="stage-title">{{ t.notifications_title }}</div>
             <div class="stage-sub">{{ t.step2_hint }}</div>
@@ -716,18 +722,16 @@ document.getElementById("telegram_notify_enabled").addEventListener("change", as
 });
 
 document.getElementById("tailoring-matrix").addEventListener("change", async (event) => {
-    if (!event.target.classList.contains("tailoring-checkbox")) return;
+    if (!event.target.classList.contains("resume-apply-checkbox")) return;
+    const checkbox = event.target;
     const formData = new FormData();
-    formData.append("level", event.target.dataset.level);
-    formData.append("change_type", event.target.dataset.changeType);
-    formData.append("auto_apply", event.target.checked ? "true" : "");
-    const response = await fetch("/automation/tailoring-permissions", { method: "POST", body: formData });
-    if (!response.ok) return;
-    const data = await response.json();
-    document.getElementById("soft-status-dot").classList.toggle("on", data.soft_active);
-    document.getElementById("medium-status-dot").classList.toggle("on", data.medium_active);
-    document.querySelector('.tailor-column[data-level="soft"]').classList.toggle("level-active", data.soft_active);
-    document.querySelector('.tailor-column[data-level="medium"]').classList.toggle("level-active", data.medium_active);
+    formData.append("key", checkbox.dataset.key);
+    formData.append("enabled", checkbox.checked ? "true" : "");
+    const response = await fetch("/automation/resume-apply", { method: "POST", body: formData });
+    if (!response.ok) {
+        checkbox.checked = !checkbox.checked;
+        showToast("Error", "danger");
+    }
 });
 
 function bindMasterToggle(id, formField, lockedElIds, offNoteId) {
@@ -748,6 +752,18 @@ function bindMasterToggle(id, formField, lockedElIds, offNoteId) {
 }
 bindMasterToggle("auto_tailor_master_enabled", "auto_tailor_master_enabled", ["tailoring-matrix"], "tailor-off-note");
 bindMasterToggle("auto_questions_master_enabled", "auto_questions_master_enabled", ["base-question-list", "base-question-add-row"], "questions-off-note");
+bindMasterToggle("auto_letter_master_enabled", "auto_letter_master_enabled", ["letter-note-wrap"], "letter-off-note");
+
+(function () {
+    const input = document.getElementById("letter_note");
+    let timeout = null;
+    const save = () => fetch("/settings/profile/letter-note", {
+        method: "POST",
+        body: new URLSearchParams({ letter_note: input.value }),
+    });
+    input.addEventListener("input", () => { clearTimeout(timeout); timeout = setTimeout(save, 800); });
+    input.addEventListener("blur", () => { clearTimeout(timeout); save(); });
+})();
 
 function addBaseQuestionRow(id, text) {
     const list = document.getElementById("base-question-list");

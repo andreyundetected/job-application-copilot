@@ -60,7 +60,7 @@ class RecordingProvider:
                 user_prompt=user_prompt,
                 max_tokens=max_tokens,
                 reasoning_effort="off",
-                temperature=0,
+                temperature=temperature,
             )
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"

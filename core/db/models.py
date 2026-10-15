@@ -480,6 +480,11 @@ class AutomationSettings(Base):
     max_pages_per_query: Mapped[int] = mapped_column(Integer, default=10)
     auto_tailor_master_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_questions_master_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_letter_master_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_apply_title_main: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_apply_exp_titles: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_apply_summary: Mapped[bool] = mapped_column(Boolean, default=True)
+    auto_apply_skills: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class ManualAssistTailoringPermission(Base):
@@ -583,6 +588,7 @@ class TailoringLetter(Base):
     session_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=True)
     notes: Mapped[str] = mapped_column(String(2000), nullable=True)
+    comment: Mapped[str] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, default=datetime.datetime.utcnow
     )

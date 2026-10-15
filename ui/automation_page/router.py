@@ -49,6 +49,20 @@ _TAILORING_MATRIX = [
 
 DEFAULT_TARGET_SITES = default_target_sites()
 
+_RESUME_APPLY_FIELDS = {
+    "title_main": "auto_apply_title_main",
+    "exp_titles": "auto_apply_exp_titles",
+    "summary": "auto_apply_summary",
+    "skills": "auto_apply_skills",
+}
+
+
+def _resume_apply_state(settings) -> list[dict]:
+    return [
+        {"key": key, "enabled": bool(getattr(settings, field))}
+        for key, field in _RESUME_APPLY_FIELDS.items()
+    ]
+
 
 def _tailoring_matrix_state(session: Session) -> list[dict]:
     return [
@@ -76,6 +90,7 @@ def automation_page(
 ):
     settings = _get_or_create_settings(session)
     base_questions = crud.list_automation_base_questions(session)
+    profile = crud.get_candidate_profile(session)
     app_settings = crud.get_app_settings(session) or crud.upsert_app_settings(session)
 
     discovery_session = DiscoverySessionLocal()
@@ -94,6 +109,9 @@ def automation_page(
             "medium_active": crud.level_has_auto_apply(session, "medium"),
             "auto_tailor_master_enabled": settings.auto_tailor_master_enabled,
             "auto_questions_master_enabled": settings.auto_questions_master_enabled,
+            "auto_letter_master_enabled": bool(settings.auto_letter_master_enabled),
+            "resume_apply_targets": _resume_apply_state(settings),
+            "letter_note": (profile.letter_note or "") if profile else "",
             "base_questions": base_questions,
             "target_sites": DEFAULT_TARGET_SITES,
             "discovery_enabled": discovery_settings.enabled,
@@ -162,6 +180,7 @@ def update_settings(
 def update_master_toggles(
     auto_tailor_master_enabled: str | None = Form(None),
     auto_questions_master_enabled: str | None = Form(None),
+    auto_letter_master_enabled: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     kwargs = {}
@@ -169,8 +188,24 @@ def update_master_toggles(
         kwargs["auto_tailor_master_enabled"] = auto_tailor_master_enabled == "true"
     if auto_questions_master_enabled is not None:
         kwargs["auto_questions_master_enabled"] = auto_questions_master_enabled == "true"
+    if auto_letter_master_enabled is not None:
+        kwargs["auto_letter_master_enabled"] = auto_letter_master_enabled == "true"
 
     crud.upsert_automation_settings(session, **kwargs)
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/resume-apply")
+def update_resume_apply(
+    key: str = Form(...),
+    enabled: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    field = _RESUME_APPLY_FIELDS.get(key)
+    if field is None:
+        raise HTTPException(status_code=400, detail="Unknown resume part")
+
+    crud.upsert_automation_settings(session, **{field: enabled == "true"})
     return JSONResponse({"status": "ok"})
 
 
