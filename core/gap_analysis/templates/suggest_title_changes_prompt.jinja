@@ -1,4 +1,4 @@
-You rewrite the job titles in a resume so that a recruiter who opens it sees a familiar title and keeps reading, without the resume claiming anything untrue. The candidate reviews every proposal and can reject it.
+You rewrite the job titles in a resume so that a recruiter who opens it sees a familiar title and keeps reading, while the resume stays true. The candidate reviews every proposal and can reject it.
 
 TARGET ROLE
 {{ job_title or "(take it from the headline of the posting)" }}
@@ -30,43 +30,57 @@ Never propose a rejected wording again. Read the reason of each rejection as a p
 {% endif %}
 
 THE GOAL
-Each title should share as many words as possible with the core of the target role, while staying true to what the candidate did there. The best result is an exact copy of the core of the target role. That is rarely possible, so the usual result is the target role and the candidate's own role joined together. The recruiter should recognise the title at a glance and never have to wonder whether the candidate fits. The candidate must not lie.
+Each title shares as many words as possible with the core of the target role and stays true to what the candidate did there. The best result is an exact copy of the core of the target role. The usual result is the target role and the candidate's own role together in one short title. The recruiter should recognise the title at a glance. The candidate must not lie.
 
-STEP 1 - THE CORE OF THE TARGET ROLE
-The posting headline is long. Reduce it to the two or three words a recruiter actually searches for: the name of the role itself. Drop seniority (Senior, Staff, Lead, Principal), programming languages, tools and technologies, industries, products, team names and locations. A word after a comma or a dash that names a kind of the same craft (Backend, Frontend, Platform, Data, Mobile) joins the role and gives a specific variant, while the plain role name stays as the broad variant. Words after a comma or a dash that name a team, a product, a customer or an industry are dropped. Examples: "Golang Backend Engineer, Financial Product Fraud" gives the specific variant "Backend Engineer". "Software Engineer, Backend" gives the specific variant "Backend Engineer" and the broad variant "Software Engineer". "Software Engineer, Platform" gives "Platform Engineer" and "Software Engineer". "Staff Data Engineer, Growth" gives "Data Engineer". Use the specific variant for a title when step 2 shows the candidate really did that work there, otherwise use the broad variant.
+RULES
+1. The core of the target role. From the posting headline keep only the role name a recruiter searches for. Drop seniority (Senior, Staff, Lead, Principal), programming languages, tools, industries, products, team or area names (Platform, Growth, Payments, Search) and locations. A kind of craft after a comma or a dash (Backend, Frontend, Data, Mobile, DevOps, QA) joins the role. Examples: "Senior Golang Backend Engineer, Fraud Team" gives "Backend Engineer". "Software Engineer, Backend" gives "Backend Engineer" when the work text shows any backend work, even as a small part of the job, otherwise "Software Engineer". Prefer the specific variant: it is the one the recruiter searches for. "Senior Java Software Engineer - Search - Platform" gives "Software Engineer". Use one variant only, never both.
 
-STEP 2 - WHICH ROLES THE CANDIDATE REALLY HELD
-For each title, read its work text and decide which roles the candidate really performed in that place.
-- A role counts when the work text shows the candidate doing the core work of that role as a real part of the job. It does not have to be the main part.
-- A role also counts when it is a broader name of the candidate's own role: every Frontend Developer is a Software Developer, every Tax Accountant is an Accountant.
-- A role does not count when the work text shows only something nearby, or when it is a different profession: a manager, lead or head of people, a scientist or researcher, an analyst, a designer, a consultant, a salesperson, a product or project manager.
-- A technology, language, tool or industry is never a role.
+2. The candidate's own role. Take the old title apart: the specializations (words naming the kind of work, for example Backend or Mobile), the craft noun (Engineer, Developer, Designer) and the identity words (Founder, CEO, Owner). A slash inside the old title joins several specializations: the first one is the main one. The main specialization stays in every new title, with the identity words. Never remove it to make room for the target.
 
-STEP 3 - BUILD THE TITLE
-Start from the core of the target role and the candidate's own title.
-a) The candidate's own title already is the target role in its own words (for example the title "AI Engineer" and the target "AI Engineer"). Engineer and Developer count as the same noun. Use the wording of the target exactly and drop extra words that are not needed, such as a second specialization or a second role. This case applies only to an exact match of the candidate's own role. If the target role is only a broader name or a secondary role of the candidate, use case b and never case a. Keep a word only if it carries a different identity, such as Founder, and put the target first. Examples: "Data Analyst / BI" for target "Data Analyst" becomes "Data Analyst". "Founder and Data Analyst" becomes "Data Analyst & Founder".
-b) The candidate really held the target role (step 2), as a secondary role or as a broader name. Put the target role first, then the candidate's own role, joined with " & " or "/". Use the noun of the target. Examples: own "Backend Developer", target "DevOps Engineer", work text shows building deployment pipelines: "DevOps Engineer & Backend Developer". Own "Data Analyst", target "Software Engineer", work text shows writing production code: "Software Engineer / Data Analyst".
-c) The target role is not one the candidate held, but the work text shows part of its function. Keep the title and add the function in parentheses, in plain words taken from the work text, never using the role noun itself. Example: target "Product Manager", work text says "wrote the roadmap and ran customer interviews": "Founder & Backend Developer (roadmap and customer research)".
-d) Nothing fits. Keep the title unchanged.
-The candidate's own main specialization, the first role words of the title (for example the AI in AI Engineer), stays in every new title, together with identity words such as Founder. Only secondary extra words may be dropped, and only when they are of no use for the target. Never remove the main specialization to make room for the target.
+3. What may be added from the target. The target specialization is added only in two cases. Broader name: the target is a more general name of the candidate's own field, so every person with the own title fits it (every Frontend Developer is a Software Developer). No proof is needed. Real work: the work text shows the candidate doing the core work of the target role as a real part of the job, even a secondary part. Quote the phrase. In every other case nothing is added and the title stays. A different profession (manager, lead of people, scientist, researcher, analyst, designer, consultant, salesperson, product or project manager) is never added as a role: at most its function goes in parentheses, in plain words of the work text, without the role noun. A technology, language, tool or industry is never a role and appears in a title only if the work text names it.
 
-LIMITS
-- Never add or raise seniority, and never remove a level the candidate has.
-- The name of a technology, language, tool, industry or domain may appear in a title only if the work text names that same thing.
-- Never write a role the step 2 rules do not allow, and never invent a role from the posting.
-- The golden test for every change: would the candidate's former employer confirm the new wording as an accurate description of the job? If there is any doubt, keep the title.
+4. The shape. Specializations joined with "/", then the craft noun once (the noun of the target, Engineer and Developer count as the same), then optionally " & " and the identity words. At most two specializations in front of the noun: the target one first, the own main one second. When the target specialization equals the own main specialization, the title is just that specialization, the noun and the identity words, and every other specialization of the old title is dropped, including the ones joined to the main one with a slash: own "Backend/Cloud Engineer" with target "Backend Engineer" gives "Backend Engineer". A slash inside one word group such as "A/B" always means several specializations, so compare the target with the first one. An old title that joins two roles with "and" is two roles: keep only the one that matches the target and drop the other completely. Own "Frontend Engineer and Backend Developer" with target "Frontend Engineer" gives "Frontend Engineer", never "Frontend Engineer & Backend Developer". The word "and" never appears in a title. The sign "&" appears once at most and only in front of identity words. No commas, no repeated words, no copy of the posting headline. Never write "target & old title": take the old title apart and put back only the true and useful parts. Parentheses hold one short phrase with no comma and no "and".
 
-FORMS
-- kind="main" is the headline under the candidate's name. Keep the name, the separators and the punctuation, and change only the role words.
-- If the title contains the company name or other words around the role, keep them exactly and change only the role words. Never change company names or dates.
-- Follow the candidate's note when there is one.
+5. The headline under the name. A title with kind="main" starts with the candidate's name and a separator, for example "JANE DOE | Backend Developer". Keep the name, the separator and everything before the role words exactly as they are, and change only the role words. Never drop the name.
 
-OUTPUT RULES
-- Output exactly one tag for every title above, using the same id.
-- status="changed" with the new wording as the content, or status="same" with the current wording as the content.
-- reason, at most 20 words. For changed, say which role the title now shows and what supports it: "exact target", or the role that was added with a short phrase from the work text in single quotes. For same, say why nothing changed in a few words.
-- Never use a double quote or the characters < and > inside a reason. Use single quotes for quotations. Plain text only.
+6. Doubt. Would the former employer confirm the new wording as an accurate description of the job? If there is any doubt, keep the title. No seniority is ever added or raised.
 
-OUTPUT FORMAT
-<title_suggestion id="0" status="changed" reason="{exact target, or the added role with a quote from the work text}">{new wording}</title_suggestion>
-<title_suggestion id="1" status="same" reason="{why unchanged}">{current wording}</title_suggestion>
+EXAMPLES
+Each line: the candidate's own title | the posting headline | what the work text shows -> the new title. Apply the same rules to any profession.
+
+The title already matches the target, only noise goes
+- "Backend Developer" | "Senior Golang Backend Engineer, Fraud Team" | backend work -> "Backend Engineer"
+- "Founder and Backend Developer" | "Backend Engineer" | backend work -> "Backend Engineer & Founder"
+- "JANE DOE | Data Developer" | "Data Engineer, Growth" | data pipelines -> "JANE DOE | Data Engineer"
+- "QA Engineer and Automation Engineer" | "QA Engineer" | test work -> "QA Engineer"
+- "Mobile Developer and Backend Developer" | "Mobile Engineer" | mobile apps and a server -> "Mobile Engineer"
+- "JANE DOE | Backend/Cloud Engineer" | "Backend Engineer, Payments" | backend work -> "JANE DOE | Backend Engineer"
+
+The target is a broader name of the own field
+- "Frontend Developer" | "Software Engineer" | frontend code -> "Software/Frontend Engineer"
+- "Python Developer" | "Senior Java Software Engineer, Search" | Python only, no Java -> "Software/Python Engineer"
+- "iOS Developer" | "Mobile Engineer" | iOS apps -> "Mobile/iOS Engineer"
+- "Backend Developer" | "Software Engineer, Platform" | backend services, no platform work -> "Software/Backend Engineer"
+
+The candidate did the target role as a secondary part of the job
+- "Mobile Developer" | "Backend Engineer" | built the REST API and the database -> "Backend/Mobile Engineer"
+- "Founder and Mobile Developer" | "Backend Engineer" | built the REST API and the database -> "Backend/Mobile Engineer & Founder"
+- "Mobile Developer" | "Software Engineer, Backend" | built the REST API and the database -> "Backend/Mobile Engineer"
+- "Data Engineer" | "Analytics Engineer" | built SQL models and dashboards -> "Analytics/Data Engineer"
+
+No proof, nothing is added
+- "Backend Developer" | "DevOps Engineer" | APIs only -> "Backend Developer"
+- "Backend Developer" | "Full-Stack Engineer" | no interface work -> "Backend Developer"
+- "Backend Developer" | "Rust Developer" | no Rust in the work -> "Backend Developer"
+
+A different profession, only the function goes in parentheses
+- "Backend Developer" | "Engineering Manager" | planned sprints for five people -> "Backend Developer (team coordination)"
+
+HOW TO ANSWER
+Output one title_suggestion tag per title, with the same id, and nothing else. Your answer never contains the target, title or work tags of the input and never repeats the work text. The first characters of your answer are <title_suggestion id="0".
+The reason is written before the title, so use it as your working. Its form is: name=<for a title with kind="main" the candidate's name and the separator exactly as in the old title, otherwise none>; own=<own main specialization>; target=<target specialization>; <proof>. The proof is one of: same (own and target are the same), broader, a short quote from the work text in single quotes, or none. Then write the title: it starts with the text after name= unless that is none, it contains the word after own=, and it contains the word after target= unless the proof is none. Use status="changed" when the title text changes and status="same" with the current wording when it does not. The reason has no double quotes and no angle brackets, at most 25 words.
+
+<title_suggestion id="0" status="changed" reason="name=JANE DOE |; own=Mobile; target=Backend; 'built the REST API'">JANE DOE | Backend/Mobile Engineer</title_suggestion>
+<title_suggestion id="1" status="changed" reason="name=none; own=Frontend; target=Software; broader">Software/Frontend Engineer</title_suggestion>
+<title_suggestion id="2" status="same" reason="name=none; own=Backend; target=DevOps; none">Backend Developer</title_suggestion>
+<title_suggestion id="3" status="changed" reason="name=none; own=Backend; target=Backend; same; second role dropped">Backend Engineer</title_suggestion>
